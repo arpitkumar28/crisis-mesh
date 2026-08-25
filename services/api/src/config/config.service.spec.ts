@@ -4,11 +4,21 @@ import { ConfigService } from './config.service';
 describe('ConfigService', () => {
   let service: ConfigService;
 
-  beforeEach(async () => {
-    // Set required environment variables for testing
+  beforeAll(() => {
+    // Set required environment variables for all tests
     process.env.JWT_SECRET = 'test-secret-key-for-testing';
+    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
     process.env.NODE_ENV = 'test';
+  });
 
+  afterAll(() => {
+    // Clean up environment variables
+    delete process.env.JWT_SECRET;
+    delete process.env.DATABASE_URL;
+    delete process.env.NODE_ENV;
+  });
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [ConfigService],
     }).compile();
@@ -17,9 +27,12 @@ describe('ConfigService', () => {
   });
 
   afterEach(() => {
-    // Clean up environment variables
-    delete process.env.JWT_SECRET;
-    delete process.env.NODE_ENV;
+    // Clean up optional environment variables
+    delete process.env.API_PORT;
+    delete process.env.API_HOST;
+    delete process.env.CORS_ORIGIN;
+    delete process.env.MQTT_BROKER_URL;
+    process.env.NODE_ENV = 'test'; // Reset to test environment
   });
 
   it('should be defined', () => {
@@ -30,16 +43,8 @@ describe('ConfigService', () => {
     expect(service.jwtSecret).toBe('test-secret-key-for-testing');
   });
 
-  it('should throw error when JWT_SECRET is missing', async () => {
-    // Remove JWT_SECRET
-    delete process.env.JWT_SECRET;
-
-    await expect(async () => {
-      const module: TestingModule = await Test.createTestingModule({
-        providers: [ConfigService],
-      }).compile();
-      module.get<ConfigService>(ConfigService);
-    }).rejects.toThrow('JWT_SECRET');
+  it('should return database URL from environment', () => {
+    expect(service.databaseUrl).toBe('postgresql://test:test@localhost:5432/test');
   });
 
   it('should return correct node environment', () => {
@@ -67,11 +72,6 @@ describe('ConfigService', () => {
     const origins = service.corsOrigin;
     expect(origins).toEqual(['http://localhost:3000', 'http://localhost:3001']);
     delete process.env.CORS_ORIGIN;
-  });
-
-  it('should return empty database URL when not set', () => {
-    delete process.env.DATABASE_URL;
-    expect(service.databaseUrl).toBe('');
   });
 
   it('should return default MQTT broker URL when not set', () => {

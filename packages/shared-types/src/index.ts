@@ -12,6 +12,7 @@ export enum UserRole {
   RESPONDER = 'RESPONDER',
   AUTHORITY = 'AUTHORITY',
   ADMIN = 'ADMIN',
+  ANALYST = 'ANALYST',
 }
 
 // ============================================================================

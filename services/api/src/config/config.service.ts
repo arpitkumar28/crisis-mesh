@@ -15,6 +15,10 @@ export class ConfigService {
       requiredVars.push('JWT_SECRET');
     }
 
+    if (!process.env.DATABASE_URL) {
+      requiredVars.push('DATABASE_URL');
+    }
+
     if (requiredVars.length > 0) {
       this.logger.error(
         `Missing required environment variables: ${requiredVars.join(', ')}. ` +
