@@ -70,6 +70,10 @@ class CrisisMeshSimulator:
             self.client.loop_start()
             
             logger.info(f"Connecting to MQTT broker: {self.config.mqtt_broker}")
+        except ConnectionRefusedError:
+            logger.warning("MQTT broker unavailable - running in degraded mode")
+            self.client = None
+            self.running = False
         except Exception as e:
             logger.error(f"Failed to connect to MQTT broker: {e}")
             raise
@@ -89,7 +93,7 @@ class CrisisMeshSimulator:
     
     async def publish_telemetry(self, device_id: str, metric: str, value: float, unit: str = ""):
         """Publish sensor telemetry"""
-        if not self.running:
+        if not self.running or self.client is None:
             logger.warning("MQTT client not connected, cannot publish")
             return
         
@@ -158,6 +162,10 @@ async def main():
     
     try:
         simulator.connect()
+        # If MQTT is unavailable, still run the simulation loop
+        if not simulator.running:
+            logger.info("Running in offline mode - no MQTT connection")
+            simulator.running = True  # Allow simulation to run without MQTT
         await simulator.run()
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt")

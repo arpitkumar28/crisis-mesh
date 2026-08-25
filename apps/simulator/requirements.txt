@@ -1,7 +1,7 @@
 # CrisisMesh Simulator Requirements
 
 # MQTT
-paho-mqtt==1.6.1
+paho-mqtt==2.1.0
 
 # Environment
 python-dotenv==1.0.0
