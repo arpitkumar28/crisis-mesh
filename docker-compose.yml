@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # MQTT Broker
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: crisis-mesh-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infrastructure/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    networks:
+      - crisis-mesh-network
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "$$SYS/broker/uptime"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database (optional - usually via Supabase)
+  # postgres:
+  #   image: postgis/postgis:15-3
+  #   container_name: crisis-mesh-db
+  #   environment:
+  #     POSTGRES_USER: ${DB_USER}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #     POSTGRES_DB: crisis_mesh
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - crisis-mesh-network
+
+  # NestJS API
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: crisis-mesh-api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mqtt:
+        condition: service_healthy
+    volumes:
+      - ./services/api/src:/app/src
+    networks:
+      - crisis-mesh-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python Simulator
+  simulator:
+    build:
+      context: ./apps/simulator
+      dockerfile: Dockerfile
+    container_name: crisis-mesh-simulator
+    environment:
+      MQTT_BROKER: mqtt://mqtt:1883
+      API_URL: http://api:3001/api
+    depends_on:
+      - mqtt
+      - api
+    volumes:
+      - ./apps/simulator:/app
+    networks:
+      - crisis-mesh-network
+
+  # Python AI Service
+  ai-service:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    container_name: crisis-mesh-ai
+    environment:
+      API_URL: http://api:3001/api
+      MQTT_BROKER: mqtt://mqtt:1883
+      AI_SERVICE_PORT: 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./services/ai:/app
+    depends_on:
+      - mqtt
+      - api
+    networks:
+      - crisis-mesh-network
+
+networks:
+  crisis-mesh-network:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_logs:
+  # postgres_data:

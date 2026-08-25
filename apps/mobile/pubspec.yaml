@@ -1,0 +1,55 @@
+name: crisis_mesh
+description: "CrisisMesh - AI-powered disaster intelligence and emergency response platform"
+publish_to: 'none'
+
+version: 0.0.1+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  riverpod: ^2.4.0
+  riverpod_generator: ^2.3.0
+
+  # Routing
+  go_router: ^11.1.0
+
+  # HTTP Client
+  dio: ^5.3.1
+  retrofit: ^4.1.0
+
+  # Maps
+  flutter_map: ^6.0.0
+  latlong2: ^0.9.1
+
+  # Local Storage
+  sqflite: ^2.3.0
+  path: ^1.8.3
+
+  # Secure Storage
+  flutter_secure_storage: ^9.0.0
+
+  # UI
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.0.0
+  logger: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.3.0
+  retrofit_generator: ^8.1.0
+
+flutter:
+  uses-material-design: true
