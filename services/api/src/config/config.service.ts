@@ -1,7 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class ConfigService {
+  private readonly logger = new Logger(ConfigService.name);
+
+  constructor() {
+    this.validateRequiredEnvVars();
+  }
+
+  private validateRequiredEnvVars(): void {
+    const requiredVars: string[] = [];
+
+    if (!process.env.JWT_SECRET) {
+      requiredVars.push('JWT_SECRET');
+    }
+
+    if (requiredVars.length > 0) {
+      this.logger.error(
+        `Missing required environment variables: ${requiredVars.join(', ')}. ` +
+        'Please set these variables in your .env file or environment.'
+      );
+      throw new Error(
+        `Configuration error: Missing required environment variables: ${requiredVars.join(', ')}`
+      );
+    }
+  }
+
   get nodeEnv(): string {
     return process.env.NODE_ENV || 'development';
   }
@@ -23,7 +47,11 @@ export class ConfigService {
   }
 
   get jwtSecret(): string {
-    return process.env.JWT_SECRET || 'dev-secret-key';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    return secret;
   }
 
   get mqttBrokerUrl(): string {

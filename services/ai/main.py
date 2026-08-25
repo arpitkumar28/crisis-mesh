@@ -1,10 +1,13 @@
 """
-CrisisMesh AI Service
+CrisisMesh AI Service (Phase 1 Skeleton)
 
-Provides risk prediction, model inference, and machine learning capabilities.
-Independent from NestJS backend.
+PHASE 1 STATUS: Service skeleton with mock predictions only.
+This is NOT a production AI service with trained models.
 
-Models are loaded at startup and inference is provided via REST API.
+Provides basic risk prediction interface for Phase 1 foundation.
+Real ML model implementation belongs to Phase 5.
+
+Independent from NestJS backend for separation of concerns.
 """
 
 import asyncio
@@ -13,7 +16,6 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 from flask import Flask, jsonify
-import numpy as np
 
 # Configure logging
 logging.basicConfig(
@@ -33,31 +35,39 @@ class AIServiceConfig:
 
 class RiskPredictor:
     """
-    Risk prediction model
+    Risk prediction model (PHASE 1 SKELETON)
     
-    Phase 1: Mock predictions
-    Phase 5+: Real scikit-learn / XGBoost models
+    ⚠️ IMPORTANT: This is a MOCK predictor for Phase 1 only.
+    ⚠️ This does NOT use real ML models or trained algorithms.
+    ⚠️ Real ML implementation belongs to Phase 5.
+    
+    Phase 1: Simple rule-based mock predictions
+    Phase 5+: Real scikit-learn / XGBoost models with trained weights
     """
     
     def __init__(self):
-        """Initialize predictor"""
-        logger.info("Initializing RiskPredictor (Phase 1 - Mock)")
+        """Initialize predictor (Phase 1 - Mock Only)"""
+        logger.info("Initializing RiskPredictor (PHASE 1 SKELETON - Mock Only)")
     
     def predict(self, features: Dict[str, float]) -> Dict[str, Any]:
         """
-        Predict risk level based on features
+        Predict risk level based on features (PHASE 1 MOCK)
+        
+        ⚠️ This is NOT a real AI/ML prediction.
+        ⚠️ This uses simple rule-based logic for Phase 1 foundation only.
+        ⚠️ Real model training and inference belongs to Phase 5.
         
         Args:
             features: Dictionary of sensor readings and environmental data
         
         Returns:
-            Dictionary with risk prediction
+            Dictionary with MOCK risk prediction
         """
-        # Phase 1: Mock prediction logic
-        # Phase 5: Load real model and run inference
+        # Phase 1: Simple rule-based mock prediction logic
+        # Phase 5: Load real trained model and run inference
         
         try:
-            # Simple mock: based on temperature
+            # Simple mock: based on temperature only
             temperature = features.get("temperature", 25.0)
             
             if temperature < 0 or temperature > 50:
@@ -76,6 +86,8 @@ class RiskPredictor:
                 "factors": ["temperature", "mock_factor"],
                 "predicted_at": datetime.utcnow().isoformat(),
                 "valid_until": datetime.utcnow().isoformat(),
+                "phase_1_mock": True,  # Explicitly mark as mock
+                "disclaimer": "This is a Phase 1 mock prediction, not a real AI model"
             }
         except Exception as e:
             logger.error(f"Error in risk prediction: {e}")
@@ -84,14 +96,18 @@ class RiskPredictor:
                 "probability": 0.0,
                 "factors": [],
                 "error": str(e),
+                "phase_1_mock": True,
             }
     
     def health(self) -> Dict[str, Any]:
-        """Check model health"""
+        """Check model health (Phase 1 Skeleton)"""
         return {
             "status": "healthy",
-            "models_loaded": 1,
+            "models_loaded": 0,  # No real models in Phase 1
             "version": "0.0.1",
+            "phase": "1",
+            "implementation": "skeleton_mock",
+            "disclaimer": "Phase 1 skeleton - no real ML models loaded"
         }
 
 
@@ -112,18 +128,26 @@ class CrisisMeshAIService:
         
         @self.app.route('/health', methods=['GET'])
         def health():
-            """Health check endpoint"""
+            """Health check endpoint (Phase 1 Skeleton)"""
             return jsonify({
                 "status": "ok",
                 "timestamp": datetime.utcnow().isoformat(),
                 "service": "crisis-mesh-ai",
                 "version": "0.0.1",
+                "phase": "1",
+                "implementation": "skeleton",
                 "model": self.predictor.health(),
+                "disclaimer": "Phase 1 skeleton - no real ML models"
             })
         
         @self.app.route('/predict', methods=['POST'])
         def predict():
-            """Risk prediction endpoint"""
+            """
+            Risk prediction endpoint (PHASE 1 MOCK)
+            
+            ⚠️ This endpoint returns MOCK predictions only.
+            ⚠️ Real AI/ML predictions belong to Phase 5.
+            """
             from flask import request
             
             try:
@@ -135,18 +159,21 @@ class CrisisMeshAIService:
                 # Extract features from request
                 features = data.get("features", {})
                 
-                # Run prediction
+                # Run mock prediction
                 result = self.predictor.predict(features)
                 
                 return jsonify({
                     "success": True,
                     "data": result,
+                    "phase_1_mock": True,
+                    "disclaimer": "Phase 1 mock prediction - not a real AI model"
                 })
             except Exception as e:
                 logger.error(f"Error in predict endpoint: {e}")
                 return jsonify({
                     "success": False,
                     "error": str(e),
+                    "phase_1_mock": True,
                 }), 500
         
         @self.app.errorhandler(404)

@@ -3,9 +3,6 @@
 # MQTT
 paho-mqtt==1.6.1
 
-# Async
-asyncio-contextmanager==1.0.0
-
 # Environment
 python-dotenv==1.0.0
 

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MQTT Broker
   mqtt:
@@ -19,21 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # PostgreSQL Database (optional - usually via Supabase)
-  # postgres:
-  #   image: postgis/postgis:15-3
-  #   container_name: crisis-mesh-db
-  #   environment:
-  #     POSTGRES_USER: ${DB_USER}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
-  #     POSTGRES_DB: crisis_mesh
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - crisis-mesh-network
 
   # NestJS API
   api:
@@ -107,4 +90,3 @@ networks:
 volumes:
   mosquitto_data:
   mosquitto_logs:
-  # postgres_data:

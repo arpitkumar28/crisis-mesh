@@ -121,10 +121,74 @@ export const MQTT_TOPICS = {
 } as const;
 
 // ============================================================================
-// API RESPONSE TYPES
+// API RESPONSE TYPES - STANDARDIZED CONTRACT
 // ============================================================================
 
-export interface ApiResponse<T> {
+/**
+ * Standard API Response Contract
+ * All API endpoints must return responses in this format
+ */
+export interface ApiResponse<T = any> {
+  success: true;
+  message: string;
+  data: T;
+  request_id: string;
+}
+
+/**
+ * Standard API Error Contract
+ * All API errors must return responses in this format
+ */
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  error: {
+    code: string;
+    details?: string[];
+  };
+  request_id: string;
+}
+
+/**
+ * Error codes for standardized error handling
+ */
+export enum ErrorCode {
+  // Validation errors (400)
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INVALID_INPUT = 'INVALID_INPUT',
+  MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD',
+
+  // Authentication errors (401)
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+
+  // Authorization errors (403)
+  FORBIDDEN = 'FORBIDDEN',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+
+  // Not found errors (404)
+  NOT_FOUND = 'NOT_FOUND',
+  RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
+
+  // Conflict errors (409)
+  CONFLICT = 'CONFLICT',
+  DUPLICATE_RESOURCE = 'DUPLICATE_RESOURCE',
+
+  // Server errors (500)
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
+
+  // Rate limiting (429)
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+}
+
+/**
+ * Legacy types for backward compatibility (deprecated)
+ * @deprecated Use ApiResponse and ApiErrorResponse instead
+ */
+export interface LegacyApiResponse<T> {
   data: T;
   meta?: {
     page?: number;
@@ -133,7 +197,7 @@ export interface ApiResponse<T> {
   };
 }
 
-export interface ApiError {
+export interface LegacyApiError {
   error: boolean;
   message: string;
   statusCode: number;
@@ -236,4 +300,3 @@ export interface RiskPrediction {
   valid_until: string;
 }
 
-export type { ApiResponse, ApiError };
