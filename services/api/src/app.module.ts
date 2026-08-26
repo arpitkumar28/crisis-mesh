@@ -12,6 +12,7 @@ import { IncidentsModule } from './incidents/incidents.module';
 import { RiskModule } from './risk/risk.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { MqttModule } from './mqtt/mqtt.module';
+import { WebSocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MqttModule } from './mqtt/mqtt.module';
     RiskModule,
     SimulationModule,
     MqttModule,
+    WebSocketModule,
   ],
   controllers: [],
   providers: [],

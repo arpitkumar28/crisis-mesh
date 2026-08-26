@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '../config/config.module';
 import { MqttModule } from '../mqtt/mqtt.module';
 import { AuthModule } from '../auth/auth.module';
+import { WebSocketModule } from '../websocket/websocket.module';
 import { TelemetryService } from './telemetry.service';
 import { TelemetryController } from './telemetry.controller';
 import { SensorReading } from '../entities/sensor-reading.entity';
@@ -14,6 +15,7 @@ import { Device } from '../entities/device.entity';
     ConfigModule,
     MqttModule,
     AuthModule,
+    WebSocketModule,
     TypeOrmModule.forFeature([SensorReading, Sensor, Device]),
   ],
   controllers: [TelemetryController],

@@ -5,6 +5,7 @@ import { Device, DeviceType, DeviceStatus } from '../entities/device.entity';
 import { Sensor } from '../entities/sensor.entity';
 import { DeviceStatusHistory } from '../entities/device-status-history.entity';
 import { MqttService } from '../mqtt/mqtt.service';
+import { WebSocketService } from '../websocket/websocket.service';
 
 export interface CreateDeviceDto {
   name: string;
@@ -37,6 +38,7 @@ export class DevicesService {
     @InjectRepository(DeviceStatusHistory)
     private readonly statusHistoryRepository: Repository<DeviceStatusHistory>,
     private readonly mqttService: MqttService,
+    private readonly webSocketService: WebSocketService,
   ) {}
 
   async createDevice(createDto: CreateDeviceDto): Promise<Device> {
@@ -195,6 +197,15 @@ export class DevicesService {
         signal_strength: device.signal_strength,
         timestamp: new Date().toISOString(),
       }, { qos: 1 });
+
+      // Broadcast WebSocket event for real-time updates
+      this.webSocketService.broadcastDeviceStatusChanged({
+        device_id: id,
+        status: status,
+        battery_level: device.battery_level,
+        signal_strength: device.signal_strength,
+        timestamp: new Date().toISOString(),
+      });
 
       return device;
     } catch (error: unknown) {

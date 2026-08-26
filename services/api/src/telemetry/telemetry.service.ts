@@ -5,6 +5,7 @@ import { SensorReading } from '../entities/sensor-reading.entity';
 import { Sensor } from '../entities/sensor.entity';
 import { Device } from '../entities/device.entity';
 import { MqttService } from '../mqtt/mqtt.service';
+import { WebSocketService } from '../websocket/websocket.service';
 import { SensorMetric } from '../entities/sensor.entity';
 
 interface TelemetryPayload {
@@ -37,6 +38,7 @@ export class TelemetryService {
     @InjectRepository(Device)
     private readonly deviceRepository: Repository<Device>,
     private readonly mqttService: MqttService,
+    private readonly webSocketService: WebSocketService,
   ) {}
 
   async onModuleInit() {
@@ -136,6 +138,16 @@ export class TelemetryService {
       });
 
       this.logger.debug(`Saved sensor reading: sensor_id=${sensor.id}, value=${payload.value}`);
+
+      // Broadcast WebSocket event for real-time updates
+      this.webSocketService.broadcastTelemetryUpdated({
+        device_id: sensor.device_id,
+        sensor_id: sensor.id,
+        metric: payload.metric,
+        value: payload.value,
+        unit: payload.unit,
+        timestamp: payload.timestamp,
+      });
 
       // Publish to alert topic if value exceeds thresholds
       await this.checkThresholdsAndAlert(sensor, payload.value);
