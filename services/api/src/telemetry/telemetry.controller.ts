@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { TelemetryService } from './telemetry.service';
 
-@Controller('api/v1/telemetry')
+@Controller('v1/telemetry')
 export class TelemetryController {
   constructor(private readonly telemetryService: TelemetryService) {}
 

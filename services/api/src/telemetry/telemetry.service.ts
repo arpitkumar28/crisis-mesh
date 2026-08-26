@@ -98,10 +98,24 @@ export class TelemetryService {
         return;
       }
 
-      // Find or create sensor
+      // Find or create sensor (this also handles device lookup by serial_number)
       const sensor = await this.findOrCreateSensor(payload.device_id, payload.metric, payload.unit);
       if (!sensor) {
         this.logger.error(`Failed to find or create sensor for device ${payload.device_id}, metric ${payload.metric}`);
+        return;
+      }
+
+      // Check for duplicate reading (same sensor and timestamp)
+      const timestamp = new Date(payload.timestamp);
+      const existingReading = await this.sensorReadingRepository.findOne({
+        where: {
+          sensor_id: sensor.id,
+          timestamp: timestamp,
+        },
+      });
+
+      if (existingReading) {
+        this.logger.debug(`Duplicate reading detected for sensor ${sensor.id} at ${timestamp}, skipping`);
         return;
       }
 
@@ -110,14 +124,14 @@ export class TelemetryService {
         sensor_id: sensor.id,
         value: payload.value,
         unit: payload.unit,
-        timestamp: new Date(payload.timestamp),
+        timestamp: timestamp,
         quality_flag: payload.quality_flag,
       });
 
       await this.sensorReadingRepository.save(reading);
 
-      // Update device last_seen
-      await this.deviceRepository.update(payload.device_id, {
+      // Update device last_seen using actual device UUID
+      await this.deviceRepository.update(sensor.device_id, {
         last_seen: new Date(),
       });
 
@@ -143,15 +157,36 @@ export class TelemetryService {
         return;
       }
 
-      // Update device status
-      await this.deviceRepository.update(payload.device_id, {
+      // Find device by serial_number (simulator sends serial numbers)
+      let device = await this.deviceRepository.findOne({
+        where: { serial_number: payload.device_id },
+      });
+
+      // If not found by serial_number, try by id (for UUID-based device_id)
+      if (!device) {
+        try {
+          device = await this.deviceRepository.findOne({
+            where: { id: payload.device_id },
+          });
+        } catch (error) {
+          // device_id is not a valid UUID, ignore
+        }
+      }
+
+      if (!device) {
+        this.logger.warn(`Device not found for status update: ${payload.device_id}`);
+        return;
+      }
+
+      // Update device status using actual device UUID
+      await this.deviceRepository.update(device.id, {
         status: payload.status as any,
         battery_level: payload.battery_level,
         signal_strength: payload.signal_strength,
         last_seen: new Date(payload.timestamp),
       });
 
-      this.logger.debug(`Updated device status: ${payload.device_id} -> ${payload.status}`);
+      this.logger.debug(`Updated device status: ${device.serial_number || device.id} -> ${payload.status}`);
 
     } catch (error: unknown) {
       this.logger.error(`Error processing device status message: ${error instanceof Error ? error.message : String(error)}`);
@@ -195,55 +230,69 @@ export class TelemetryService {
 
   private async findOrCreateSensor(deviceId: string, metric: string, unit: string): Promise<Sensor | null> {
     try {
-      // Check cache first
-      if (this.deviceSensorCache.has(deviceId)) {
-        const cachedSensor = this.deviceSensorCache.get(deviceId)!.get(metric);
+      // First, try to find device by serial_number (simulator sends serial numbers)
+      let device = await this.deviceRepository.findOne({
+        where: { serial_number: deviceId },
+      });
+
+      // If not found by serial_number, try by id (for UUID-based device_id)
+      if (!device) {
+        try {
+          device = await this.deviceRepository.findOne({
+            where: { id: deviceId },
+          });
+        } catch (error) {
+          // deviceId is not a valid UUID, ignore and proceed to create
+        }
+      }
+
+      // Create device if not exists
+      if (!device) {
+        this.logger.log(`Auto-creating device with serial_number ${deviceId}`);
+        device = this.deviceRepository.create({
+          name: `Device ${deviceId}`,
+          type: 'SIMULATOR' as any,
+          status: 'ONLINE' as any,
+          serial_number: deviceId,
+        });
+        await this.deviceRepository.save(device);
+      }
+
+      const actualDeviceId = device.id;
+
+      // Check cache first using actual device UUID
+      if (this.deviceSensorCache.has(actualDeviceId)) {
+        const cachedSensor = this.deviceSensorCache.get(actualDeviceId)!.get(metric);
         if (cachedSensor) {
           return cachedSensor;
         }
       }
 
-      // Query database
+      // Query database using actual device UUID
       let sensor = await this.sensorRepository.findOne({
         where: {
-          device_id: deviceId,
+          device_id: actualDeviceId,
           metric: metric as SensorMetric,
         },
       });
 
       // Create sensor if not exists
       if (!sensor) {
-        let device = await this.deviceRepository.findOne({
-        where: { id: deviceId },
-      });
-
-      if (!device) {
-        // Auto-create device for simulator
-        this.logger.log(`Auto-creating device ${deviceId}`);
-        device = this.deviceRepository.create({
-            id: deviceId,
-            name: `Device ${deviceId}`,
-            type: 'SIMULATOR' as any,
-            status: 'ONLINE' as any,
-          });
-          await this.deviceRepository.save(device);
-        }
-
         sensor = this.sensorRepository.create({
-          device_id: deviceId,
+          device_id: actualDeviceId,
           name: `${metric} Sensor`,
           metric: metric as SensorMetric,
           unit: unit,
         });
         await this.sensorRepository.save(sensor);
 
-        // Update cache
-        if (!this.deviceSensorCache.has(deviceId)) {
-          this.deviceSensorCache.set(deviceId, new Map());
+        // Update cache using actual device UUID
+        if (!this.deviceSensorCache.has(actualDeviceId)) {
+          this.deviceSensorCache.set(actualDeviceId, new Map());
         }
-        this.deviceSensorCache.get(deviceId)!.set(metric, sensor);
+        this.deviceSensorCache.get(actualDeviceId)!.set(metric, sensor);
 
-        this.logger.log(`Created new sensor: device_id=${deviceId}, metric=${metric}`);
+        this.logger.log(`Created new sensor: device_id=${actualDeviceId}, metric=${metric}`);
       }
 
       return sensor;

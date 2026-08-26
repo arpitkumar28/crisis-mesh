@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpCode, HttpS
 import { DevicesService, CreateDeviceDto, UpdateDeviceDto } from './devices.service';
 import { Device, DeviceStatus, DeviceType } from '../entities/device.entity';
 
-@Controller('api/v1/devices')
+@Controller('v1/devices')
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
