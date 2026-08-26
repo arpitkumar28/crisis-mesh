@@ -11,8 +11,10 @@ future hardware will use.
 import asyncio
 import json
 import logging
+import random
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 
 import paho.mqtt.client as mqtt
 
@@ -24,13 +26,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class DisasterScenario(Enum):
+    """Disaster simulation scenarios"""
+    NORMAL = "normal"
+    FLOODING = "flooding"
+    FIRE = "fire"
+    EARTHQUAKE = "earthquake"
+    HEATWAVE = "heatwave"
+
+
 class SimulatorConfig:
     """Configuration for the simulator"""
-    mqtt_broker: str = "mqtt://localhost:1883"
-    mqtt_port: int = 1883
-    mqtt_username: Optional[str] = None
-    mqtt_password: Optional[str] = None
-    simulation_interval: int = 5  # seconds
+    def __init__(
+        self,
+        mqtt_broker: str = "mqtt://localhost:1883",
+        mqtt_port: int = 1883,
+        mqtt_username: Optional[str] = None,
+        mqtt_password: Optional[str] = None,
+        simulation_interval: int = 5,
+        scenario: DisasterScenario = DisasterScenario.NORMAL,
+        num_devices: int = 5,
+    ):
+        self.mqtt_broker = mqtt_broker
+        self.mqtt_port = mqtt_port
+        self.mqtt_username = mqtt_username
+        self.mqtt_password = mqtt_password
+        self.simulation_interval = simulation_interval
+        self.scenario = scenario
+        self.num_devices = num_devices
 
 
 class CrisisMeshSimulator:
@@ -46,8 +69,11 @@ class CrisisMeshSimulator:
         self.config = config or SimulatorConfig()
         self.client: Optional[mqtt.Client] = None
         self.running = False
+        self.devices = [f"sim-node-{i:03d}" for i in range(1, self.config.num_devices + 1)]
+        self.scenario = self.config.scenario
         
-        logger.info("CrisisMesh Simulator initialized")
+        logger.info(f"CrisisMesh Simulator initialized with {len(self.devices)} devices")
+        logger.info(f"Scenario: {self.scenario.value}")
     
     def connect(self):
         """Connect to MQTT broker"""
@@ -122,29 +148,83 @@ class CrisisMeshSimulator:
             try:
                 iteration += 1
                 
-                # Simulate various sensor readings
-                # Phase 1: Simple mock data
-                # Phase 3+: Real simulation scenarios
-                
-                device_id = "sim-node-001"
-                
-                # Simulate temperature
-                temperature = 25.0 + (iteration % 10)
-                await self.publish_telemetry(device_id, "TEMPERATURE", temperature, "°C")
-                
-                # Simulate humidity
-                humidity = 50.0 + (iteration % 20)
-                await self.publish_telemetry(device_id, "HUMIDITY", humidity, "%")
-                
-                # Simulate pressure
-                pressure = 1013.0 + (iteration % 5)
-                await self.publish_telemetry(device_id, "PRESSURE", pressure, "hPa")
+                # Simulate each device
+                for device_id in self.devices:
+                    # Publish device status periodically
+                    if iteration % 10 == 0:
+                        await self.publish_device_status(device_id)
+                    
+                    # Generate scenario-based telemetry
+                    telemetry_data = self.generate_scenario_telemetry(device_id, iteration)
+                    
+                    for metric, value, unit in telemetry_data:
+                        await self.publish_telemetry(device_id, metric, value, unit)
                 
                 await asyncio.sleep(self.config.simulation_interval)
                 
             except Exception as e:
                 logger.error(f"Error in simulation loop: {e}")
                 await asyncio.sleep(1)
+    
+    def generate_scenario_telemetry(self, device_id: str, iteration: int):
+        """Generate telemetry based on current disaster scenario"""
+        telemetry = []
+        
+        if self.scenario == DisasterScenario.NORMAL:
+            # Normal conditions
+            telemetry.append(("TEMPERATURE", 25.0 + random.uniform(-2, 2), "°C"))
+            telemetry.append(("HUMIDITY", 50.0 + random.uniform(-10, 10), "%"))
+            telemetry.append(("PRESSURE", 1013.0 + random.uniform(-5, 5), "hPa"))
+            
+        elif self.scenario == DisasterScenario.FLOODING:
+            # Rising water levels, high humidity
+            water_level = 2.0 + (iteration % 50) * 0.1 + random.uniform(0, 0.5)
+            telemetry.append(("WATER_LEVEL", water_level, "m"))
+            telemetry.append(("HUMIDITY", 85.0 + random.uniform(-5, 10), "%"))
+            telemetry.append(("TEMPERATURE", 22.0 + random.uniform(-2, 2), "°C"))
+            
+        elif self.scenario == DisasterScenario.FIRE:
+            # High temperature, low humidity, smoke
+            temperature = 35.0 + (iteration % 30) * 0.5 + random.uniform(0, 5)
+            telemetry.append(("TEMPERATURE", temperature, "°C"))
+            telemetry.append(("HUMIDITY", 20.0 + random.uniform(-5, 5), "%"))
+            telemetry.append(("AIR_QUALITY", 150 + random.uniform(0, 50), "AQI"))
+            
+        elif self.scenario == DisasterScenario.EARTHQUAKE:
+            # Seismic activity
+            magnitude = 3.0 + random.uniform(0, 5)
+            telemetry.append(("SEISMIC", magnitude, "Richter"))
+            telemetry.append(("TEMPERATURE", 25.0 + random.uniform(-2, 2), "°C"))
+            telemetry.append(("PRESSURE", 1013.0 + random.uniform(-10, 10), "hPa"))
+            
+        elif self.scenario == DisasterScenario.HEATWAVE:
+            # Extreme temperatures
+            temperature = 40.0 + (iteration % 20) * 0.3 + random.uniform(0, 3)
+            telemetry.append(("TEMPERATURE", temperature, "°C"))
+            telemetry.append(("HUMIDITY", 30.0 + random.uniform(-5, 10), "%"))
+            telemetry.append(("AIR_QUALITY", 80 + random.uniform(0, 30), "AQI"))
+        
+        return telemetry
+    
+    async def publish_device_status(self, device_id: str):
+        """Publish device status to MQTT"""
+        if not self.running or self.client is None:
+            return
+        
+        topic = f"device/{device_id}/status"
+        payload = {
+            "device_id": device_id,
+            "status": "ONLINE",
+            "battery_level": random.randint(70, 100),
+            "signal_strength": random.randint(-50, -30),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        
+        try:
+            self.client.publish(topic, json.dumps(payload), qos=1)
+            logger.debug(f"📤 Published device status for {device_id}")
+        except Exception as e:
+            logger.error(f"Failed to publish device status: {e}")
     
     def stop(self):
         """Stop the simulator"""
@@ -157,7 +237,25 @@ class CrisisMeshSimulator:
 
 async def main():
     """Main entry point"""
-    config = SimulatorConfig()
+    import os
+    
+    # Get scenario from environment variable
+    scenario_str = os.getenv("SIMULATION_SCENARIO", "normal").upper()
+    try:
+        scenario = DisasterScenario[scenario_str]
+    except KeyError:
+        logger.warning(f"Invalid scenario '{scenario_str}', defaulting to NORMAL")
+        scenario = DisasterScenario.NORMAL
+    
+    # Get number of devices from environment variable
+    num_devices = int(os.getenv("NUM_DEVICES", "5"))
+    
+    config = SimulatorConfig(
+        mqtt_broker=os.getenv("MQTT_BROKER", "mqtt://localhost:1883"),
+        scenario=scenario,
+        num_devices=num_devices,
+    )
+    
     simulator = CrisisMeshSimulator(config)
     
     try:

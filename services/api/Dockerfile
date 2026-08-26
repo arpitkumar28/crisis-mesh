@@ -44,6 +44,6 @@ HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
 EXPOSE 3001
 
 # Use dumb-init to handle signals properly
-ENTRYPOINT ["/sbin/dumb-init", "--"]
+ENTRYPOINT ["dumb-init", "--"]
 
 CMD ["node", "dist/main"]

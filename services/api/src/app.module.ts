@@ -10,6 +10,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { RiskModule } from './risk/risk.module';
 import { SimulationModule } from './simulation/simulation.module';
+import { MqttModule } from './mqtt/mqtt.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SimulationModule } from './simulation/simulation.module';
     IncidentsModule,
     RiskModule,
     SimulationModule,
+    MqttModule,
   ],
   controllers: [],
   providers: [],

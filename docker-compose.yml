@@ -13,7 +13,7 @@ services:
     networks:
       - crisis-mesh-network
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "$$SYS/broker/uptime"]
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,8 +34,7 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      mqtt:
-        condition: service_healthy
+      - mqtt
     volumes:
       - ./services/api/src:/app/src
     networks:
@@ -55,6 +54,8 @@ services:
     environment:
       MQTT_BROKER: mqtt://mqtt:1883
       API_URL: http://api:3001/api
+      SIMULATION_SCENARIO: ${SIMULATION_SCENARIO:-normal}
+      NUM_DEVICES: ${NUM_DEVICES:-5}
     depends_on:
       - mqtt
       - api
