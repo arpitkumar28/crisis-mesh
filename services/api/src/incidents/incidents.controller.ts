@@ -17,7 +17,7 @@ export class IncidentsController {
   @Post()
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.CITIZEN)
   async create(@Body() createIncidentDto: CreateIncidentDto, @CurrentUser() user: any) {
-    const incident = await this.incidentsService.create(createIncidentDto, user.sub);
+    const incident = await this.incidentsService.create(createIncidentDto, user.id);
     return {
       success: true,
       message: 'Incident created successfully',
@@ -113,7 +113,7 @@ export class IncidentsController {
   @Put(':id')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   async update(@Param('id') id: string, @Body() updateIncidentDto: UpdateIncidentDto, @CurrentUser() user: any) {
-    const incident = await this.incidentsService.update(id, updateIncidentDto, user.sub);
+    const incident = await this.incidentsService.update(id, updateIncidentDto, user.id);
     return {
       success: true,
       message: 'Incident updated successfully',
@@ -125,7 +125,7 @@ export class IncidentsController {
   @Delete(':id')
   @Roles(UserRoleEnum.ADMIN)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.incidentsService.remove(id, user.sub);
+    await this.incidentsService.remove(id, user.id);
     return {
       success: true,
       message: 'Incident deleted successfully',

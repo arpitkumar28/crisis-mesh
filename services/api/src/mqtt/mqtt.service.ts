@@ -33,7 +33,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         clientId: 'crisis-mesh-backend',
         clean: true,
         connectTimeout: 4000,
-        reconnectPeriod: 1000,
+        reconnectPeriod: 0, // Disable reconnection
       });
 
       this.client.on('connect', () => {
@@ -42,8 +42,17 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('error', (error) => {
-        this.logger.error(`❌ MQTT connection error: ${error.message}`);
-        reject(error);
+        this.logger.warn(`⚠️  MQTT connection error: ${error.message} - continuing without MQTT`);
+        // Don't reject - allow app to start without MQTT
+        resolve();
+      });
+
+      this.client.on('offline', () => {
+        this.logger.warn('⚠️  MQTT client offline - disabling reconnection');
+        if (this.client) {
+          this.client.end();
+          this.client = null;
+        }
       });
 
       this.client.on('message', (topic, payload) => {
@@ -98,8 +107,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   async subscribe(pattern: string, handler: (message: MqttMessage) => void): Promise<void> {
-    if (!this.client) {
-      throw new Error('MQTT client not connected');
+    if (!this.client || !this.client.connected) {
+      this.logger.warn(`MQTT client not connected, skipping subscription to ${pattern}`);
+      return;
     }
 
     this.messageHandlers.set(pattern, handler);
@@ -115,8 +125,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   async publish(topic: string, payload: any, options: { qos?: 0 | 1 | 2; retain?: boolean } = {}): Promise<void> {
-    if (!this.client) {
-      throw new Error('MQTT client not connected');
+    if (!this.client || !this.client.connected) {
+      this.logger.warn(`MQTT client not connected, skipping publish to ${topic}`);
+      return;
     }
 
     const message = typeof payload === 'string' ? payload : JSON.stringify(payload);

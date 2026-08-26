@@ -78,7 +78,13 @@ class CrisisMeshSimulator:
     def connect(self):
         """Connect to MQTT broker"""
         try:
-            self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="crisis-mesh-simulator")
+            if hasattr(mqtt, "CallbackAPIVersion"):
+                self.client = mqtt.Client(
+                    mqtt.CallbackAPIVersion.VERSION2,
+                    client_id="crisis-mesh-simulator",
+                )
+            else:
+                self.client = mqtt.Client(client_id="crisis-mesh-simulator")
             self.client.on_connect = self._on_connect
             self.client.on_disconnect = self._on_disconnect
             
@@ -94,6 +100,7 @@ class CrisisMeshSimulator:
             
             self.client.connect(broker_host, self.config.mqtt_port, keepalive=60)
             self.client.loop_start()
+            self.running = True
             
             logger.info(f"Connecting to MQTT broker: {self.config.mqtt_broker}")
         except ConnectionRefusedError:
@@ -104,7 +111,7 @@ class CrisisMeshSimulator:
             logger.error(f"Failed to connect to MQTT broker: {e}")
             raise
     
-    def _on_connect(self, client, userdata, connect_flags, reason_code, properties):
+    def _on_connect(self, client, userdata, connect_flags, reason_code, properties=None):
         """MQTT connection callback"""
         if reason_code == 0:
             logger.info("✅ Connected to MQTT broker")
@@ -112,7 +119,7 @@ class CrisisMeshSimulator:
         else:
             logger.error(f"❌ Failed to connect, reason code: {reason_code}")
     
-    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties):
+    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code=None, properties=None):
         """MQTT disconnection callback"""
         logger.warning(f"Disconnected from MQTT broker (code: {reason_code})")
         self.running = False
@@ -216,7 +223,7 @@ class CrisisMeshSimulator:
             "device_id": device_id,
             "status": "ONLINE",
             "battery_level": random.randint(70, 100),
-            "signal_strength": random.randint(-50, -30),
+            "signal_strength": random.randint(50, 100),
             "timestamp": datetime.utcnow().isoformat(),
         }
         

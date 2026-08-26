@@ -9,7 +9,13 @@ import {
 } from 'typeorm';
 import { Profile } from './profile.entity';
 import { GeographicLocation } from './geographic-location.entity';
-import { AlertSeverity } from './alert.entity';
+
+export enum IncidentSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
 
 export enum IncidentType {
   DISASTER = 'DISASTER',
@@ -35,12 +41,14 @@ export class Incident {
   @Column({
     type: 'enum',
     enum: IncidentType,
+    enumName: 'incident_type_enum',
   })
   type: IncidentType;
 
   @Column({
     type: 'enum',
     enum: IncidentStatus,
+    enumName: 'incident_status_enum',
     default: IncidentStatus.REPORTED,
   })
   status: IncidentStatus;
@@ -60,10 +68,11 @@ export class Incident {
 
   @Column({
     type: 'enum',
-    enum: AlertSeverity,
-    default: AlertSeverity.MEDIUM,
+    enum: IncidentSeverity,
+    enumName: 'incident_severity_enum',
+    default: IncidentSeverity.MEDIUM,
   })
-  severity: AlertSeverity;
+  severity: IncidentSeverity;
 
   @Column({ name: 'reported_by' })
   reported_by: string;

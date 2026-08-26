@@ -31,28 +31,28 @@ export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewa
     private readonly jwtService: JwtService,
   ) {}
 
-  async handleConnection(client: Socket) {
-    try {
-      // Extract JWT token from handshake
+  afterInit(server: Server) {
+    server.use((client, next) => {
       const token = this.extractTokenFromSocket(client);
-      
+
       if (!token) {
-        this.logger.warn(`Connection rejected: No token provided for client ${client.id}`);
-        client.disconnect();
-        return;
+        return next(new Error('Unauthorized'));
       }
 
-      // Validate JWT token
-      let userId: string | null = null;
       try {
         const payload = this.jwtService.verify(token);
-        userId = payload.sub;
-        this.logger.debug(`User ${userId} connected via WebSocket: ${client.id}`);
-      } catch (error) {
-        this.logger.warn(`Connection rejected: Invalid token for client ${client.id}`);
-        client.disconnect();
-        return;
+        client.data.userId = payload.sub;
+        next();
+      } catch {
+        next(new Error('Unauthorized'));
       }
+    });
+  }
+
+  async handleConnection(client: Socket) {
+    try {
+      const userId = client.data.userId;
+      this.logger.debug(`User ${userId} connected via WebSocket: ${client.id}`);
 
       // Register client
       this.webSocketService.registerClient(client.id, client, userId);

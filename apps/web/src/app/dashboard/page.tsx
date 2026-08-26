@@ -67,16 +67,20 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     try {
       const [devicesRes, alertsRes, incidentsRes] = await Promise.all([
-        apiClient.get('/devices/count'),
-        apiClient.get('/alerts/count'),
-        apiClient.get('/incidents/count'),
+        apiClient.get('/devices'),
+        apiClient.get('/alerts'),
+        apiClient.get('/incidents'),
       ]);
 
+      const devices = devicesRes.data.data;
+      const alerts = alertsRes.data.data;
+      const incidents = incidentsRes.data.data;
+
       setStats({
-        devices: devicesRes.data.data.count || 0,
-        alerts: alertsRes.data.data.count || 0,
-        incidents: incidentsRes.data.data.count || 0,
-        onlineDevices: 0, // Will be updated with actual online count
+        devices: devices.length,
+        alerts: alerts.filter((alert: any) => alert.status === 'ACTIVE').length,
+        incidents: incidents.filter((incident: any) => incident.status !== 'RESOLVED' && incident.status !== 'CLOSED').length,
+        onlineDevices: devices.filter((device: any) => device.status === 'ONLINE').length,
       });
     } catch (error) {
       console.error('Failed to fetch stats:', error);

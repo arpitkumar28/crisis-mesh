@@ -17,7 +17,7 @@ export class AlertsController {
   @Post()
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   async create(@Body() createAlertDto: CreateAlertDto, @CurrentUser() user: any) {
-    const alert = await this.alertsService.create(createAlertDto, user.sub);
+    const alert = await this.alertsService.create(createAlertDto, user.id);
     return {
       success: true,
       message: 'Alert created successfully',
@@ -125,7 +125,7 @@ export class AlertsController {
   @Put(':id')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   async update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertDto, @CurrentUser() user: any) {
-    const alert = await this.alertsService.update(id, updateAlertDto, user.sub);
+    const alert = await this.alertsService.update(id, updateAlertDto, user.id);
     return {
       success: true,
       message: 'Alert updated successfully',
@@ -137,7 +137,7 @@ export class AlertsController {
   @Delete(':id')
   @Roles(UserRoleEnum.ADMIN)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.alertsService.remove(id, user.sub);
+    await this.alertsService.remove(id, user.id);
     return {
       success: true,
       message: 'Alert deleted successfully',

@@ -6,6 +6,7 @@ import { SensorReading } from '../entities/sensor-reading.entity';
 import { Sensor } from '../entities/sensor.entity';
 import { Device } from '../entities/device.entity';
 import { MqttService } from '../mqtt/mqtt.service';
+import { WebSocketService } from '../websocket/websocket.service';
 
 describe('TelemetryService', () => {
   let service: TelemetryService;
@@ -41,6 +42,17 @@ describe('TelemetryService', () => {
     isConnected: jest.fn().mockReturnValue(true),
   };
 
+  const mockWebSocketService = {
+    broadcastTelemetryUpdated: jest.fn(),
+    broadcastDeviceStatusChanged: jest.fn(),
+    broadcastAlertCreated: jest.fn(),
+    broadcastAlertUpdated: jest.fn(),
+    broadcastIncidentCreated: jest.fn(),
+    broadcastIncidentUpdated: jest.fn(),
+    broadcastIncidentStatusChanged: jest.fn(),
+    broadcastNotificationCreated: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,6 +72,10 @@ describe('TelemetryService', () => {
         {
           provide: MqttService,
           useValue: mockMqttService,
+        },
+        {
+          provide: WebSocketService,
+          useValue: mockWebSocketService,
         },
       ],
     }).compile();

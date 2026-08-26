@@ -60,8 +60,8 @@ export class TelemetryService {
 
       this.logger.log('MQTT subscriptions configured successfully');
     } catch (error: unknown) {
-      this.logger.error(`Failed to setup MQTT subscriptions: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
+      this.logger.warn(`Failed to setup MQTT subscriptions: ${error instanceof Error ? error.message : String(error)} - continuing without MQTT`);
+      // Don't throw - allow app to start without MQTT
     }
   }
 

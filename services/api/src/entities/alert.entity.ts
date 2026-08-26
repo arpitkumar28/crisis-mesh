@@ -44,18 +44,21 @@ export class Alert {
   @Column({
     type: 'enum',
     enum: AlertType,
+    enumName: 'alert_type_enum',
   })
   type: AlertType;
 
   @Column({
     type: 'enum',
     enum: AlertSeverity,
+    enumName: 'alert_severity_enum',
   })
   severity: AlertSeverity;
 
   @Column({
     type: 'enum',
     enum: AlertStatus,
+    enumName: 'alert_status_enum',
     default: AlertStatus.ACTIVE,
   })
   status: AlertStatus;
