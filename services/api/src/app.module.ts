@@ -4,6 +4,7 @@ import { HealthModule } from './health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { AuditModule } from './audit/audit.module';
 import { DevicesModule } from './devices/devices.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { AlertsModule } from './alerts/alerts.module';
@@ -19,6 +20,7 @@ import { MqttModule } from './mqtt/mqtt.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    AuditModule,
     DevicesModule,
     TelemetryModule,
     AlertsModule,

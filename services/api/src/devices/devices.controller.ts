@@ -1,12 +1,18 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { DevicesService, CreateDeviceDto, UpdateDeviceDto } from './devices.service';
 import { Device, DeviceStatus, DeviceType } from '../entities/device.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRoleEnum } from '../entities/profile.entity';
 
 @Controller('v1/devices')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
   @Post()
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   @HttpCode(HttpStatus.CREATED)
   async createDevice(@Body() createDto: CreateDeviceDto) {
     const device = await this.devicesService.createDevice(createDto);
@@ -18,6 +24,7 @@ export class DevicesController {
   }
 
   @Get()
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getAllDevices() {
     const devices = await this.devicesService.getAllDevices();
     return {
@@ -28,6 +35,7 @@ export class DevicesController {
   }
 
   @Get('count')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
   async getDeviceCount() {
     const count = await this.devicesService.getDeviceCount();
     return {
@@ -38,6 +46,7 @@ export class DevicesController {
   }
 
   @Get('count/by-status')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
   async getDeviceCountByStatus() {
     const counts = await this.devicesService.getDeviceCountByStatus();
     return {
@@ -48,6 +57,7 @@ export class DevicesController {
   }
 
   @Get('online')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getOnlineDevices() {
     const devices = await this.devicesService.getOnlineDevices();
     return {
@@ -58,6 +68,7 @@ export class DevicesController {
   }
 
   @Get('offline')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getOfflineDevices() {
     const devices = await this.devicesService.getOfflineDevices();
     return {
@@ -68,6 +79,7 @@ export class DevicesController {
   }
 
   @Get('status/:status')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDevicesByStatus(@Param('status') status: DeviceStatus) {
     const devices = await this.devicesService.getDevicesByStatus(status);
     return {
@@ -78,6 +90,7 @@ export class DevicesController {
   }
 
   @Get('type/:type')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDevicesByType(@Param('type') type: DeviceType) {
     const devices = await this.devicesService.getDevicesByType(type);
     return {
@@ -88,6 +101,7 @@ export class DevicesController {
   }
 
   @Get(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDeviceById(@Param('id') id: string) {
     const device = await this.devicesService.getDeviceById(id);
     return {
@@ -98,6 +112,7 @@ export class DevicesController {
   }
 
   @Get(':id/sensors')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDeviceSensors(@Param('id') id: string) {
     const sensors = await this.devicesService.getDeviceSensors(id);
     return {
@@ -108,6 +123,7 @@ export class DevicesController {
   }
 
   @Get(':id/status/history')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
   async getDeviceStatusHistory(
     @Param('id') id: string,
     @Query('limit') limit?: string,
@@ -124,6 +140,7 @@ export class DevicesController {
   }
 
   @Put(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   async updateDevice(@Param('id') id: string, @Body() updateDto: UpdateDeviceDto) {
     const device = await this.devicesService.updateDevice(id, updateDto);
     return {
@@ -134,6 +151,7 @@ export class DevicesController {
   }
 
   @Put(':id/status')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
   async updateDeviceStatus(
     @Param('id') id: string,
     @Body() body: { status: DeviceStatus; battery_level?: number; signal_strength?: number },
@@ -151,6 +169,7 @@ export class DevicesController {
   }
 
   @Post(':id/sensors')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY)
   async addSensorToDevice(
     @Param('id') id: string,
     @Body() sensorData: { name: string; metric: string; unit: string; min_value?: number; max_value?: number },
@@ -164,6 +183,7 @@ export class DevicesController {
   }
 
   @Delete(':id')
+  @Roles(UserRoleEnum.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteDevice(@Param('id') id: string) {
     await this.devicesService.deleteDevice(id);

@@ -7,6 +7,9 @@ import { JwtAuthProvider } from './providers/jwt.provider';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { UsersModule } from '../users/users.module';
+import { AuditModule } from '../audit/audit.module';
+import { AuthController } from './auth.controller';
 
 export const AUTH_PROVIDER = 'AUTH_PROVIDER';
 
@@ -22,7 +25,10 @@ export const AUTH_PROVIDER = 'AUTH_PROVIDER';
         },
       }),
     }),
+    UsersModule,
+    AuditModule,
   ],
+  controllers: [AuthController],
   providers: [
     AuthService,
     JwtAuthProvider,

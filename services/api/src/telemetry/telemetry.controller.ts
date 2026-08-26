@@ -1,11 +1,17 @@
-import { Controller, Get, Query, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Query, Param, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { TelemetryService } from './telemetry.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRoleEnum } from '../entities/profile.entity';
 
 @Controller('v1/telemetry')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TelemetryController {
   constructor(private readonly telemetryService: TelemetryService) {}
 
   @Get('device/:deviceId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getTelemetryByDevice(
     @Param('deviceId') deviceId: string,
     @Query('limit') limit?: string,
@@ -22,6 +28,7 @@ export class TelemetryController {
   }
 
   @Get('sensor/:sensorId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getTelemetryBySensor(
     @Param('sensorId') sensorId: string,
     @Query('limit') limit?: string,
@@ -38,6 +45,7 @@ export class TelemetryController {
   }
 
   @Get('aggregate/:deviceId/:metric')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
   async getAggregatedTelemetry(
     @Param('deviceId') deviceId: string,
     @Param('metric') metric: string,
