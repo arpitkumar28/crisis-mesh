@@ -198,6 +198,14 @@ export class TelemetryService {
         last_seen: new Date(payload.timestamp),
       });
 
+      this.webSocketService.broadcastDeviceStatusChanged({
+        device_id: device.id,
+        status: payload.status,
+        battery_level: payload.battery_level,
+        signal_strength: payload.signal_strength,
+        timestamp: payload.timestamp,
+      });
+
       this.logger.debug(`Updated device status: ${device.serial_number || device.id} -> ${payload.status}`);
 
     } catch (error: unknown) {

@@ -1,188 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Battery, Radio, RefreshCw, WifiOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import apiClient from '@/lib/api-client';
+import { OperationsShell } from '@/components/operations-shell';
 
-interface Device {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  serial_number: string;
-  last_seen: string;
-  battery_level?: number;
-  signal_strength?: number;
-}
-
+type Device = { id: string; name?: string; type?: string; status?: string; serial_number?: string; last_seen?: string; battery_level?: number };
 export default function DevicesPage() {
-  const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'online' | 'offline'>('all');
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    fetchDevices();
-  }, [isAuthenticated, router, filter]);
-
-  const fetchDevices = async () => {
-    setLoading(true);
-    try {
-      let endpoint = '/devices';
-      if (filter === 'online') endpoint = '/devices/status/ONLINE';
-      if (filter === 'offline') endpoint = '/devices/status/OFFLINE';
-      
-      const response = await apiClient.get(endpoint);
-      setDevices(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch devices:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ONLINE':
-        return 'bg-green-100 text-green-800';
-      case 'OFFLINE':
-        return 'bg-gray-100 text-gray-800';
-      case 'UNREACHABLE':
-        return 'bg-red-100 text-red-800';
-      case 'ERROR':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <a href="/dashboard" className="text-gray-700 hover:text-gray-900">
-                Dashboard
-              </a>
-              <a href="/alerts" className="text-gray-700 hover:text-gray-900">
-                Alerts
-              </a>
-              <a href="/incidents" className="text-gray-700 hover:text-gray-900">
-                Incidents
-              </a>
-              <a href="/devices" className="text-primary-600 font-medium">
-                Devices
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Devices</h2>
-          <div className="space-x-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-md ${
-                filter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter('online')}
-              className={`px-4 py-2 rounded-md ${
-                filter === 'online' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'
-              }`}
-            >
-              Online
-            </button>
-            <button
-              onClick={() => setFilter('offline')}
-              className={`px-4 py-2 rounded-md ${
-                filter === 'offline' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'
-              }`}
-            >
-              Offline
-            </button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          </div>
-        ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Serial Number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Battery
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Seen
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {devices.map((device) => (
-                  <tr key={device.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {device.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {device.type}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(device.status)}`}>
-                        {device.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {device.serial_number || device.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {device.battery_level !== undefined ? `${device.battery_level}%` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(device.last_seen).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {devices.length === 0 && (
-              <div className="text-center py-8 text-gray-500">No devices found</div>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
-  );
+  const router = useRouter(); const authenticated = useAuthStore((state) => state.isAuthenticated);
+  const [devices, setDevices] = useState<Device[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [filter, setFilter] = useState('ALL');
+  const load = useCallback(async () => { setLoading(true); setError(''); try { const path = filter === 'ALL' ? '/devices' : `/devices/status/${filter}`; const response = await apiClient.get(path); setDevices(response.data.data || []); } catch { setError('Device data is unavailable. Check the API and retry.'); } finally { setLoading(false); } }, [filter]);
+  useEffect(() => { if (!authenticated) { router.push('/login'); return; } load(); }, [authenticated, load, router]);
+  if (!authenticated) return null;
+  const online = devices.filter((device) => device.status === 'ONLINE').length;
+  return <OperationsShell eyebrow="Sensor network" title="Devices"><section className="page-summary"><div><span>Total devices</span><strong>{loading ? '—' : devices.length}</strong></div><div><span>Online</span><strong className="safe-text">{loading ? '—' : online}</strong></div><div><span>Offline / unreachable</span><strong className="danger-text">{loading ? '—' : devices.length - online}</strong></div><button onClick={load}><RefreshCw size={15} />Refresh</button></section><section className="data-panel"><div className="data-toolbar"><div><h2>Field device registry</h2><p>Live operational status from the CrisisMesh sensor network.</p></div><div className="filter-tabs">{['ALL', 'ONLINE', 'OFFLINE'].map((value) => <button key={value} onClick={() => setFilter(value)} className={filter === value ? 'selected' : ''}>{value[0] + value.slice(1).toLowerCase()}</button>)}</div></div>{error ? <div className="data-error">{error}<button onClick={load}>Retry</button></div> : loading ? <div className="data-loading">Loading sensor network…</div> : devices.length === 0 ? <div className="data-empty"><WifiOff size={25} />No devices match this view.</div> : <div className="device-grid">{devices.map((device) => { const isOnline = device.status === 'ONLINE'; return <article className="device-card" key={device.id}><div className={`device-icon ${isOnline ? 'online' : ''}`}><Radio size={19} /></div><div className="device-card-main"><h3>{device.name || device.serial_number || 'Unnamed device'}</h3><p>{device.type || 'Field sensor'} · {device.serial_number || device.id}</p><span className={`state-badge ${isOnline ? 'online' : 'offline'}`}><i />{device.status || 'UNKNOWN'}</span></div><div className="device-meta"><span><Battery size={14} />{device.battery_level == null ? '—' : `${device.battery_level}%`}</span><small>{device.last_seen ? `Seen ${new Date(device.last_seen).toLocaleString()}` : 'No last-seen signal'}</small></div></article>; })}</div>}</section></OperationsShell>;
 }

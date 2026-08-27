@@ -38,6 +38,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
       this.client.on('connect', () => {
         this.logger.log(`✅ Connected to MQTT broker: ${brokerUrl}`);
+        for (const pattern of this.messageHandlers.keys()) {
+          this.client!.subscribe(pattern, { qos: 1 as any }, (error) => {
+            if (error) {
+              this.logger.error(`Failed to subscribe to ${pattern}: ${error.message}`);
+            } else {
+              this.logger.log(`📡 Subscribed to MQTT pattern: ${pattern}`);
+            }
+          });
+        }
         resolve();
       });
 
@@ -107,12 +116,12 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   async subscribe(pattern: string, handler: (message: MqttMessage) => void): Promise<void> {
+    this.messageHandlers.set(pattern, handler);
+
     if (!this.client || !this.client.connected) {
-      this.logger.warn(`MQTT client not connected, skipping subscription to ${pattern}`);
+      this.logger.warn(`MQTT client not connected, deferring subscription to ${pattern}`);
       return;
     }
-
-    this.messageHandlers.set(pattern, handler);
     
     // Subscribe to the pattern
     this.client.subscribe(pattern, { qos: 1 as any }, (error) => {

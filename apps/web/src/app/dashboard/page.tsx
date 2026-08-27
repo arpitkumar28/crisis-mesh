@@ -1,151 +1,85 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Activity, AlertCircle, Bell, Boxes, LogOut, Map, Radio, ShieldCheck, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth-store';
 import apiClient from '@/lib/api-client';
 import { wsClient } from '@/lib/websocket-client';
+import type { MapEntity } from '@/components/live-map';
 
-interface DashboardStats {
-  devices: number;
-  alerts: number;
-  incidents: number;
-  onlineDevices: number;
+const LiveMap = dynamic(() => import('@/components/live-map'), { ssr: false, loading: () => <div className="map-frame"><div className="map-empty">Loading operational map...</div></div> });
+
+type RecordItem = Record<string, any>;
+const navItems = [['Overview', '/dashboard', Activity], ['Live map', '/dashboard#map', Map], ['Devices', '/devices', Radio], ['Telemetry', '/dashboard#telemetry', Activity], ['Alerts', '/alerts', Bell], ['Incidents', '/incidents', AlertCircle], ['Responders', '/dashboard#responders', Users], ['Shelters', '/dashboard#shelters', ShieldCheck]] as const;
+
+function coords(item: RecordItem) {
+  const location = item.location || item.coordinates || {};
+  const latitude = Number(item.latitude ?? item.lat ?? location.latitude ?? location.lat);
+  const longitude = Number(item.longitude ?? item.lng ?? location.longitude ?? location.lng);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : {};
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const [stats, setStats] = useState<DashboardStats>({
-    devices: 0,
-    alerts: 0,
-    incidents: 0,
-    onlineDevices: 0,
-  });
+  const [devices, setDevices] = useState<RecordItem[]>([]);
+  const [alerts, setAlerts] = useState<RecordItem[]>([]);
+  const [incidents, setIncidents] = useState<RecordItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [connection, setConnection] = useState('disconnected');
+  const [lastEvent, setLastEvent] = useState('Awaiting live events');
+
+  const loadData = async () => {
+    setError('');
+    try {
+      const [deviceResponse, alertResponse, incidentResponse] = await Promise.all([apiClient.get('/devices'), apiClient.get('/alerts'), apiClient.get('/incidents')]);
+      setDevices(deviceResponse.data.data || []);
+      setAlerts(alertResponse.data.data || []);
+      setIncidents(incidentResponse.data.data || []);
+    } catch {
+      setError('Operational data is unavailable. Check the API connection and retry.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    fetchStats();
-
-    // Set up WebSocket listeners
-    const handleTelemetryUpdate = (data: any) => {
-      console.log('Telemetry updated:', data);
-    };
-
-    const handleDeviceStatusChange = (data: any) => {
-      console.log('Device status changed:', data);
-      fetchStats();
-    };
-
-    const handleAlertCreated = (data: any) => {
-      console.log('Alert created:', data);
-      fetchStats();
-    };
-
-    const handleIncidentCreated = (data: any) => {
-      console.log('Incident created:', data);
-      fetchStats();
-    };
-
-    wsClient.on('telemetry.updated', handleTelemetryUpdate);
-    wsClient.on('device.status_changed', handleDeviceStatusChange);
-    wsClient.on('alert.created', handleAlertCreated);
-    wsClient.on('incident.created', handleIncidentCreated);
-
-    return () => {
-      wsClient.off('telemetry.updated', handleTelemetryUpdate);
-      wsClient.off('device.status_changed', handleDeviceStatusChange);
-      wsClient.off('alert.created', handleAlertCreated);
-      wsClient.off('incident.created', handleIncidentCreated);
-    };
+    if (!isAuthenticated) { router.push('/login'); return; }
+    loadData();
+    const stopConnection = wsClient.onConnectionChange(setConnection);
+    const refresh = (label: string) => () => { setLastEvent(label); loadData(); };
+    const handlers = [
+      ['telemetry.updated', refresh('Telemetry updated')], ['device.status_changed', refresh('Device status changed')],
+      ['alert.created', refresh('New alert received')], ['alert.updated', refresh('Alert updated')],
+      ['incident.created', refresh('New incident received')], ['incident.updated', refresh('Incident updated')],
+      ['incident.status_changed', refresh('Incident status changed')],
+    ] as const;
+    handlers.forEach(([event, handler]) => wsClient.on(event, handler));
+    return () => { stopConnection(); handlers.forEach(([event, handler]) => wsClient.off(event, handler)); };
   }, [isAuthenticated, router]);
 
-  const fetchStats = async () => {
-    try {
-      const [devicesRes, alertsRes, incidentsRes] = await Promise.all([
-        apiClient.get('/devices'),
-        apiClient.get('/alerts'),
-        apiClient.get('/incidents'),
-      ]);
+  if (!isAuthenticated) return null;
+  const activeAlerts = alerts.filter((item) => item.status === 'ACTIVE');
+  const activeIncidents = incidents.filter((item) => !['RESOLVED', 'CLOSED'].includes(item.status));
+  const metrics: Array<[string, number, string, LucideIcon]> = [['Active alerts', activeAlerts.length, 'critical', Bell], ['Open incidents', activeIncidents.length, 'warning', AlertCircle], ['Devices online', devices.filter((item) => item.status === 'ONLINE').length, 'safe', Radio], ['Total devices', devices.length, 'neutral', Boxes]];
+  const mapEntities: MapEntity[] = [
+    ...devices.map((item) => ({ id: item.id, kind: 'device' as const, title: item.name || 'Device', detail: item.type || 'Sensor', status: item.status, ...coords(item) })),
+    ...activeAlerts.map((item) => ({ id: item.id, kind: 'alert' as const, title: item.title || item.type || 'Alert', detail: item.description || 'Active alert', severity: item.severity, status: item.status, ...coords(item) })),
+    ...activeIncidents.map((item) => ({ id: item.id, kind: 'incident' as const, title: item.title || item.type || 'Incident', detail: item.description || 'Open incident', severity: item.severity, status: item.status, ...coords(item) })),
+  ];
+  const statusLabel = connection === 'connected' || connection === 'reconnected' ? 'LIVE' : connection === 'reconnecting' ? 'RECONNECTING' : 'OFFLINE';
 
-      const devices = devicesRes.data.data;
-      const alerts = alertsRes.data.data;
-      const incidents = incidentsRes.data.data;
-
-      setStats({
-        devices: devices.length,
-        alerts: alerts.filter((alert: any) => alert.status === 'ACTIVE').length,
-        incidents: incidents.filter((incident: any) => incident.status !== 'RESOLVED' && incident.status !== 'CLOSED').length,
-        onlineDevices: devices.filter((device: any) => device.status === 'ONLINE').length,
-      });
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-
-  const handleLogout = () => {
-    useAuthStore.getState().logout();
-    localStorage.removeItem('access_token');
-    wsClient.disconnect();
-    router.push('/login');
-  };
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">CrisisMesh</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">{user?.name}</span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Total Devices</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{stats.devices}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Active Alerts</h3>
-            <p className="mt-2 text-3xl font-bold text-danger-600">{stats.alerts}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Open Incidents</h3>
-            <p className="mt-2 text-3xl font-bold text-warning-600">{stats.incidents}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Online Devices</h3>
-            <p className="mt-2 text-3xl font-bold text-success-600">{stats.onlineDevices}</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
-          <p className="text-gray-500">Real-time updates will appear here via WebSocket.</p>
-        </div>
-      </main>
-    </div>
-  );
+  return <div className="command-center">
+    <aside className="sidebar"><div className="brand"><span className="brand-mark">+</span><span>CRISIS<span className="brand-accent">MESH</span></span></div><div className="sidebar-label">Operations</div><nav>{navItems.map(([label, href, Icon]) => <a className={label === 'Overview' ? 'active' : ''} href={href} key={label}><Icon size={16} />{label}</a>)}</nav><div className="sidebar-footer"><div className="status-dot" />System nominal<br /><small>Command node CM-01</small></div></aside>
+    <main className="main-panel"><header className="topbar"><div><div className="eyebrow">Emergency operations center</div><h1>Situation overview</h1></div><div className="topbar-actions"><span className={`connection ${statusLabel.toLowerCase()}`}><span />{statusLabel}</span><button className="icon-button" aria-label="Notifications"><Bell size={18} /><i>{activeAlerts.length}</i></button><div className="user-chip"><div className="avatar">{(user?.name || 'U').slice(0, 1).toUpperCase()}</div><span>{user?.name || 'Operator'}<small>{user?.role || 'FIELD USER'}</small></span></div><button className="icon-button" aria-label="Log out" onClick={() => { useAuthStore.getState().logout(); localStorage.removeItem('access_token'); wsClient.disconnect(); router.push('/login'); }}><LogOut size={17} /></button></div></header>
+      {error && <div className="error-banner" role="alert"><AlertCircle size={17} />{error}<button onClick={loadData}>Retry</button></div>}
+      <section className="metric-grid">{metrics.map(([label, value, tone, Icon]) => <div className="metric-card" key={label}><div className={`metric-icon ${tone}`}><Icon size={17} /></div><div><span>{label}</span><strong>{loading ? '-' : value}</strong></div></div>)}</section>
+      <section className="panel map-panel" id="map"><div className="panel-heading"><div><div className="eyebrow">Geospatial intelligence</div><h2>Live disaster map</h2></div><div className="legend"><span><i className="legend-device" />Devices</span><span><i className="legend-alert" />Alerts</span><span><i className="legend-incident" />Incidents</span></div></div><LiveMap entities={mapEntities} /></section>
+      <div className="lower-grid"><section className="panel" id="telemetry"><div className="panel-heading"><div><div className="eyebrow">Sensor network</div><h2>Live telemetry</h2></div><span className="live-tag"><Activity size={13} /> {lastEvent}</span></div>{loading ? <div className="skeleton-list" /> : devices.length === 0 ? <div className="empty-state">No devices have reported telemetry yet.</div> : <div className="telemetry-list">{devices.slice(0, 4).map((device) => <div className="telemetry-row" key={device.id}><span className={`pulse ${device.status === 'ONLINE' ? 'online' : ''}`} /><div><strong>{device.name || device.serial_number || 'Unnamed device'}</strong><small>{device.type || 'Sensor'} · {device.last_seen ? new Date(device.last_seen).toLocaleTimeString() : 'No recent signal'}</small></div><b>{device.battery_level != null ? `${device.battery_level}%` : '—'}</b></div>)}</div>}</section>
+        <section className="panel"><div className="panel-heading"><div><div className="eyebrow">Priority queue</div><h2>Active emergencies</h2></div><a href="/alerts">View all</a></div>{loading ? <div className="skeleton-list" /> : activeAlerts.length === 0 && activeIncidents.length === 0 ? <div className="empty-state">No active emergencies. Monitoring continues.</div> : <div className="emergency-list">{[...activeAlerts, ...activeIncidents].slice(0, 5).map((item) => <div className="emergency-row" key={item.id}><span className={`severity ${(item.severity || 'LOW').toLowerCase()}`} /><div><strong>{item.title || item.type || 'Operational event'}</strong><small>{item.severity || 'UNSPECIFIED'} · {item.status || 'ACTIVE'}</small></div><span className="row-arrow">›</span></div>)}</div>}</section></div>
+    </main></div>;
 }

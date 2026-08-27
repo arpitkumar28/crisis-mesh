@@ -6,13 +6,14 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:crisis_mesh/main.dart';
 
 void main() {
   testWidgets('renders the CrisisMesh login screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const CrisisMeshApp());
+    await tester.pumpWidget(const ProviderScope(child: CrisisMeshApp()));
 
-    expect(find.text('CrisisMesh'), findsOneWidget);
+    expect(find.text('CRISISMESH'), findsOneWidget);
   });
 }
