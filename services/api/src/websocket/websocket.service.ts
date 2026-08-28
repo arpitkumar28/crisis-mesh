@@ -136,6 +136,10 @@ export class WebSocketService {
     this.broadcast(event);
   }
 
+  broadcastIntelligence(type: WebSocketEventType, data: any) {
+    this.broadcast({ type, data, timestamp: new Date().toISOString() });
+  }
+
   getConnectedClientsCount(): number {
     return this.connectedClients.size;
   }

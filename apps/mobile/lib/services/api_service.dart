@@ -83,6 +83,36 @@ class ApiService {
     return await _dio.get('/v1/devices/status/ONLINE');
   }
 
+  Future<Response> getDashboardOverview() async {
+    _applyAuth();
+    return _dio.get('/v1/dashboard/overview');
+  }
+
+  Future<Response> getResources() async {
+    _applyAuth();
+    return _dio.get('/v1/resources');
+  }
+
+  Future<Response> getShelters() async {
+    _applyAuth();
+    return _dio.get('/v1/shelters');
+  }
+
+  Future<Response> getWeather() async {
+    _applyAuth();
+    return _dio.get('/v1/weather');
+  }
+
+  Future<Response> getNews() async {
+    _applyAuth();
+    return _dio.get('/v1/news');
+  }
+
+  Future<Response> getNotifications() async {
+    _applyAuth();
+    return _dio.get('/v1/notifications');
+  }
+
   Future<Response> updateAlert(String id, Map<String, dynamic> data) async {
     _applyAuth();
     return _dio.put('/v1/alerts/$id', data: data);

@@ -16,7 +16,7 @@ class CrisisMeshApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0757E8)),
         scaffoldBackgroundColor: const Color(0xFFF6F8FC),
-        appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: Color(0xFF0B1B3F), elevation: 0, surfaceTintColor: Colors.white),
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.white, foregroundColor: Color(0xFF0B1B3F), elevation: 0, surfaceTintColor: Colors.white, centerTitle: false),
         cardTheme: CardThemeData(color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE4EAF4)))),
         inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: const Color(0xFFF8FAFD), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDCE3F0))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDCE3F0)))),
         useMaterial3: true,

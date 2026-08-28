@@ -1,26 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import Link from 'next/link';
+import { AlertTriangle, Bell, ChevronRight, CloudRain, MapPinned, Search, ShieldCheck, Siren, Waves } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+import type { MapEntity } from '@/components/live-map';
 
-export default function Home() {
-  const router = useRouter();
-  const { isAuthenticated, hasHydrated } = useAuthStore();
+const LiveMap = dynamic(() => import('@/components/live-map'), { ssr: false, loading: () => <div className="map-loading">Loading interactive map…</div> });
 
-  useEffect(() => {
-    if (!hasHydrated) return;
+type Alert = { id: string; title?: string; type?: string; severity?: string; description?: string; issued_at?: string };
+type Weather = { temperature_celsius?: string; humidity_percent?: string; wind_speed_kmh?: string; precipitation_mm?: string };
+const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:3002/api';
 
-    if (isAuthenticated) {
-      router.push('/dashboard');
-    } else {
-      router.push('/login');
-    }
-  }, [isAuthenticated, hasHydrated, router]);
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#061322' }}>
-      <div style={{ color: '#e7f0ed' }}>Loading CrisisMesh...</div>
-    </div>
-  );
+export default function PublicHome() {
+  const [alerts, setAlerts] = useState<Alert[]>([]); const [weather, setWeather] = useState<Weather | null>(null); const [failed, setFailed] = useState(false); const [mapEntities, setMapEntities] = useState<MapEntity[]>([]);
+  useEffect(() => { Promise.all([fetch(`${apiUrl}/v1/weather`).then((r) => r.json()), fetch(`${apiUrl}/v1/alerts/active`).then((r) => r.ok ? r.json() : { data: [] }), fetch(`${apiUrl}/v1/public/map`).then((r) => r.ok ? r.json() : { data: null })]).then(([weatherResult, alertResult, mapResult]) => { setWeather(weatherResult.data?.[0] || null); setAlerts(alertResult.data || []); const mapData = mapResult.data || mapResult; const items = [...(mapData?.alerts || []), ...(mapData?.incidents || []), ...(mapData?.devices || [])]; setMapEntities(items.map((item: any): MapEntity => { const coordinates = item.location?.location?.coordinates; return { id: String(item.id), kind: 'alert', title: item.title || item.name || item.type || 'CrisisMesh feature', detail: item.description || item.location?.name || 'Live map feature', latitude: Array.isArray(coordinates) ? Number(coordinates[1]) : undefined, longitude: Array.isArray(coordinates) ? Number(coordinates[0]) : undefined }; }).filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude))); }).catch(() => setFailed(true)); }, []);
+  return <main className="public-app">
+    <header className="public-header"><Link className="public-brand" href="/"><ShieldCheck /><span><b>CRISIS</b>MESH<small>Resilient Disaster Intelligence</small></span></Link><nav>{[['Home', '/'], ['Live Map', '/map'], ['States', '/districts'], ['Districts', '/districts'], ['Alerts', '/alerts'], ['News', '/news'], ['Safety', '/safety'], ['Resources', '/resources'], ['About', '/about']].map(([label, href]) => <Link className={label === 'Home' ? 'selected' : ''} key={label} href={href}>{label}</Link>)}</nav><div className="header-actions"><button>◉ English⌄</button><Bell size={20}/><Link href="/login">Login / Sign Up</Link></div></header>
+    <div className="live-alert"><b><AlertTriangle size={14}/> LIVE ALERT</b><span>{alerts[0]?.title || 'Live public safety monitoring is active'}</span><small>{alerts[0]?.issued_at ? new Date(alerts[0].issued_at).toLocaleTimeString() : 'Live'}</small><Link href="/alerts">View Alert <ChevronRight size={16}/></Link><span className="other">Other active alerts: {alerts.length > 1 ? `${alerts.length - 1} in view` : 'Monitoring all regions'}</span></div>
+    <div className="public-grid"><section className="hero-map"><div className="hero-copy"><h1>India&apos;s Live<br/>Disaster Intelligence<br/>Platform</h1><p>Real-time alerts, weather updates, and risk intelligence to keep communities safe and authorities prepared.</p><label><Search size={18}/><input placeholder="Search location, district, or hazard..."/><Link href="/map" aria-label="Open live map"><Search size={18}/></Link></label></div><div style={{position:'absolute',zIndex:1,top:24,right:18,width:'48%',height:360,borderRadius:12,overflow:'hidden',boxShadow:'0 14px 35px rgba(0,0,0,.35)'}} aria-label="India disaster map"><LiveMap entities={mapEntities} /></div><div className="hero-stats"><Metric icon={<Siren/>} value={alerts.filter((alert) => alert.severity === 'CRITICAL').length} label="Critical Alerts"/><Metric icon={<AlertTriangle/>} value={alerts.length} label="Active Alerts"/><Metric icon={<Waves/>} value="LIVE" label="Risk Monitoring"/><Metric icon={<ShieldCheck/>} value="24/7" label="Safety Network"/></div></section>
+      <aside className="area-panel"><div className="panel-top"><div><small>MY AREA</small><h2><MapPinned size={19}/> Location services</h2></div><Link href="/login">Change Location</Link></div><div className="weather-cards"><WeatherCard icon="🌡" value={weather?.temperature_celsius ? `${weather.temperature_celsius}°C` : '—'} label="Temperature"/><WeatherCard icon="🌧" value={weather?.precipitation_mm ? `${weather.precipitation_mm} mm` : '—'} label="Rainfall"/><WeatherCard icon="⚠" value={alerts.length.toString()} label="Active Alerts"/></div><div className="side-heading"><h3>Latest Alerts</h3><Link href="/alerts">View All <ChevronRight size={14}/></Link></div>{alerts.length ? alerts.slice(0, 4).map((alert) => <article className="public-alert" key={alert.id}><AlertTriangle/><div><b>{alert.title || alert.type || 'Safety alert'}</b><small>{alert.severity || 'ACTIVE'} · {alert.description || 'Official update'}</small></div></article>) : <div className="public-empty">{failed ? 'Live data is temporarily unavailable.' : 'No active alerts right now.'}</div>}<Link className="subscribe-card" href="/register"><Bell/><div><b>Stay Informed. Stay Safe.</b><span>Subscribe to verified updates for your area.</span></div><ChevronRight/></Link></aside></div>
+    <section className="public-cards"><WeatherSummary weather={weather}/><Feature href="/map" icon={<MapPinned/>} title="Live Disaster Map" text="Explore real-time hazards and safe zones"/><Feature href="/resources" icon={<ShieldCheck/>} title="Emergency Resources" text="Find shelters and relief support"/><Feature href="/safety" icon={<Siren/>} title="Safety Guidance" text="Practical guidance for every hazard"/></section>
+    <footer className="public-footer">CRISISMESH — Building a safer and more resilient India.<span>Privacy · Terms · Support</span></footer>
+  </main>;
 }
+function Metric({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) { return <div><i>{icon}</i><strong>{value}</strong><span>{label}</span></div>; }
+function WeatherCard({ icon, value, label }: { icon: string; value: string; label: string }) { return <div><i>{icon}</i><b>{value}</b><small>{label}</small></div>; }
+function WeatherSummary({ weather }: { weather: Weather | null }) { return <article className="weather-summary"><CloudRain/><div><small>Weather Overview</small><h3>{weather?.temperature_celsius ? `${weather.temperature_celsius}°C` : '—'}</h3><span>{weather?.humidity_percent ? `${weather.humidity_percent}% humidity` : 'Latest observation pending'}</span></div><div><b>{weather?.wind_speed_kmh || '—'} km/h</b><small>Wind</small></div><div><b>{weather?.precipitation_mm || '—'} mm</b><small>Rain</small></div></article>; }
+function Feature({ href, icon, title, text }: { href: string; icon: ReactNode; title: string; text: string }) { return <Link className="feature-card" href={href}>{icon}<div><b>{title}</b><span>{text}</span></div><ChevronRight/></Link>; }

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ClipboardList, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth-store";
 import apiClient from "@/lib/api-client";
 import { OperationsShell } from "@/components/operations-shell";
@@ -117,7 +118,7 @@ export default function IncidentsPage() {
         ) : (
           <div className="incident-list">
             {items.map((item) => (
-              <article key={item.id} className="incident-row">
+              <Link href={`/incidents/${item.id}`} key={item.id} className="incident-row">
                 <span
                   className={`incident-mark ${(item.severity || "low").toLowerCase()}`}
                 />
@@ -139,7 +140,7 @@ export default function IncidentsPage() {
                   </span>
                   <small>{item.severity || "UNSPECIFIED"} priority</small>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}

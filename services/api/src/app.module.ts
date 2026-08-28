@@ -13,6 +13,12 @@ import { RiskModule } from './risk/risk.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { ResponseModule } from './response/response.module';
+import { InformationModule } from './information/information.module';
+import { DistrictsModule } from './districts/districts.module';
+import { WeatherModule } from './weather/weather.module';
+import { IntelligenceModule } from './intelligence/intelligence.module';
 
 @Module({
   imports: [
@@ -30,6 +36,12 @@ import { WebSocketModule } from './websocket/websocket.module';
     SimulationModule,
     MqttModule,
     WebSocketModule,
+    DashboardModule,
+    ResponseModule,
+    InformationModule,
+    DistrictsModule,
+    WeatherModule,
+    IntelligenceModule,
   ],
   controllers: [],
   providers: [],

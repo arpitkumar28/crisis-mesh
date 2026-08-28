@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, Between } from 'typeorm';
 import { Alert, AlertStatus, AlertSeverity } from '../entities/alert.entity';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -193,5 +193,85 @@ export class AlertsService {
       },
       order: { issued_at: 'DESC' },
     });
+  }
+
+  async findByFilters(filters: {
+    location_id?: string;
+    district_id?: string;
+    hazard_type?: string;
+    severity?: AlertSeverity[];
+    source?: string;
+    start_date?: Date;
+    end_date?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ alerts: Alert[]; total: number }> {
+    const queryBuilder = this.alertRepository.createQueryBuilder('alert')
+      .leftJoinAndSelect('alert.location', 'location')
+      .leftJoinAndSelect('alert.issuer', 'issuer')
+      .leftJoinAndSelect('alert.incident', 'incident');
+
+    if (filters.location_id) {
+      queryBuilder.andWhere('alert.location_id = :locationId', { locationId: filters.location_id });
+    }
+
+    if (filters.district_id) {
+      queryBuilder.andWhere('location.district_id = :districtId', { districtId: filters.district_id });
+    }
+
+    if (filters.hazard_type) {
+      queryBuilder.andWhere('alert.type = :type', { type: filters.hazard_type });
+    }
+
+    if (filters.severity && filters.severity.length > 0) {
+      queryBuilder.andWhere('alert.severity IN (:...severities)', { severities: filters.severity });
+    }
+
+    if (filters.source) {
+      queryBuilder.andWhere('alert.source = :source', { source: filters.source });
+    }
+
+    if (filters.start_date && filters.end_date) {
+      queryBuilder.andWhere('alert.issued_at BETWEEN :startDate AND :endDate', {
+        startDate: filters.start_date,
+        endDate: filters.end_date,
+      });
+    }
+
+    const total = await queryBuilder.getCount();
+
+    if (filters.limit) {
+      queryBuilder.limit(filters.limit);
+    }
+
+    if (filters.offset) {
+      queryBuilder.offset(filters.offset);
+    }
+
+    queryBuilder.orderBy('alert.issued_at', 'DESC');
+
+    const alerts = await queryBuilder.getMany();
+
+    return { alerts, total };
+  }
+
+  async getAlertSources(): Promise<string[]> {
+    const result = await this.alertRepository
+      .createQueryBuilder('alert')
+      .select('DISTINCT alert.source', 'source')
+      .where('alert.source IS NOT NULL')
+      .getRawMany();
+
+    return result.map(r => r.source);
+  }
+
+  async getAlertTypes(): Promise<string[]> {
+    const result = await this.alertRepository
+      .createQueryBuilder('alert')
+      .select('DISTINCT alert.type', 'type')
+      .where('alert.type IS NOT NULL')
+      .getRawMany();
+
+    return result.map(r => r.type);
   }
 }

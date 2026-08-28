@@ -34,7 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(children: [Icon(Icons.shield_outlined, color: Color(0xFF0757E8)), SizedBox(width: 7), Text('CRISISMESH', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .4))]),
+        title: Row(children: [Image.asset('assets/brand/crisismesh-icon.png', width: 27, height: 27), const SizedBox(width: 7), const Text('CRISIS', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .4)), const Text('MESH', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .4, color: Color(0xFF09A86B)))]),
         actions: [
           PopupMenuButton<String>(onSelected: (value) { if (value == 'incidents') Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Incidents')), body: const IncidentsScreen()))); if (value == 'logout') _logout(); }, itemBuilder: (context) => const [PopupMenuItem(value: 'incidents', child: Text('Incidents')), PopupMenuItem(value: 'logout', child: Text('Log out'))]),
         ],

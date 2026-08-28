@@ -83,6 +83,9 @@ export class Alert {
   @JoinColumn({ name: 'issued_by' })
   issuer: Profile;
 
+  @Column({ length: 100, nullable: true })
+  source: string;
+
   @Column({ name: 'issued_at', type: 'timestamp with time zone', default: () => 'NOW()' })
   issued_at: Date;
 

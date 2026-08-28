@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, AlertCircle, Bell, Boxes, LogOut, Map, Radio, ShieldCheck, Users } from 'lucide-react';
+import { Activity, AlertCircle, Bell, Boxes, CloudLightning, LogOut, Map, Radio, ShieldCheck, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth-store';
 import apiClient from '@/lib/api-client';
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [devices, setDevices] = useState<RecordItem[]>([]);
   const [alerts, setAlerts] = useState<RecordItem[]>([]);
   const [incidents, setIncidents] = useState<RecordItem[]>([]);
+  const [intelligence, setIntelligence] = useState<RecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [connection, setConnection] = useState('disconnected');
@@ -59,10 +60,11 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     setError('');
     try {
-      const [deviceResponse, alertResponse, incidentResponse] = await Promise.all([apiClient.get('/devices'), apiClient.get('/alerts'), apiClient.get('/incidents')]);
+      const [deviceResponse, alertResponse, incidentResponse, intelligenceResponse] = await Promise.all([apiClient.get('/devices'), apiClient.get('/alerts'), apiClient.get('/incidents'), apiClient.get('/intelligence')]);
       setDevices(deviceResponse.data.data || []);
       setAlerts(alertResponse.data.data || []);
       setIncidents(incidentResponse.data.data || []);
+      setIntelligence(intelligenceResponse.data.data || []);
     } catch {
       setError('Operational data is unavailable. Check the API connection and retry.');
     } finally {
@@ -82,6 +84,7 @@ export default function DashboardPage() {
       ['alert.created', refresh('New alert received')], ['alert.updated', refresh('Alert updated')],
       ['incident.created', refresh('New incident received')], ['incident.updated', refresh('Incident updated')],
       ['incident.status_changed', refresh('Incident status changed')],
+      ['intelligence.created', refresh('New intelligence received')], ['intelligence.updated', refresh('Intelligence updated')],
     ] as const;
     handlers.forEach(([event, handler]) => wsClient.on(event, handler));
     return () => { stopConnection(); handlers.forEach(([event, handler]) => wsClient.off(event, handler)); };
@@ -90,11 +93,14 @@ export default function DashboardPage() {
   if (!hasHydrated || !isAuthenticated) return null;
   const activeAlerts = alerts.filter((item) => item.status === 'ACTIVE');
   const activeIncidents = incidents.filter((item) => !['RESOLVED', 'CLOSED'].includes(item.status));
-  const metrics: Array<[string, number, string, LucideIcon]> = [['Active alerts', activeAlerts.length, 'critical', Bell], ['Open incidents', activeIncidents.length, 'warning', AlertCircle], ['Devices online', devices.filter((item) => item.status === 'ONLINE').length, 'safe', Radio], ['Total devices', devices.length, 'neutral', Boxes]];
+  const activeDisasters = intelligence.filter((item) => item.kind === 'disaster');
+  const severeWeather = intelligence.filter((item) => item.kind === 'weather' && ['CRITICAL', 'HIGH'].includes(item.severity));
+  const metrics: Array<[string, number, string, LucideIcon]> = [['Active alerts', activeAlerts.length, 'critical', Bell], ['Active disasters', activeDisasters.length, 'warning', CloudLightning], ['Severe weather', severeWeather.length, 'warning', CloudLightning], ['Devices online', devices.filter((item) => item.status === 'ONLINE').length, 'safe', Radio], ['Total devices', devices.length, 'neutral', Boxes]];
   const mapEntities: MapEntity[] = [
     ...devices.map((item) => ({ id: item.id, kind: 'device' as const, title: item.name || 'Device', detail: item.type || 'Sensor', status: item.status, ...coords(item) })),
     ...activeAlerts.map((item) => ({ id: item.id, kind: 'alert' as const, title: item.title || item.type || 'Alert', detail: item.description || 'Active alert', severity: item.severity, status: item.status, ...coords(item) })),
     ...activeIncidents.map((item) => ({ id: item.id, kind: 'incident' as const, title: item.title || item.type || 'Incident', detail: item.description || 'Open incident', severity: item.severity, status: item.status, ...coords(item) })),
+    ...intelligence.map((item) => ({ id: item.id, kind: (item.kind === 'disaster' || item.kind === 'weather' || item.kind === 'news' ? item.kind : 'alert') as MapEntity['kind'], title: item.title || item.eventType || 'Live intelligence', detail: item.source || item.country || 'Provider intelligence', severity: item.severity, ...coords(item) })),
   ];
   const statusLabel = connection === 'connected' || connection === 'reconnected' ? 'LIVE' : connection === 'reconnecting' ? 'RECONNECTING' : 'OFFLINE';
 
@@ -105,6 +111,6 @@ export default function DashboardPage() {
       <section className="metric-grid">{metrics.map(([label, value, tone, Icon]) => <div className="metric-card" key={label}><div className={`metric-icon ${tone}`}><Icon size={17} /></div><div><span>{label}</span><strong>{loading ? '-' : value}</strong></div></div>)}</section>
       <section className="panel map-panel" id="map"><div className="panel-heading"><div><div className="eyebrow">Geospatial intelligence</div><h2>Live disaster map</h2></div><div className="legend"><span><i className="legend-device" />Devices</span><span><i className="legend-alert" />Alerts</span><span><i className="legend-incident" />Incidents</span></div></div><LiveMap entities={mapEntities} /></section>
       <div className="lower-grid"><section className="panel" id="telemetry"><div className="panel-heading"><div><div className="eyebrow">Sensor network</div><h2>Live telemetry</h2></div><span className="live-tag"><Activity size={13} /> {lastEvent}</span></div>{loading ? <div className="skeleton-list" /> : devices.length === 0 ? <div className="empty-state">No devices have reported telemetry yet.</div> : <div className="telemetry-list">{devices.slice(0, 4).map((device) => <div className="telemetry-row" key={device.id}><span className={`pulse ${device.status === 'ONLINE' ? 'online' : ''}`} /><div><strong>{device.name || device.serial_number || 'Unnamed device'}</strong><small>{device.type || 'Sensor'} · {device.last_seen ? new Date(device.last_seen).toLocaleTimeString() : 'No recent signal'}</small></div><b>{device.battery_level != null ? `${device.battery_level}%` : '—'}</b></div>)}</div>}</section>
-        <section className="panel"><div className="panel-heading"><div><div className="eyebrow">Priority queue</div><h2>Active emergencies</h2></div><a href="/alerts">View all</a></div>{loading ? <div className="skeleton-list" /> : activeAlerts.length === 0 && activeIncidents.length === 0 ? <div className="empty-state">No active emergencies. Monitoring continues.</div> : <div className="emergency-list">{[...activeAlerts, ...activeIncidents].slice(0, 5).map((item) => <div className="emergency-row" key={item.id}><span className={`severity ${(item.severity || 'LOW').toLowerCase()}`} /><div><strong>{item.title || item.type || 'Operational event'}</strong><small>{item.severity || 'UNSPECIFIED'} · {item.status || 'ACTIVE'}</small></div><span className="row-arrow">›</span></div>)}</div>}</section></div>
+        <section className="panel"><div className="panel-heading"><div><div className="eyebrow">Priority queue</div><h2>Latest intelligence</h2></div><a href="/alerts">View all</a></div>{loading ? <div className="skeleton-list" /> : [...activeAlerts, ...activeIncidents, ...intelligence].length === 0 ? <div className="empty-state">No active intelligence. Monitoring continues.</div> : <div className="emergency-list">{[...activeAlerts, ...activeIncidents, ...intelligence].slice(0, 5).map((item) => <div className="emergency-row" key={item.id}><span className={`severity ${(item.severity || 'LOW').toLowerCase()}`} /><div><strong>{item.title || item.type || item.eventType || 'Operational event'}</strong><small>{item.severity || 'UNSPECIFIED'} · {item.source || item.status || 'LIVE'}</small></div><span className="row-arrow">›</span></div>)}</div>}</section></div>
     </main></div>;
 }

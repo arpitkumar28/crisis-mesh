@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname === '/register') {
     if (token) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Protected routes
-  if (pathname === '/' || pathname.startsWith('/dashboard') || pathname.startsWith('/devices') || pathname.startsWith('/alerts') || pathname.startsWith('/incidents')) {
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/devices') || pathname.startsWith('/alerts') || pathname.startsWith('/incidents') || pathname.startsWith('/resources') || pathname.startsWith('/shelters') || pathname.startsWith('/weather') || pathname.startsWith('/news') || pathname.startsWith('/notifications')) {
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
@@ -24,5 +24,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/dashboard/:path*', '/devices/:path*', '/alerts/:path*', '/incidents/:path*'],
+  matcher: ['/login', '/register', '/dashboard/:path*', '/devices/:path*', '/alerts/:path*', '/incidents/:path*', '/resources/:path*', '/shelters/:path*', '/weather/:path*', '/news/:path*', '/notifications/:path*'],
 };

@@ -10,6 +10,11 @@ export enum WebSocketEventType {
   NOTIFICATION_CREATED = 'notification.created',
   CONNECTION_ESTABLISHED = 'connection.established',
   HEARTBEAT = 'heartbeat',
+  INTELLIGENCE_CREATED = 'intelligence.created',
+  INTELLIGENCE_UPDATED = 'intelligence.updated',
+  WEATHER_UPDATED = 'weather.updated',
+  DISASTER_CREATED = 'disaster.created',
+  DISASTER_UPDATED = 'disaster.updated',
 }
 
 export interface WebSocketEvent {

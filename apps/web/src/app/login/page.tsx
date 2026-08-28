@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,7 +12,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('registered') === '1') {
+      setSuccess('Account created successfully. Sign in to continue.');
+    }
+  }, []);
 
   // Redirect if already authenticated
   if (hasHydrated && isAuthenticated) {
@@ -35,13 +44,11 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-        console.error('Login API error:', errorData);
         setError(errorData.message || `Login failed with status ${response.status}`);
         return;
       }
 
       const data = await response.json();
-      console.log('Login response:', data);
 
       if (data.success) {
         // Set token as cookie for middleware to read with proper attributes
@@ -52,13 +59,11 @@ export default function LoginPage() {
         // Update auth store
         setAuth(data.data.user, data.data.access_token);
 
-        console.log('Token stored, redirecting to dashboard...');
         router.push('/dashboard');
       } else {
         setError(data.message || 'Login failed');
       }
     } catch (err) {
-      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -69,11 +74,16 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px', background: 'radial-gradient(circle at 20% 15%, #153d67 0, transparent 28%), #061322' }}>
       <div style={{ width: 'min(100%, 420px)', padding: '42px', background: '#fff', color: '#102043', borderRadius: '14px', boxShadow: '0 24px 60px rgba(0,0,0,.35)' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'grid', placeItems: 'center', margin: '0 auto 14px', width: '42px', height: '42px', borderRadius: '11px', background: '#e8f0ff', color: '#0757e8', fontSize: '24px' }}>✦</div>
+          <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={46} height={46} style={{ display: 'block', margin: '0 auto 14px', borderRadius: '12px', objectFit: 'cover' }} />
           <h2 style={{ margin: '0', fontSize: '25px', letterSpacing: '1px' }}>CRISIS<span style={{ color: '#0ca66d' }}>MESH</span></h2>
           <p style={{ marginTop: '8px', color: '#65728a', fontSize: '13px' }}>Emergency operations command center</p>
         </div>
         <form style={{ marginTop: '32px' }} onSubmit={handleSubmit}>
+          {success && (
+            <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid #86efac', background: '#f0fdf4', color: '#15803d', borderRadius: '8px' }}>
+              {success}
+            </div>
+          )}
           {error && (
             <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid #fca5a5', background: '#fef2f2', color: '#dc2626', borderRadius: '8px' }}>
               {error}
@@ -118,6 +128,9 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+        <p style={{ marginTop: '22px', textAlign: 'center', color: '#65728a', fontSize: '13px' }}>
+          New to CrisisMesh? <Link href="/register" style={{ color: '#0757e8', fontWeight: '700', textDecoration: 'none' }}>Create account</Link>
+        </p>
       </div>
     </div>
   );

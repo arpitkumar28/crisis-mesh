@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -142,6 +142,69 @@ export class AlertsController {
       success: true,
       message: 'Alert deleted successfully',
       data: null,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Get('filter')
+  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  async findByFilters(
+    @Query('location_id') locationId?: string,
+    @Query('district_id') districtId?: string,
+    @Query('hazard_type') hazardType?: string,
+    @Query('severity') severity?: string,
+    @Query('source') source?: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const severities = severity ? severity.split(',').map(s => s.trim().toUpperCase() as AlertSeverity) : undefined;
+    const { alerts, total } = await this.alertsService.findByFilters({
+      location_id: locationId,
+      district_id: districtId,
+      hazard_type: hazardType,
+      severity: severities,
+      source: source,
+      start_date: startDate ? new Date(startDate) : undefined,
+      end_date: endDate ? new Date(endDate) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+      offset: offset ? parseInt(offset) : undefined,
+    });
+
+    return {
+      success: true,
+      message: 'Filtered alerts retrieved successfully',
+      data: alerts,
+      meta: {
+        total,
+        limit: limit ? parseInt(limit) : undefined,
+        offset: offset ? parseInt(offset) : undefined,
+      },
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Get('sources')
+  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  async getSources() {
+    const sources = await this.alertsService.getAlertSources();
+    return {
+      success: true,
+      message: 'Alert sources retrieved successfully',
+      data: sources,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Get('types')
+  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  async getTypes() {
+    const types = await this.alertsService.getAlertTypes();
+    return {
+      success: true,
+      message: 'Alert types retrieved successfully',
+      data: types,
       request_id: crypto.randomUUID(),
     };
   }

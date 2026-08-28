@@ -91,14 +91,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.shield_outlined, color: Color(0xFF0757E8), size: 34), SizedBox(width: 8), Text(
-                    'CRISISMESH',
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF102043),
-                    ),
-                  )]),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [Image.asset('assets/brand/crisismesh-icon.png', width: 38, height: 38), const SizedBox(width: 8), const Text(
+                    'CRISIS',
+                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+                  ), const Text('MESH', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Color(0xFF09A86B)))]),
                   const SizedBox(height: 8),
                   const Text(
                     'Command access for emergency operations',
