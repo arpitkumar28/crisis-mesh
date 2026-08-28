@@ -75,6 +75,7 @@ export class DevicesService {
       return await this.deviceRepository.find({
         relations: {
           sensors: true,
+          location: true,
         },
         order: {
           created_at: 'DESC',
@@ -92,6 +93,7 @@ export class DevicesService {
         where: { id },
         relations: {
           sensors: true,
+          location: true,
           gateways: true,
           source_links: true,
           target_links: true,

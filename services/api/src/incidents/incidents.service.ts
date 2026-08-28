@@ -6,6 +6,7 @@ import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
+import { IncidentUpdatedEvent } from '../websocket/dto/websocket-event.dto';
 
 @Injectable()
 export class IncidentsService {
@@ -128,6 +129,16 @@ export class IncidentsService {
     }
 
     const updatedIncident = await this.incidentRepository.save(incident);
+
+    // Broadcast WebSocket event for updates
+    this.webSocketService.broadcastIncidentUpdated({
+      incident_id: updatedIncident.id,
+      severity: updatedIncident.severity,
+      type: updatedIncident.type,
+      location: updatedIncident.location_id,
+      status: updatedIncident.status,
+      timestamp: updatedIncident.updated_at.toISOString(),
+    });
 
     // Broadcast WebSocket event for status changes
     if (updateIncidentDto.status && updateIncidentDto.status !== oldValues.status) {

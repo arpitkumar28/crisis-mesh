@@ -32,18 +32,13 @@ services:
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     ports:
-      - "3001:3001"
+      - "3002:3002"
     depends_on:
       - mqtt
     volumes:
       - ./services/api/src:/app/src
     networks:
       - crisis-mesh-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Python Simulator
   simulator:

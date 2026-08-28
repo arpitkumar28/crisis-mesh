@@ -53,3 +53,22 @@ export interface IncidentCreatedEvent {
   status: string;
   timestamp: string;
 }
+
+export interface AlertUpdatedEvent {
+  alert_id: string;
+  severity: string;
+  type: string;
+  status: string;
+  location?: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface IncidentUpdatedEvent {
+  incident_id: string;
+  severity: string;
+  type: string;
+  location?: string;
+  status: string;
+  timestamp: string;
+}

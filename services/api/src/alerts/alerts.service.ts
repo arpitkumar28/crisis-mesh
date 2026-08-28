@@ -6,6 +6,7 @@ import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
+import { AlertUpdatedEvent } from '../websocket/dto/websocket-event.dto';
 
 @Injectable()
 export class AlertsService {
@@ -123,14 +124,14 @@ export class AlertsService {
 
     // Broadcast WebSocket event for status changes
     if (updateAlertDto.status && updateAlertDto.status !== oldValues.status) {
-      this.webSocketService.broadcast({
-        type: 'alert.updated' as any,
-        data: {
-          alert_id: updatedAlert.id,
-          status: updatedAlert.status,
-          timestamp: new Date().toISOString(),
-        },
-        timestamp: new Date().toISOString(),
+      this.webSocketService.broadcastAlertUpdated({
+        alert_id: updatedAlert.id,
+        severity: updatedAlert.severity,
+        type: updatedAlert.type,
+        status: updatedAlert.status,
+        location: updatedAlert.location_id,
+        message: updatedAlert.title,
+        timestamp: updatedAlert.updated_at.toISOString(),
       });
     }
 

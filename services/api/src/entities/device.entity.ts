@@ -3,6 +3,7 @@ import { Sensor } from './sensor.entity';
 import { Gateway } from './gateway.entity';
 import { MeshLink } from './mesh-link.entity';
 import { DeviceStatusHistory } from './device-status-history.entity';
+import { GeographicLocation } from './geographic-location.entity';
 
 export enum DeviceType {
   SENSOR = 'SENSOR',
@@ -43,6 +44,10 @@ export class Device {
 
   @Column({ type: 'uuid', nullable: true })
   location_id: string;
+
+  @ManyToOne(() => GeographicLocation, { nullable: true })
+  @JoinColumn({ name: 'location_id' })
+  location: GeographicLocation;
 
   @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
   serial_number: string;

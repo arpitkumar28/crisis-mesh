@@ -35,8 +35,8 @@ INSERT INTO countries (name, iso_code) VALUES
 -- Password is hashed using bcrypt (cost factor 10)
 -- Default password: admin123 (CHANGE IN PRODUCTION)
 
-INSERT INTO profiles (email, name, phone) VALUES
-('admin@crisismesh.dev', 'System Administrator', '+919876543210');
+INSERT INTO profiles (email, name, phone, password_hash) VALUES
+('admin@crisismesh.dev', 'System Administrator', '+919876543210', '$2b$10$aXA.xr7Gt9icDZ37XRlvQOiFOJZxOfd7GXZJCif1AKOF47LuxqvZ2');
 
 -- Assign admin role to the default admin user
 INSERT INTO user_roles (profile_id, role_id, assigned_by)

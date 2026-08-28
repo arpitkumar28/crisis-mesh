@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { WebSocketEventType, WebSocketEvent, TelemetryUpdatedEvent, DeviceStatusChangedEvent, AlertCreatedEvent, IncidentCreatedEvent } from './dto/websocket-event.dto';
+import { WebSocketEventType, WebSocketEvent, TelemetryUpdatedEvent, DeviceStatusChangedEvent, AlertCreatedEvent, AlertUpdatedEvent, IncidentCreatedEvent, IncidentUpdatedEvent } from './dto/websocket-event.dto';
 
 @Injectable()
 export class WebSocketService {
@@ -112,6 +112,24 @@ export class WebSocketService {
   broadcastIncidentCreated(data: IncidentCreatedEvent) {
     const event: WebSocketEvent = {
       type: WebSocketEventType.INCIDENT_CREATED,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+    this.broadcast(event);
+  }
+
+  broadcastAlertUpdated(data: AlertUpdatedEvent) {
+    const event: WebSocketEvent = {
+      type: WebSocketEventType.ALERT_UPDATED,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+    this.broadcast(event);
+  }
+
+  broadcastIncidentUpdated(data: IncidentUpdatedEvent) {
+    const event: WebSocketEvent = {
+      type: WebSocketEventType.INCIDENT_UPDATED,
       data,
       timestamp: new Date().toISOString(),
     };

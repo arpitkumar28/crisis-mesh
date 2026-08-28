@@ -53,7 +53,7 @@ describe('ConfigService', () => {
 
   it('should return default API port when not set', () => {
     delete process.env.API_PORT;
-    expect(service.apiPort).toBe(3001);
+    expect(service.apiPort).toBe(3002);
   });
 
   it('should return custom API port when set', () => {

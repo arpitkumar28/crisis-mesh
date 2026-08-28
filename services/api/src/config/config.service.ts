@@ -35,7 +35,7 @@ export class ConfigService {
   }
 
   get apiPort(): number {
-    return parseInt(process.env.API_PORT || '3001', 10);
+    return parseInt(process.env.API_PORT || '3002', 10);
   }
 
   get apiHost(): string {

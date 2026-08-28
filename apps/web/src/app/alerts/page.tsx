@@ -1,9 +1,149 @@
-'use client';
-import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, BellRing, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
-import apiClient from '@/lib/api-client';
-import { OperationsShell } from '@/components/operations-shell';
-type Alert = { id: string; title?: string; type?: string; description?: string; severity?: string; status?: string; issued_at?: string };
-export default function AlertsPage() { const router = useRouter(); const authenticated = useAuthStore((s) => s.isAuthenticated); const [items, setItems] = useState<Alert[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [activeOnly, setActiveOnly] = useState(false); const load = useCallback(async () => { setLoading(true); setError(''); try { const result = await apiClient.get(activeOnly ? '/alerts/active' : '/alerts'); setItems(result.data.data || []); } catch { setError('Alerts are unavailable. Check the API and retry.'); } finally { setLoading(false); } }, [activeOnly]); useEffect(() => { if (!authenticated) { router.push('/login'); return; } load(); }, [authenticated, load, router]); if (!authenticated) return null; const critical = items.filter((i) => i.severity === 'CRITICAL').length; return <OperationsShell eyebrow="Emergency warning system" title="Alerts center"><section className="page-summary"><div><span>Active alerts</span><strong>{loading ? '—' : items.filter((i) => i.status === 'ACTIVE').length}</strong></div><div><span>Critical priority</span><strong className="danger-text">{loading ? '—' : critical}</strong></div><div><span>Monitoring state</span><strong className="safe-text">LIVE</strong></div><button onClick={load}><RefreshCw size={15} />Refresh</button></section><section className="data-panel"><div className="data-toolbar"><div><h2>Alert queue</h2><p>Prioritized operational alerts. Critical events remain visible until resolved.</p></div><div className="filter-tabs"><button className={!activeOnly ? 'selected' : ''} onClick={() => setActiveOnly(false)}>All alerts</button><button className={activeOnly ? 'selected' : ''} onClick={() => setActiveOnly(true)}>Active only</button></div></div>{error ? <div className="data-error">{error}<button onClick={load}>Retry</button></div> : loading ? <div className="data-loading">Loading active warnings…</div> : items.length === 0 ? <div className="data-empty"><BellRing size={25} />No alerts in this view.</div> : <div className="alert-list">{items.map((item) => <article key={item.id} className={`alert-row severity-${(item.severity || 'low').toLowerCase()}`}><span className="alert-symbol"><AlertTriangle size={20} /></span><div><div className="alert-title"><h3>{item.title || item.type || 'Operational alert'}</h3><span>{item.severity || 'UNSPECIFIED'}</span></div><p>{item.description || 'No detail supplied by the issuing service.'}</p><small>{item.status || 'ACTIVE'} · {item.issued_at ? new Date(item.issued_at).toLocaleString() : 'Time unavailable'}</small></div><b>›</b></article>)}</div>}</section></OperationsShell>; }
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, BellRing, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth-store";
+import apiClient from "@/lib/api-client";
+import { OperationsShell } from "@/components/operations-shell";
+import { wsClient } from "@/lib/websocket-client";
+type Alert = {
+  id: string;
+  title?: string;
+  type?: string;
+  description?: string;
+  severity?: string;
+  status?: string;
+  issued_at?: string;
+};
+export default function AlertsPage() {
+  const router = useRouter();
+  const { token, isAuthenticated: authenticated, hasHydrated } = useAuthStore();
+  const [items, setItems] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await apiClient.get(
+        activeOnly ? "/alerts/active" : "/alerts",
+      );
+      setItems(result.data.data || []);
+    } catch {
+      setError("Alerts are unavailable. Check the API and retry.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeOnly]);
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!authenticated || !token) {
+      router.push("/login");
+      return;
+    }
+    wsClient.connect(token);
+    load();
+    const refresh = () => load();
+    wsClient.on("alert.created", refresh);
+    wsClient.on("alert.updated", refresh);
+    return () => {
+      wsClient.off("alert.created", refresh);
+      wsClient.off("alert.updated", refresh);
+    };
+  }, [authenticated, hasHydrated, load, router, token]);
+  if (!hasHydrated || !authenticated) return null;
+  const critical = items.filter((i) => i.severity === "CRITICAL").length;
+  return (
+    <OperationsShell eyebrow="Emergency warning system" title="Alerts center">
+      <section className="page-summary">
+        <div>
+          <span>Active alerts</span>
+          <strong>
+            {loading ? "—" : items.filter((i) => i.status === "ACTIVE").length}
+          </strong>
+        </div>
+        <div>
+          <span>Critical priority</span>
+          <strong className="danger-text">{loading ? "—" : critical}</strong>
+        </div>
+        <div>
+          <span>Monitoring state</span>
+          <strong className="safe-text">LIVE</strong>
+        </div>
+        <button onClick={load}>
+          <RefreshCw size={15} />
+          Refresh
+        </button>
+      </section>
+      <section className="data-panel">
+        <div className="data-toolbar">
+          <div>
+            <h2>Alert queue</h2>
+            <p>
+              Prioritized operational alerts. Critical events remain visible
+              until resolved.
+            </p>
+          </div>
+          <div className="filter-tabs">
+            <button
+              className={!activeOnly ? "selected" : ""}
+              onClick={() => setActiveOnly(false)}
+            >
+              All alerts
+            </button>
+            <button
+              className={activeOnly ? "selected" : ""}
+              onClick={() => setActiveOnly(true)}
+            >
+              Active only
+            </button>
+          </div>
+        </div>
+        {error ? (
+          <div className="data-error">
+            {error}
+            <button onClick={load}>Retry</button>
+          </div>
+        ) : loading ? (
+          <div className="data-loading">Loading active warnings…</div>
+        ) : items.length === 0 ? (
+          <div className="data-empty">
+            <BellRing size={25} />
+            No alerts in this view.
+          </div>
+        ) : (
+          <div className="alert-list">
+            {items.map((item) => (
+              <article
+                key={item.id}
+                className={`alert-row severity-${(item.severity || "low").toLowerCase()}`}
+              >
+                <span className="alert-symbol">
+                  <AlertTriangle size={20} />
+                </span>
+                <div>
+                  <div className="alert-title">
+                    <h3>{item.title || item.type || "Operational alert"}</h3>
+                    <span>{item.severity || "UNSPECIFIED"}</span>
+                  </div>
+                  <p>
+                    {item.description ||
+                      "No detail supplied by the issuing service."}
+                  </p>
+                  <small>
+                    {item.status || "ACTIVE"} ·{" "}
+                    {item.issued_at
+                      ? new Date(item.issued_at).toLocaleString()
+                      : "Time unavailable"}
+                  </small>
+                </div>
+                <b>›</b>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </OperationsShell>
+  );
+}

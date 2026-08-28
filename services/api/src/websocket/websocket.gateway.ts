@@ -19,6 +19,7 @@ import { WebSocketEventType } from './dto/websocket-event.dto';
     credentials: true,
   },
   namespace: '/ws',
+  path: '/ws',
 })
 export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
