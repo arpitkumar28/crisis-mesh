@@ -1,618 +1,241 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { 
-  AlertTriangle, 
-  Activity, 
-  MapPin, 
-  Thermometer, 
-  Droplets, 
-  Wind, 
-  Gauge,
-  Shield,
-  Home,
-  Phone,
-  Flame,
-  Bell,
-  Radio,
-  ChevronRight,
-  CloudRain,
-  Building,
-  Factory,
-  TrendingUp,
-  Newspaper
+import React, { useState } from 'react';
+import {
+  ArrowLeft, MapPin, Activity, AlertTriangle, Bell,
+  Cloud, Droplets, Wind, Gauge, Info, ChevronRight,
+  TrendingUp, TrendingDown, Shield, Home, Phone,
+  Building, CheckCircle2, Factory, Thermometer
 } from 'lucide-react';
+import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
-import type { MapEntity } from '@/components/live-map';
+import { useParams, useRouter } from 'next/navigation';
 
-const LiveMap = dynamic(() => import('@/components/live-map'), { 
-  ssr: false, 
-  loading: () => <div className="map-frame"><div className="map-empty">Loading district map...</div></div> 
+const LiveMap = dynamic(() => import('@/components/live-map'), {
+  ssr: false,
+  loading: () => <div className="h-full bg-blue-50 flex items-center justify-center text-blue-900/20 font-black">Loading District Map...</div>
 });
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:3002/api';
-
-type DistrictIntelligence = {
-  district: {
-    id: string;
-    name: string;
-    state: string;
-    population: string;
-    area_sq_km: string;
-    code?: string;
-  };
-  overall_risk: {
-    percentage: string;
-    severity: string;
-    trend: string;
-    change: number;
-    last_assessment: Date;
-  };
-  active_alerts: {
-    total: number;
-    critical: number;
-    high: number;
-    recent: Array<{
-      id: string;
-      title: string;
-      type: string;
-      severity: string;
-      description: string;
-      issued_at: Date;
-      source: string;
-      location: string;
-    }>;
-  };
-  incidents: {
-    total: number;
-    recent: Array<{
-      id: string;
-      title: string;
-      type: string;
-      severity: string;
-      status: string;
-      reported_at: Date;
-      location: string;
-    }>;
-  };
-  sensors: {
-    online: number;
-    total: number;
-    offline: number;
-    operational_percentage: number;
-    crisis_mesh_intelligence: {
-      water_level: {
-        current: string;
-        trend: string;
-        time_period: string;
-        status: string;
-      };
-      rainfall_intensity: {
-        current: string;
-        intensity: string;
-        today_total: string;
-      };
-      soil_moisture: {
-        current: string;
-        status: string;
-      };
-      ai_risk_prediction: {
-        risk_level: string;
-        severity: string;
-        confidence: string;
-        trend: string;
-      };
-      ai_insight: string;
-    };
-  };
-  weather: {
-    temperature_celsius: string;
-    humidity_percent: string;
-    wind_speed_kmh: string;
-    precipitation_mm: string;
-    observation_time: Date;
-    source: string;
-    condition: string;
-  } | null;
-  risk_breakdown: {
-    flood: string;
-    heat: string;
-    fire: string;
-    lightning: string;
-    pollution: string;
-  };
-  risk_assessments: Array<{
-    id: string;
-    risk_type: string;
-    risk_level: string;
-    severity: string;
-    confidence: string;
-    prediction: string;
-    valid_from: Date;
-    valid_until: Date;
-  }>;
-  emergency_resources: {
-    hospitals: number;
-    shelters: number;
-    police_stations: number;
-    fire_stations: number;
-    helpline: string;
-    ambulance: number;
-  };
-  last_updated: string;
-  generated_at: string;
-};
-
-export default function DistrictPage({ params }: { params: { id: string } }) {
-  const [intelligence, setIntelligence] = useState<DistrictIntelligence | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selectedLayer, setSelectedLayer] = useState<string>('all');
-
-  const loadDistrictIntelligence = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch(`${apiUrl}/v1/public/districts/${params.id}/intelligence`);
-      if (!response.ok) throw new Error('Failed to load district intelligence');
-      const result = await response.json();
-      setIntelligence(result.data);
-    } catch (err) {
-      setError('Failed to load district intelligence. Please try again.');
-      console.error('Error loading district intelligence:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id]);
-
-  useEffect(() => {
-    loadDistrictIntelligence();
-  }, [loadDistrictIntelligence]);
-
-  if (loading) {
-    return (
-      <div className="loading-state">
-        <Activity className="spinner" size={32} />
-        <p>Loading district intelligence...</p>
-      </div>
-    );
-  }
-
-  if (error || !intelligence) {
-    return (
-      <div className="error-state">
-        <AlertTriangle size={32} />
-        <p>{error || 'District not found'}</p>
-        <button onClick={loadDistrictIntelligence}>Retry</button>
-        <Link href="/districts">Back to Districts</Link>
-      </div>
-    );
-  }
-
-  const riskPercentage = parseFloat(intelligence.overall_risk.percentage);
-  const riskLevel = intelligence.overall_risk.severity || (riskPercentage >= 80 ? 'CRITICAL' : riskPercentage >= 60 ? 'HIGH' : riskPercentage >= 40 ? 'MODERATE' : 'LOW');
-  const riskColor = riskLevel === 'CRITICAL' ? '#df2534' : riskLevel === 'HIGH' ? '#f1781b' : riskLevel === 'MODERATE' ? '#f2b314' : '#18a85b';
-
-  const mapEntities: MapEntity[] = []; // This would be populated with actual map data
+export default function DistrictDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const districtName = "Jaipur District, Rajasthan";
+  const [activeTab, setActiveTab] = useState('Overview');
 
   return (
-    <main className="district-app">
-      <header className="district-header">
-        <Link className="brand" href="/">
-          <Shield />
-          <span><b>CRISIS</b>MESH<small>Resilient Disaster Intelligence</small></span>
-        </Link>
-        <nav>
-          <Link href="/">Home</Link>
-          <Link href="/map">Live Map</Link>
-          <Link href="/districts">Districts</Link>
-          <Link href="/alerts">Alerts</Link>
-          <Link href="/news">News</Link>
-          <Link href="/resources">Resources</Link>
-        </nav>
-        <div className="header-actions">
-          <button>◉ English⌄</button>
-          <Bell size={20} />
-          <Link href="/login">Login / Sign Up</Link>
+    <OperationsShell eyebrow="Comprehensive overview of district status and resources" title={districtName}>
+      <div className="mb-6">
+         <button className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline" onClick={() => router.back()}>
+          <ArrowLeft size={14} /> Back to All Districts
+        </button>
+      </div>
+
+      {/* District Primary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <StatCard label="Total Area" value="11,117 km²" sub="Jaipur Division" icon={<MapPin className="text-blue-500" />} />
+        <StatCard label="Population" value="6.98 Lakh" sub="Active Residents" icon={<Activity className="text-gray-500" />} />
+        <StatCard label="Active Alerts" value="7" sub="2 Critical • 5 High" icon={<Bell className="text-orange-500" />} />
+        <StatCard label="Sensors Online" value="67 / 74" sub="90% Operational" icon={<Shield className="text-green-500" />} />
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">District Risk</span>
+            <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded">High Risk</span>
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+             <h4 className="text-3xl font-black text-red-600">87%</h4>
+             <div className="flex items-center gap-1 text-red-500 text-[10px] font-bold mb-1">
+                <TrendingUp size={12} /> 12% in 24h
+             </div>
+          </div>
         </div>
-      </header>
-
-      <div className="live-alert">
-        <b><AlertTriangle size={14} /> LIVE ALERT</b>
-        <span>{intelligence.district.name}, {intelligence.district.state}: Active monitoring</span>
-        <small>{new Date().toLocaleTimeString()}</small>
-        <Link href="/alerts">View Alert <ChevronRight size={16} /></Link>
       </div>
 
-      <div className="district-workspace">
-        <aside className="district-sidebar">
-          <div className="sidebar-nav">
-            <a className="active" href="#overview">Overview</a>
-            <a href="#map">Live Map</a>
-            <a href="#alerts">Alerts ({intelligence.active_alerts.total})</a>
-            <a href="#weather">Weather</a>
-            <a href="#sensors">Sensors (CrisisMesh)</a>
-            <a href="#incidents">Incidents ({intelligence.incidents.total})</a>
-            <a href="#news">News & Updates</a>
-            <a href="#safety">Safety & Guidance</a>
-            <a href="#resources">Resources</a>
-            <a href="#reports">Reports & Analytics</a>
-          </div>
-
-          <div className="share-location">
-            <small>SHARE LOCATION</small>
-            <button><Activity size={16} /> Copy Link</button>
-          </div>
-
-          <div className="my-location">
-            <small>MY LOCATION</small>
-            <h3><MapPin size={16} /> {intelligence.district.name}, {intelligence.district.state}</h3>
-            <button>Change</button>
-          </div>
-
-          <div className="current-risk">
-            <small>CURRENT RISK</small>
-            <div className="risk-display" style={{ color: riskColor }}>
-              {intelligence.overall_risk.percentage}% {riskLevel}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left: Map & Risk Analysis */}
+        <div className="col-span-12 xl:col-span-8 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs">District Risk Heatmap</h3>
+              <div className="flex gap-2">
+                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase">Risk View</button>
+                <button className="px-3 py-1 bg-gray-50 border border-gray-200 text-gray-500 rounded-lg text-[10px] font-black uppercase">Sensor View</button>
+              </div>
             </div>
-            <Link href={`/districts/${params.id}#overview`}>View My Area</Link>
-          </div>
-        </aside>
-
-        <main className="district-main">
-          <div className="district-header-content">
-            <div>
-              <div className="breadcrumb">India <ChevronRight size={14} /> {intelligence.district.state} <ChevronRight size={14} /> {intelligence.district.name}</div>
-              <h1>{intelligence.district.name} District, {intelligence.district.state}</h1>
-              <span className={`risk-pill ${riskLevel.toLowerCase()}`}>{riskLevel} RISK</span>
-              <small>Last Updated: {new Date(intelligence.last_updated).toLocaleString()}</small>
-            </div>
-            <div className="district-actions">
-              <button><Radio size={16} /> Refresh</button>
-              <button><Bell size={16} /> Subscribe</button>
-              <button><Activity size={16} /> Download Report</button>
+            <div className="h-[400px] bg-blue-50 relative">
+               <LiveMap entities={[]} />
+               <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-gray-200 shadow-xl max-w-[180px]">
+                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Risk Legend</p>
+                 <div className="space-y-2">
+                    <LegendItem color="bg-red-600" label="Extreme Risk" />
+                    <LegendItem color="bg-orange-500" label="High Risk" />
+                    <LegendItem color="bg-yellow-400" label="Moderate Risk" />
+                    <LegendItem color="bg-green-500" label="Low / Safe" />
+                 </div>
+               </div>
             </div>
           </div>
 
-          <div className="district-metrics">
-            <MetricCard 
-              icon={<Activity />}
-              label="Overall Risk"
-              value={`${intelligence.overall_risk.percentage}%`}
-              sub={intelligence.overall_risk.trend}
-              trend={intelligence.overall_risk.change > 0 ? 'increasing' : intelligence.overall_risk.change < 0 ? 'decreasing' : 'stable'}
-              color={riskColor}
-            />
-            <MetricCard
-              icon={<AlertTriangle />}
-              label="Active Alerts"
-              value={intelligence.active_alerts.total}
-              sub={`${intelligence.active_alerts.critical} Critical, ${intelligence.active_alerts.high} High`}
-              color={intelligence.active_alerts.critical > 0 ? '#df2534' : '#f1781b'}
-            />
-            <MetricCard
-              icon={<Radio />}
-              label="Sensors Online"
-              value={`${intelligence.sensors.online}/${intelligence.sensors.total}`}
-              sub={`${intelligence.sensors.operational_percentage}% Operational, ${intelligence.sensors.offline} Offline`}
-              color={intelligence.sensors.operational_percentage > 80 ? '#18a85b' : '#f1781b'}
-            />
-            <MetricCard
-              icon={<AlertTriangle />}
-              label="Incidents"
-              value={intelligence.incidents.total}
-              sub="Active Incidents"
-              color="#f1781b"
-            />
-            <MetricCard
-              icon={<MapPin />}
-              label="Population"
-              value={intelligence.district.population}
-              sub="Estimated"
-              color="#6366f1"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-6">Key Risk Indicators</h3>
+                <div className="space-y-5">
+                   <RiskIndicator label="Flood Probability" value={92} color="bg-red-600" />
+                   <RiskIndicator label="Power Failure" value={65} color="bg-orange-500" />
+                   <RiskIndicator label="Road Access" value={45} color="bg-yellow-500" />
+                   <RiskIndicator label="Communications" value={15} color="bg-green-500" />
+                </div>
+             </div>
+
+             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-6">Recent Alerts</h3>
+                <div className="space-y-4">
+                   <MiniAlert title="Water Level Critical" loc="Malviya Nagar" time="2 min ago" type="CRITICAL" />
+                   <MiniAlert title="Heavy Rainfall warning" loc="City Center" time="15 min ago" type="HIGH" />
+                   <MiniAlert title="Power Outage" loc="Vaishali Nagar" time="32 min ago" type="MEDIUM" />
+                   <MiniAlert title="Road Closure" loc="Sanganer" time="1h ago" type="MEDIUM" />
+                </div>
+                <button className="w-full mt-6 py-2 text-[10px] font-black text-blue-600 uppercase border border-blue-50 rounded-lg hover:bg-blue-50">View District Alerts</button>
+             </div>
+          </div>
+        </div>
+
+        {/* Right: Weather & Resources */}
+        <div className="col-span-12 xl:col-span-4 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs">Current Weather</h3>
+              <span className="text-[10px] font-black text-green-500 uppercase flex items-center gap-1">
+                <div className="w-1 h-1 rounded-full bg-green-500"></div> LIVE
+              </span>
+            </div>
+
+            <div className="flex items-center gap-6 mb-8">
+               <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+                  <Cloud size={32} />
+               </div>
+               <div>
+                  <h4 className="text-4xl font-black text-[#0f172a]">28.6°C</h4>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Light Rain • Humidity: 72%</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <WeatherMetric label="Precipitation" value="12.4 mm" icon={<Droplets size={14} />} />
+               <WeatherMetric label="Wind Speed" value="18 km/h" icon={<Wind size={14} />} />
+               <WeatherMetric label="Air Quality" value="45 AQI" icon={<Activity size={14} />} />
+               <WeatherMetric label="Pressure" value="1013 hPa" icon={<Gauge size={14} />} />
+            </div>
           </div>
 
-          <div className="district-grid">
-            <section className="district-map" id="map">
-              <div className="panel-header">
-                <h2>District Live Map</h2>
-                <div className="map-controls">
-                  <button 
-                    className={selectedLayer === 'all' ? 'active' : ''}
-                    onClick={() => setSelectedLayer('all')}
-                  >All Layers</button>
-                  <button 
-                    className={selectedLayer === 'alerts' ? 'active' : ''}
-                    onClick={() => setSelectedLayer('alerts')}
-                  >Alerts</button>
-                  <button 
-                    className={selectedLayer === 'sensors' ? 'active' : ''}
-                    onClick={() => setSelectedLayer('sensors')}
-                  >Sensors</button>
-                  <button 
-                    className={selectedLayer === 'incidents' ? 'active' : ''}
-                    onClick={() => setSelectedLayer('incidents')}
-                  >Incidents</button>
-                </div>
-              </div>
-              <LiveMap entities={mapEntities} />
-              <div className="map-legend">
-                <span><i className="legend-dot" style={{ background: '#18a85b' }} />Safe Zone</span>
-                <span><i className="legend-dot" style={{ background: '#f2b314' }} />Moderate Risk</span>
-                <span><i className="legend-dot" style={{ background: '#f1781b' }} />High Risk</span>
-                <span><i className="legend-dot" style={{ background: '#df2534' }} />Critical Risk</span>
-              </div>
-            </section>
-
-            <section className="district-weather" id="weather">
-              <div className="panel-header">
-                <h2>Current Weather</h2>
-                <span className="live-tag"><Activity size={12} /> LIVE</span>
-              </div>
-              {intelligence.weather ? (
-                <div className="weather-display">
-                  <div className="weather-main">
-                    <Thermometer size={32} />
-                    <div>
-                      <span className="temperature">{intelligence.weather.temperature_celsius}°C</span>
-                      <small>{intelligence.weather.condition}</small>
-                    </div>
-                  </div>
-                  <div className="weather-details">
-                    <WeatherDetail icon={<Droplets />} label="Humidity" value={`${intelligence.weather.humidity_percent}%`} />
-                    <WeatherDetail icon={<Wind />} label="Wind" value={`${intelligence.weather.wind_speed_kmh} km/h`} />
-                    <WeatherDetail icon={<Droplets />} label="Rain (Today)" value={`${intelligence.weather.precipitation_mm} mm`} />
-                    <WeatherDetail icon={<Gauge />} label="Pressure" value="1013 hPa" />
-                  </div>
-                </div>
-              ) : (
-                <div className="no-data">Weather data unavailable</div>
-              )}
-            </section>
-
-            <section className="district-risk" id="overview">
-              <div className="panel-header">
-                <h2>Risk Breakdown</h2>
-                <span className="risk-score" style={{ color: riskColor }}>{intelligence.overall_risk.percentage}%</span>
-              </div>
-              <div className="risk-chart">
-                <div className="risk-bar" style={{ width: `${intelligence.risk_breakdown.flood}%`, background: '#3b82f6' }}>
-                  <span>Flood {intelligence.risk_breakdown.flood}%</span>
-                </div>
-                <div className="risk-bar" style={{ width: `${intelligence.risk_breakdown.heat}%`, background: '#ef4444' }}>
-                  <span>Heat {intelligence.risk_breakdown.heat}%</span>
-                </div>
-                <div className="risk-bar" style={{ width: `${intelligence.risk_breakdown.fire}%`, background: '#f97316' }}>
-                  <span>Fire {intelligence.risk_breakdown.fire}%</span>
-                </div>
-                <div className="risk-bar" style={{ width: `${intelligence.risk_breakdown.lightning}%`, background: '#eab308' }}>
-                  <span>Lightning {intelligence.risk_breakdown.lightning}%</span>
-                </div>
-                <div className="risk-bar" style={{ width: `${intelligence.risk_breakdown.pollution}%`, background: '#8b5cf6' }}>
-                  <span>Pollution {intelligence.risk_breakdown.pollution}%</span>
-                </div>
-              </div>
-            </section>
-
-            <section className="district-alerts" id="alerts">
-              <div className="panel-header">
-                <h2>Latest Alerts</h2>
-                <Link href="/alerts">View All <ChevronRight size={14} /></Link>
-              </div>
-              <div className="alerts-list">
-                {intelligence.active_alerts.recent.map(alert => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
-              </div>
-            </section>
-
-            <section className="district-incidents" id="incidents">
-              <div className="panel-header">
-                <h2>Active Incidents</h2>
-                <Link href="/incidents">View All <ChevronRight size={14} /></Link>
-              </div>
-              <div className="incidents-list">
-                {intelligence.incidents.recent.map(incident => (
-                  <IncidentCard key={incident.id} incident={incident} />
-                ))}
-              </div>
-            </section>
-
-            <section className="district-news" id="news">
-              <div className="panel-header">
-                <h2>Latest News & Updates</h2>
-                <Link href="/news">View All <ChevronRight size={14} /></Link>
-              </div>
-              <div className="news-list">
-                <NewsCard 
-                  title="Heavy rainfall warning issued for Jaipur district"
-                  source="IMD"
-                  date="25 Aug 2026"
-                />
-                <NewsCard 
-                  title="Local authorities advise caution in low-lying areas"
-                  source="Local News"
-                  date="25 Aug 2026"
-                />
-                <NewsCard 
-                  title="Emergency response teams on standby"
-                  source="NDEM"
-                  date="25 Aug 2026"
-                />
-              </div>
-            </section>
-
-            <section className="district-intelligence" id="sensors">
-              <div className="panel-header">
-                <h2>CrisisMesh Intelligence</h2>
-                <span className="live-tag"><Activity size={12} /> LIVE</span>
-              </div>
-              <div className="intelligence-grid">
-                <IntelligenceCard 
-                  icon={<Droplets />}
-                  label="Water Level"
-                  value={intelligence.sensors.crisis_mesh_intelligence.water_level.current}
-                  sub={intelligence.sensors.crisis_mesh_intelligence.water_level.time_period}
-                  trend={intelligence.sensors.crisis_mesh_intelligence.water_level.trend.includes('+') ? 'up' : 'stable'}
-                />
-                <IntelligenceCard
-                  icon={<CloudRain />}
-                  label="Rainfall Intensity"
-                  value={intelligence.sensors.crisis_mesh_intelligence.rainfall_intensity.current}
-                  sub={intelligence.sensors.crisis_mesh_intelligence.rainfall_intensity.intensity}
-                  trend="up"
-                />
-                <IntelligenceCard
-                  icon={<Factory />}
-                  label="Soil Moisture"
-                  value={intelligence.sensors.crisis_mesh_intelligence.soil_moisture.current}
-                  sub={intelligence.sensors.crisis_mesh_intelligence.soil_moisture.status}
-                  trend="stable"
-                />
-                <IntelligenceCard
-                  icon={<Activity />}
-                  label="AI Risk Prediction"
-                  value={intelligence.sensors.crisis_mesh_intelligence.ai_risk_prediction.risk_level}
-                  sub={`${intelligence.sensors.crisis_mesh_intelligence.ai_risk_prediction.confidence} Confidence`}
-                  trend={intelligence.sensors.crisis_mesh_intelligence.ai_risk_prediction.trend}
-                />
-              </div>
-              <div className="ai-insight">
-                <Activity size={16} />
-                <p>{intelligence.sensors.crisis_mesh_intelligence.ai_insight}</p>
-              </div>
-            </section>
-
-            <section className="district-resources" id="resources">
-              <div className="panel-header">
-                <h2>Emergency Resources</h2>
-                <Link href="/resources">View All <ChevronRight size={14} /></Link>
-              </div>
-              <div className="resources-grid">
-                <ResourceCard icon={<Building />} label="Hospitals" value={intelligence.emergency_resources.hospitals} />
-                <ResourceCard icon={<Home />} label="Shelters" value={intelligence.emergency_resources.shelters} />
-                <ResourceCard icon={<Shield />} label="Police Stations" value={intelligence.emergency_resources.police_stations} />
-                <ResourceCard icon={<Flame />} label="Fire Stations" value={intelligence.emergency_resources.fire_stations} />
-                <ResourceCard icon={<Phone />} label="Helpline" value={intelligence.emergency_resources.helpline} />
-                <ResourceCard icon={<Activity />} label="Ambulance" value={intelligence.emergency_resources.ambulance} />
-              </div>
-            </section>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-6">Emergency Resources</h3>
+            <div className="grid grid-cols-2 gap-4">
+               <ResourceMini label="Hospitals" value={14} icon={<Building size={16} />} />
+               <ResourceMini label="Shelters" value={56} icon={<Home size={16} />} />
+               <ResourceMini label="Police" value={22} icon={<Shield size={16} />} />
+               <ResourceMini label="Fire" value={8} icon={<Activity size={16} />} />
+            </div>
+            <div className="mt-6 p-4 bg-blue-600 rounded-2xl text-white text-center">
+               <p className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-80">24/7 Helpline</p>
+               <h5 className="text-xl font-black">0141-2456000</h5>
+            </div>
           </div>
-        </main>
+
+          <div className="bg-[#0f172a] rounded-2xl p-6 text-white">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                <Info size={18} />
+              </div>
+              <h3 className="font-black text-xs uppercase tracking-wider">AI System Insight</h3>
+            </div>
+            <p className="text-xs font-bold text-gray-400 leading-relaxed mb-4">
+              Flood probability in Jaipur South has increased by 15% due to continuous precipitation.
+              Recommend pre-positioning NDRF units in Sanganer and Malviya Nagar sectors.
+            </p>
+            <button className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+              Read Analysis Report
+            </button>
+          </div>
+        </div>
       </div>
-    </main>
+    </OperationsShell>
   );
 }
 
-function MetricCard({ icon, label, value, sub, trend, color }: { 
-  icon: React.ReactNode; 
-  label: string; 
-  value: string | number; 
-  sub?: string; 
-  trend?: string;
-  color?: string;
-}) {
+function StatCard({ label, value, sub, icon }: { label: string; value: string; sub: string; icon: React.ReactNode }) {
   return (
-    <div className="metric-card">
-      <div className="metric-icon" style={{ color: color || '#6366f1' }}>{icon}</div>
-      <div>
-        <span>{label}</span>
-        <strong style={{ color: color }}>{value}</strong>
-        {sub && <small>{sub}</small>}
-        {trend && (
-          <span className={`trend ${trend}`}>
-            <TrendingUp size={12} />
-            {trend}
-          </span>
-        )}
+    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
+        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
+          {icon}
+        </div>
+      </div>
+      <h4 className="text-xl font-black text-[#0f172a] mb-1">{value}</h4>
+      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{sub}</p>
+    </div>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-2 h-2 rounded-full ${color}`}></div>
+      <span className="text-[10px] font-bold text-gray-600">{label}</span>
+    </div>
+  );
+}
+
+function RiskIndicator({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+        <span className="text-gray-500">{label}</span>
+        <span className="text-[#0f172a]">{value}%</span>
+      </div>
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full ${color}`} style={{ width: `${value}%` }}></div>
       </div>
     </div>
   );
 }
 
-function WeatherDetail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function MiniAlert({ title, loc, time, type }: { title: string; loc: string; time: string; type: string }) {
+  const color = type === 'CRITICAL' ? 'bg-red-600' : type === 'HIGH' ? 'bg-orange-500' : 'bg-yellow-500';
   return (
-    <div className="weather-detail">
-      {icon}
-      <div>
-        <small>{label}</small>
-        <strong>{value}</strong>
+    <div className="flex items-center gap-3 group cursor-pointer">
+      <div className={`w-1 h-8 rounded-full ${color} shrink-0`}></div>
+      <div className="flex-1 min-w-0">
+        <h5 className="text-xs font-black text-[#0f172a] group-hover:text-blue-600 transition-colors truncate">{title}</h5>
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{loc} • {time}</p>
       </div>
+      <ChevronRight size={14} className="text-gray-300" />
     </div>
   );
 }
 
-function AlertCard({ alert }: { alert: any }) {
+function WeatherMetric({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className={`alert-card severity-${alert.severity.toLowerCase()}`}>
-      <AlertTriangle size={16} />
-      <div>
-        <strong>{alert.title}</strong>
-        <small>{alert.severity} · {alert.location} · {alert.source} · {new Date(alert.issued_at).toLocaleString()}</small>
+    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+      <div className="flex items-center gap-2 mb-1 text-blue-600">
+        {icon}
+        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
       </div>
-      <ChevronRight size={16} />
+      <p className="text-xs font-black text-[#0f172a]">{value}</p>
     </div>
   );
 }
 
-function IncidentCard({ incident }: { incident: any }) {
+function ResourceMini({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
-    <div className={`incident-card severity-${incident.severity.toLowerCase()}`}>
-      <AlertTriangle size={16} />
-      <div>
-        <strong>{incident.title}</strong>
-        <small>{incident.severity} · {incident.location} · {new Date(incident.reported_at).toLocaleString()}</small>
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-blue-600 border border-gray-100">
+        {icon}
       </div>
-      <ChevronRight size={16} />
-    </div>
-  );
-}
-
-function IntelligenceCard({ icon, label, value, sub, trend }: { 
-  icon: React.ReactNode; 
-  label: string; 
-  value: string; 
-  sub: string; 
-  trend: string;
-}) {
-  return (
-    <div className="intelligence-card">
-      {icon}
       <div>
-        <small>{label}</small>
-        <strong>{value}</strong>
-        <span>{sub}</span>
+        <h5 className="text-sm font-black text-[#0f172a]">{value}</h5>
+        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
       </div>
-      <span className={`trend ${trend}`}>
-        <TrendingUp size={12} />
-      </span>
-    </div>
-  );
-}
-
-function ResourceCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
-  return (
-    <div className="resource-card">
-      {icon}
-      <div>
-        <small>{label}</small>
-        <strong>{value}</strong>
-      </div>
-    </div>
-  );
-}
-
-function NewsCard({ title, source, date }: { title: string; source: string; date: string }) {
-  return (
-    <div className="news-card">
-      <Newspaper size={16} />
-      <div>
-        <strong>{title}</strong>
-        <small>{source} · {date}</small>
-      </div>
-      <ChevronRight size={16} />
     </div>
   );
 }

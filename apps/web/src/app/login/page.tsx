@@ -1,137 +1,208 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ShieldCheck, Mail, Lock, ChevronRight, AlertTriangle, Info, HelpCircle, Globe, ChevronDown } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setAuth, isAuthenticated, hasHydrated } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { setAuth } = useAuthStore();
+  const [email, setEmail] = useState('district.mgr@jaipur.gov.in');
+  const [step, setStep] = useState(1); // 1: Login, 2: MFA
 
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('registered') === '1') {
-      setSuccess('Account created successfully. Sign in to continue.');
-    }
-  }, []);
-
-  // Redirect if already authenticated
-  if (hasHydrated && isAuthenticated) {
-    router.push('/dashboard');
-    return null;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setStep(2);
+  };
 
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
-      const response = await fetch(`${apiUrl}/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-        setError(errorData.message || `Login failed with status ${response.status}`);
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Set token as cookie for middleware to read with proper attributes
-        document.cookie = `access_token=${data.data.access_token}; path=/; max-age=86400; SameSite=Lax`;
-        localStorage.setItem('access_token', data.data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-
-        // Update auth store
-        setAuth(data.data.user, data.data.access_token);
-
-        router.push('/dashboard');
-      } else {
-        setError(data.message || 'Login failed');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleMFA = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Mock login success
+    const mockUser = { id: '1', name: 'Arpit Kumar', role: 'Authority', email: 'admin@crisismesh.gov.in' };
+    setAuth(mockUser, 'mock_token');
+    router.push('/dashboard');
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px', background: 'radial-gradient(circle at 20% 15%, #153d67 0, transparent 28%), #061322' }}>
-      <div style={{ width: 'min(100%, 420px)', padding: '42px', background: '#fff', color: '#102043', borderRadius: '14px', boxShadow: '0 24px 60px rgba(0,0,0,.35)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={46} height={46} style={{ display: 'block', margin: '0 auto 14px', borderRadius: '12px', objectFit: 'cover' }} />
-          <h2 style={{ margin: '0', fontSize: '25px', letterSpacing: '1px' }}>CRISIS<span style={{ color: '#0ca66d' }}>MESH</span></h2>
-          <p style={{ marginTop: '8px', color: '#65728a', fontSize: '13px' }}>Emergency operations command center</p>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Top Header */}
+      <header className="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg">
+            <ShieldCheck size={20} />
+          </div>
+          <span className="text-xl font-black tracking-tighter text-[#061a37]">
+            CRISIS<span className="text-blue-600">MESH</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-6 text-gray-400">
+          <button className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest hover:text-blue-600">
+            <HelpCircle size={14} /> Help
+          </button>
+          <button className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest hover:text-blue-600">
+            <Globe size={14} /> English <ChevronDown size={12} />
+          </button>
         </div>
-        <form style={{ marginTop: '32px' }} onSubmit={handleSubmit}>
-          {success && (
-            <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid #86efac', background: '#f0fdf4', color: '#15803d', borderRadius: '8px' }}>
-              {success}
-            </div>
-          )}
-          {error && (
-            <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid #fca5a5', background: '#fef2f2', color: '#dc2626', borderRadius: '8px' }}>
-              {error}
-            </div>
-          )}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <label htmlFor="email" style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '12px 13px', border: '1px solid #dce3f0', borderRadius: '8px', color: '#102043', outline: 'none', fontSize: '14px' }}
-                placeholder="Email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '12px 13px', border: '1px solid #dce3f0', borderRadius: '8px', color: '#102043', outline: 'none', fontSize: '14px' }}
-                placeholder="Password"
-              />
-            </div>
-          </div>
+      </header>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '12px', border: '0', borderRadius: '8px', background: '#0757e8', color: '#fff', fontWeight: '700', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1 }}
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+      <main className="flex-1 flex items-center justify-center p-6 bg-[#f8fafc]">
+        {step === 1 ? (
+          /* Screen 76: Authority / Admin Login */
+          <div className="w-full max-w-[900px] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100">
+            <div className="md:w-1/2 bg-[#061a37] p-12 flex flex-col justify-end relative overflow-hidden text-white">
+              <Image
+                src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800"
+                alt="Command Center"
+                fill
+                className="object-cover opacity-40"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#061a37] via-[#061a37]/50 to-transparent"></div>
+
+              <div className="relative z-10">
+                <h2 className="text-4xl font-black leading-tight mb-4 uppercase tracking-tighter">Welcome Back! <br />CrisisMesh Authority Portal</h2>
+                <p className="text-gray-400 text-sm font-bold mb-8">Real-time monitoring, faster decisions, safer communities.</p>
+
+                <div className="space-y-3">
+                   <div className="flex items-center gap-3 text-xs font-bold text-blue-400">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div> Role-based access
+                   </div>
+                   <div className="flex items-center gap-3 text-xs font-bold text-blue-400">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div> Real-time dashboards
+                   </div>
+                   <div className="flex items-center gap-3 text-xs font-bold text-blue-400">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div> Secure & audited
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:w-1/2 p-12 flex flex-col justify-center">
+              <div className="mb-10 text-center">
+                <h3 className="text-2xl font-black text-[#0f172a] mb-2 uppercase tracking-tighter">Authority Login</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Use your official credentials</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username / Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#0f172a] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
+                    placeholder="district.mgr@jaipur.gov.in"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Password</label>
+                    <a href="#" className="text-[9px] font-black text-blue-600 uppercase hover:underline">Forgot password?</a>
+                  </div>
+                  <input
+                    type="password"
+                    defaultValue="password"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#0f172a] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 px-1">
+                   <input type="checkbox" id="remember" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                   <label htmlFor="remember" className="text-[10px] font-black text-gray-500 uppercase">Remember me</label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 transition-all"
+                >
+                  Login
+                </button>
+              </form>
+
+              <div className="mt-8 relative">
+                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+                 <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest"><span className="bg-white px-4 text-gray-400 uppercase">OR</span></div>
+              </div>
+
+              <div className="mt-8 space-y-3">
+                 <button className="w-full py-3 border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] flex items-center justify-center gap-3 hover:bg-gray-50 transition-all">
+                    <Image src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width={14} height={14} />
+                    Login with Government
+                 </button>
+              </div>
+
+              <p className="mt-10 text-center text-[9px] font-black text-gray-400 uppercase tracking-widest">Authorized Access Only</p>
+            </div>
           </div>
-        </form>
-        <p style={{ marginTop: '22px', textAlign: 'center', color: '#65728a', fontSize: '13px' }}>
-          New to CrisisMesh? <Link href="/register" style={{ color: '#0757e8', fontWeight: '700', textDecoration: 'none' }}>Create account</Link>
-        </p>
-      </div>
+        ) : (
+          /* Screen 75: Authentication & MFA */
+          <div className="w-full max-w-[800px] bg-white rounded-[40px] shadow-2xl p-16 border border-gray-100 flex flex-col md:flex-row gap-16">
+            <div className="md:w-1/2">
+              <h3 className="text-3xl font-black text-[#0f172a] mb-4 uppercase tracking-tighter">Sign in to your account</h3>
+              <p className="text-xs font-bold text-gray-400 mb-10">Enter your credentials to access your dashboard.</p>
+
+              <div className="space-y-6">
+                 <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Email address</p>
+                    <p className="text-sm font-bold text-[#0f172a]">{email}</p>
+                 </div>
+                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3">
+                    <Info size={16} className="text-blue-600" />
+                    <p className="text-[9px] font-black text-blue-600 uppercase">Authenticated by government AD service</p>
+                 </div>
+              </div>
+            </div>
+
+            <div className="md:w-1/2">
+              <h3 className="text-xl font-black text-[#0f172a] mb-2 uppercase tracking-tighter">Multi-Factor Authentication</h3>
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-8">Enter the 6-digit code from your authenticator app.</p>
+
+              <form onSubmit={handleMFA}>
+                <div className="grid grid-cols-6 gap-2 mb-6">
+                   {[2, 4, 7, 8, 3, 1].map((n, i) => (
+                     <input
+                       key={i}
+                       type="text"
+                       defaultValue={n}
+                       className="w-full aspect-square border-2 border-gray-100 rounded-xl text-center text-xl font-black text-[#0f172a] focus:border-blue-600 outline-none transition-all"
+                     />
+                   ))}
+                </div>
+
+                <p className="text-center text-[10px] font-black text-gray-400 uppercase mb-8">Code expires in <span className="text-red-500">24s</span></p>
+
+                <div className="flex items-center gap-2 mb-8">
+                   <input type="checkbox" id="trust" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                   <label htmlFor="trust" className="text-[10px] font-black text-gray-500 uppercase">Trust this device for 30 days</label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 mb-6 transition-all"
+                >
+                  Verify & Continue
+                </button>
+
+                <button type="button" className="w-full text-center text-[10px] font-black text-blue-600 uppercase hover:underline">Use backup code</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="h-14 border-t border-gray-100 flex items-center justify-between px-6 bg-white shrink-0 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+         <div>Powered by CrisisMesh • All systems monitored</div>
+         <div className="flex gap-6">
+            <a href="#" className="hover:text-blue-600">Privacy Policy</a>
+            <a href="#" className="hover:text-blue-600">Terms of Service</a>
+            <a href="#" className="hover:text-blue-600 text-blue-600">Help & Support</a>
+         </div>
+      </footer>
     </div>
   );
 }

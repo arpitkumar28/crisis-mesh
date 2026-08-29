@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import '../models/information_models.dart';
 
 class ApiService {
   String? _token;
@@ -53,6 +54,15 @@ class ApiService {
     return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
   }
 
+  Map<String, dynamic>? dataFrom(Response response) {
+    final body = response.data;
+    if (body is Map<String, dynamic> && body['data'] is Map) {
+      return Map<String, dynamic>.from(body['data']);
+    }
+    return null;
+  }
+
+  // Alerts API
   Future<Response> getAlerts() async {
     _applyAuth();
     return await _dio.get('/v1/alerts');
@@ -63,6 +73,47 @@ class ApiService {
     return await _dio.get('/v1/alerts/active');
   }
 
+  Future<Response> getCriticalAlerts() async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/critical');
+  }
+
+  Future<Response> getAlertById(String id) async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/$id');
+  }
+
+  Future<Response> createAlert(Map<String, dynamic> data) async {
+    _applyAuth();
+    return await _dio.post('/v1/alerts', data: data);
+  }
+
+  Future<Response> updateAlert(String id, Map<String, dynamic> data) async {
+    _applyAuth();
+    return _dio.put('/v1/alerts/$id', data: data);
+  }
+
+  Future<Response> getAlertCountByStatus() async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/count/by-status');
+  }
+
+  Future<Response> getAlertSources() async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/sources');
+  }
+
+  Future<Response> getAlertTypes() async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/types');
+  }
+
+  Future<Response> getFilteredAlerts(Map<String, dynamic> params) async {
+    _applyAuth();
+    return await _dio.get('/v1/alerts/filter', queryParameters: params);
+  }
+
+  // Incidents API
   Future<Response> getIncidents() async {
     _applyAuth();
     return await _dio.get('/v1/incidents');
@@ -73,6 +124,27 @@ class ApiService {
     return await _dio.get('/v1/incidents/active');
   }
 
+  Future<Response> getIncidentById(String id) async {
+    _applyAuth();
+    return await _dio.get('/v1/incidents/$id');
+  }
+
+  Future<Response> createIncident(Map<String, dynamic> data) async {
+    _applyAuth();
+    return await _dio.post('/v1/incidents', data: data);
+  }
+
+  Future<Response> updateIncident(String id, Map<String, dynamic> data) async {
+    _applyAuth();
+    return _dio.put('/v1/incidents/$id', data: data);
+  }
+
+  Future<Response> getIncidentCountByStatus() async {
+    _applyAuth();
+    return await _dio.get('/v1/incidents/count/by-status');
+  }
+
+  // Devices API
   Future<Response> getDevices() async {
     _applyAuth();
     return await _dio.get('/v1/devices');
@@ -83,14 +155,15 @@ class ApiService {
     return await _dio.get('/v1/devices/status/ONLINE');
   }
 
-  Future<Response> getDashboardOverview() async {
-    _applyAuth();
-    return _dio.get('/v1/dashboard/overview');
-  }
-
+  // Response & Resources API
   Future<Response> getResources() async {
     _applyAuth();
     return _dio.get('/v1/resources');
+  }
+
+  Future<Response> getResourceById(String id) async {
+    _applyAuth();
+    return _dio.get('/v1/resources/$id');
   }
 
   Future<Response> getShelters() async {
@@ -98,29 +171,52 @@ class ApiService {
     return _dio.get('/v1/shelters');
   }
 
-  Future<Response> getWeather() async {
+  Future<Response> getShelterById(String id) async {
     _applyAuth();
-    return _dio.get('/v1/weather');
+    return _dio.get('/v1/shelters/$id');
   }
 
-  Future<Response> getNews() async {
+  // Other APIs
+  Future<Response> getDashboardOverview() async {
     _applyAuth();
-    return _dio.get('/v1/news');
+    return _dio.get('/v1/dashboard/overview');
+  }
+
+  Future<WeatherData> getWeather(double latitude, double longitude) async {
+    try {
+      final response = await _dio.get(
+        '/v1/public/weather/$latitude/$longitude',
+      );
+      final data = response.data is Map<String, dynamic>
+          ? response.data['data']
+          : response.data;
+      return WeatherData.fromJson(Map<String, dynamic>.from(data as Map));
+    } catch (e) {
+      throw Exception('Failed to fetch weather: $e');
+    }
+  }
+
+  Future<List<NewsArticle>> getNews() async {
+    try {
+      final response = await _dio.get('/v1/news');
+      final data = response.data is Map<String, dynamic>
+          ? response.data['data']
+          : response.data;
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((item) => NewsArticle.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch news: $e');
+    }
   }
 
   Future<Response> getNotifications() async {
     _applyAuth();
     return _dio.get('/v1/notifications');
-  }
-
-  Future<Response> updateAlert(String id, Map<String, dynamic> data) async {
-    _applyAuth();
-    return _dio.put('/v1/alerts/$id', data: data);
-  }
-
-  Future<Response> updateIncident(String id, Map<String, dynamic> data) async {
-    _applyAuth();
-    return _dio.put('/v1/incidents/$id', data: data);
   }
 }
 

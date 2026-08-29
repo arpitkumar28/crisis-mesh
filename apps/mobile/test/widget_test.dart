@@ -14,6 +14,7 @@ void main() {
   testWidgets('renders the CrisisMesh login screen', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: CrisisMeshApp()));
 
-    expect(find.text('CRISISMESH'), findsOneWidget);
+    expect(find.text('CRISIS'), findsOneWidget);
+    expect(find.text('MESH'), findsOneWidget);
   });
 }

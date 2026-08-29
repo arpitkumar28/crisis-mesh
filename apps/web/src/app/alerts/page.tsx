@@ -1,516 +1,154 @@
-"use client";
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { 
-  BellRing, 
-  RefreshCw, 
-  Filter, 
-  ChevronRight,
-  Clock,
-  MapPin,
-  Layers,
-  Shield,
-  X,
-  AlertTriangle,
-  Activity,
-  Flame,
-  CloudLightning,
-  Zap,
-  Menu,
-  Bell
-} from "lucide-react";
+'use client';
 
-type Alert = {
-  id: string;
-  title?: string;
-  type?: string;
-  description?: string;
-  severity?: string;
-  status?: string;
-  issued_at?: string;
-  source?: string;
-  location?: {
-    name?: string;
-    district?: string;
-    state?: string;
-  };
-  issued_by?: {
-    name?: string;
-  };
-};
+import React, { useState } from 'react';
+import {
+  Bell, AlertTriangle, Shield, Cloud, Activity,
+  MapPin, Clock, Info, Filter, Search,
+  ChevronRight, MoreHorizontal, CheckCircle2,
+  AlertCircle, Zap, Flame, ExternalLink, ChevronDown
+} from 'lucide-react';
+import { OperationsShell } from '@/components/operations-shell';
 
-const ALERT_TABS = ['All Alerts', 'Official Alerts', 'CrisisMesh Alerts', 'Weather Alerts', 'System Alerts'];
-const TIME_RANGES = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'All Time'];
+const alerts = [
+  { id: 'AL-902', title: 'Heavy Rainfall Warning', type: 'Weather', location: 'Jaipur, Rajasthan', severity: 'High', source: 'IMD', time: '2 min ago', status: 'Active' },
+  { id: 'AL-901', title: 'Water Level Critical', type: 'Flood', location: 'Mansarovar, Jaipur', severity: 'Critical', source: 'CrisisMesh', time: '15 min ago', status: 'Active' },
+  { id: 'AL-900', title: 'Flash Flood Watch', type: 'Weather', location: 'Sanganer, Jaipur', severity: 'High', source: 'IMD', time: '32 min ago', status: 'Active' },
+  { id: 'AL-899', title: 'Road Closure Notice', type: 'Safety', location: 'Ajmeri Gate, Jaipur', severity: 'Medium', source: 'Authority', time: '1h ago', status: 'Active' },
+  { id: 'AL-898', title: 'Cyclone Watch', type: 'Weather', location: 'Odisha Coast', severity: 'Medium', source: 'IMD', time: '2h ago', status: 'Active' },
+  { id: 'AL-897', title: 'Sensor Offline Alert', type: 'System', location: 'Jhotwara Node', severity: 'Low', source: 'System', time: '4h ago', status: 'Resolved' },
+  { id: 'AL-896', title: 'Power Outage Warning', type: 'Utility', location: 'Vaishali Nagar', severity: 'Medium', source: 'System', time: '5h ago', status: 'Active' },
+];
 
 export default function AlertsPage() {
-  const [items, setItems] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [selectedTab, setSelectedTab] = useState('All Alerts');
-  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
-  const [filters, setFilters] = useState({
-    location: 'Rajasthan',
-    district: 'All Districts',
-    hazardType: 'All Hazards',
-    severity: [] as string[],
-    source: 'All Sources',
-    timeRange: 'Last 24 Hours'
-  });
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('Newest First');
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:3002/api';
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const params = new URLSearchParams();
-      
-      // Apply filters
-      if (filters.severity.length > 0) {
-        params.append('severity', filters.severity.join(','));
-      }
-      if (filters.source !== 'All Sources') {
-        params.append('source', filters.source);
-      }
-      if (filters.hazardType !== 'All Hazards') {
-        params.append('hazard_type', filters.hazardType);
-      }
-      if (filters.location !== 'Rajasthan') {
-        params.append('location', filters.location);
-      }
-      
-      // Apply time range
-      const now = new Date();
-      let startDate: Date | undefined;
-      if (filters.timeRange === 'Last 24 Hours') {
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === 'Last 7 Days') {
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === 'Last 30 Days') {
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
-      
-      if (startDate) {
-        params.append('start_date', startDate.toISOString());
-        params.append('end_date', now.toISOString());
-      }
-
-      const response = await fetch(`${apiUrl}/v1/public/alerts/filter?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to load alerts');
-      const result = await response.json();
-      let alerts = result.data || [];
-
-      // Apply tab filtering
-      if (selectedTab === 'Official Alerts') {
-        alerts = alerts.filter((a: Alert) => a.source === 'IMD' || a.source === 'NDMA');
-      } else if (selectedTab === 'CrisisMesh Alerts') {
-        alerts = alerts.filter((a: Alert) => a.source === 'CrisisMesh');
-      } else if (selectedTab === 'Weather Alerts') {
-        alerts = alerts.filter((a: Alert) => a.type?.includes('Weather') || a.type?.includes('Rain') || a.type?.includes('Heat'));
-      } else if (selectedTab === 'System Alerts') {
-        alerts = alerts.filter((a: Alert) => a.source === 'System');
-      }
-
-      // Apply sorting
-      if (sortBy === 'Newest First') {
-        alerts.sort((a: Alert, b: Alert) => 
-          new Date(b.issued_at || 0).getTime() - new Date(a.issued_at || 0).getTime()
-        );
-      } else if (sortBy === 'Oldest First') {
-        alerts.sort((a: Alert, b: Alert) => 
-          new Date(a.issued_at || 0).getTime() - new Date(b.issued_at || 0).getTime()
-        );
-      } else if (sortBy === 'Severity') {
-        const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'INFO': 4 };
-        alerts.sort((a: Alert, b: Alert) => 
-          (severityOrder[a.severity as keyof typeof severityOrder] || 5) - 
-          (severityOrder[b.severity as keyof typeof severityOrder] || 5)
-        );
-      }
-
-      setItems(alerts);
-    } catch {
-      setError("Alerts are unavailable. Check the API and retry.");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, selectedTab, sortBy, apiUrl]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    // Simulate WebSocket connection for real-time updates
-    const interval = setInterval(() => {
-      load();
-    }, 60000); // Refresh every minute
-
-    return () => clearInterval(interval);
-  }, [load]);
-
-  const activeCount = items.filter((i) => i.status === "ACTIVE").length;
-
-  const clearFilters = () => {
-    setFilters({
-      location: 'Rajasthan',
-      district: 'All Districts',
-      hazardType: 'All Hazards',
-      severity: [],
-      source: 'All Sources',
-      timeRange: 'Last 24 Hours'
-    });
-  };
-
-  const activeFilterCount = filters.severity.length + 
-    (filters.source !== 'All Sources' ? 1 : 0) +
-    (filters.hazardType !== 'All Hazards' ? 1 : 0) +
-    (filters.timeRange !== 'Last 24 Hours' ? 1 : 0);
 
   return (
-    <main className="alerts-center-app">
-      <header className="alerts-header">
-        <Link className="brand" href="/">
-          <Shield />
-          <span><b>CRISIS</b>MESH<small>Resilient Disaster Intelligence</small></span>
-        </Link>
-        <nav>
-          <Link href="/">Overview</Link>
-          <Link href="/map">Live Map</Link>
-          <Link href="/alerts" className="active">Alerts <span className="badge">{activeCount}</span></Link>
-          <Link href="/news">Weather</Link>
-          <Link href="/devices">Sensors CrisisMesh</Link>
-          <Link href="/incidents">Incidents <span className="badge">{items.filter(i => i.status === 'ACTIVE').length}</span></Link>
-          <Link href="/news">News & Updates</Link>
-          <Link href="/resources">Safety & Guidance</Link>
-          <Link href="/resources">Resources</Link>
-        </nav>
-        <div className="header-actions">
-          <button>◉ English⌄</button>
-          <Bell size={20} />
-          <Link href="/login">Login / Sign Up</Link>
-        </div>
-      </header>
-
-      <div className="live-alert">
-        <b><AlertTriangle size={14} /> LIVE ALERT</b>
-        <span>Jaipur, Rajasthan: Heavy rainfall warning issued by IMD</span>
-        <small>{new Date().toLocaleTimeString()}</small>
-        <button>View Details <ChevronRight size={16} /></button>
+    <OperationsShell eyebrow="Monitor and manage all active alerts and notifications" title="Alerts Center">
+      {/* Top Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <SummaryCard label="Total Alerts" value="156" icon={<Bell size={20} />} detail="+18 since last 24h" />
+        <SummaryCard label="Active Alerts" value="18" icon={<AlertTriangle size={20} className="text-orange-500" />} detail="6 Immediate action req." color="text-orange-500" />
+        <SummaryCard label="Critical Alerts" value="4" icon={<AlertCircle size={20} className="text-red-500" />} detail="2 Unacknowledged" color="text-red-500" />
+        <SummaryCard label="Resolved Today" value="32" icon={<CheckCircle2 size={20} className="text-green-500" />} detail="Avg. time: 45 min" color="text-green-500" />
       </div>
 
-      <div className="alerts-workspace">
-        <aside className="alerts-sidebar">
-          <div className="sidebar-nav">
-            <a className="active" href="#overview">Overview</a>
-            <a href="#map">Live Map</a>
-            <a href="#alerts">Alerts <span className="badge">{activeCount}</span></a>
-            <a href="#weather">Weather</a>
-            <a href="#sensors">Sensors (CrisisMesh)</a>
-            <a href="#incidents">Incidents <span className="badge">{items.filter(i => i.status === 'ACTIVE').length}</span></a>
-            <a href="#news">News & Updates</a>
-            <a href="#safety">Safety & Guidance</a>
-            <a href="#resources">Resources</a>
-          </div>
-
-          <div className="my-location">
-            <small>MY LOCATION</small>
-            <h3><MapPin size={16} /> Jaipur, Rajasthan</h3>
-            <button>Change</button>
-          </div>
-
-          <div className="current-risk">
-            <small>CURRENT RISK</small>
-            <div className="risk-display">87% HIGH</div>
-            <a href="#">View My Area</a>
-          </div>
-        </aside>
-
-        <main className="alerts-main">
-          <div className="alerts-header-content">
-            <h1>Alerts Center</h1>
-            <div className="header-actions">
-              <button onClick={load}><RefreshCw size={16} /> Refresh</button>
-              <button><Menu size={16} /> Menu</button>
-            </div>
-          </div>
-
-          <div className="alerts-tabs">
-            {ALERT_TABS.map(tab => (
-              <button 
+      {/* Toolbar & Tabs */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex gap-6">
+            {['All Alerts', 'Official Alerts', 'CrisisMesh', 'Active', 'Resolved'].map(tab => (
+              <button
                 key={tab}
-                className={selectedTab === tab ? 'active' : ''}
                 onClick={() => setSelectedTab(tab)}
+                className={`text-[11px] font-black uppercase tracking-widest transition-all relative pb-2 ${
+                  selectedTab === tab ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 {tab}
+                {selectedTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>}
               </button>
             ))}
           </div>
-
-          <div className="alerts-content-layout">
-            {/* Filters Panel */}
-            <aside className={`alerts-filters-panel ${showFilters ? 'expanded' : ''}`}>
-              <div className="filters-header">
-                <h3>Filters</h3>
-                {activeFilterCount > 0 && (
-                  <button className="clear-filters" onClick={clearFilters}>
-                    Clear All ({activeFilterCount})
-                  </button>
-                )}
-              </div>
-
-
-
-              <div className="filter-group">
-                <label>Hazard Type</label>
-                <select 
-                  value={filters.hazardType}
-                  onChange={(e) => setFilters(prev => ({ ...prev, hazardType: e.target.value }))}
-                >
-                  <option>All Hazards</option>
-                  <option>Flood</option>
-                  <option>Heavy Rainfall</option>
-                  <option>Heat Wave</option>
-                  <option>Fire</option>
-                  <option>Lightning</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Source</label>
-                <select 
-                  value={filters.source}
-                  onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
-                >
-                  <option>All Sources</option>
-                  <option>IMD</option>
-                  <option>NDMA</option>
-                  <option>CrisisMesh</option>
-                  <option>System</option>
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Time</label>
-                <select 
-                  value={filters.timeRange}
-                  onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value }))}
-                >
-                  {TIME_RANGES.map(range => (
-                    <option key={range} value={range}>{range}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="filter-group">
-                <label>Severity</label>
-                <select 
-                  value={filters.severity.join(',')}
-                  onChange={(e) => setFilters(prev => ({ ...prev, severity: e.target.value ? e.target.value.split(',') : [] }))}
-                >
-                  <option value="">All Severities</option>
-                  <option value="CRITICAL">Critical</option>
-                  <option value="HIGH">High</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                  <option value="INFO">Info</option>
-                </select>
-              </div>
-
-              <button className="apply-filters" onClick={load}>
-                Apply Filters
-              </button>
-            </aside>
-
-            {/* Alerts List */}
-            <div className="alerts-list-container">
-              <div className="alerts-toolbar">
-                <button 
-                  className={`filter-toggle ${activeFilterCount > 0 ? 'has-filters' : ''}`}
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter size={16} />
-                  Filters
-                  {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
-                </button>
-                <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="sort-select"
-                >
-                  <option>Newest First</option>
-                  <option>Oldest First</option>
-                  <option>Severity</option>
-                </select>
-              </div>
-
-              {error ? (
-                <div className="data-error">
-                  {error}
-                  <button onClick={load}>Retry</button>
-                </div>
-              ) : loading ? (
-                <div className="data-loading">Loading active warnings…</div>
-              ) : items.length === 0 ? (
-                <div className="data-empty">
-                  <BellRing size={25} />
-                  No alerts in this view.
-                </div>
-              ) : (
-                <div className="alerts-list-modern">
-                  {items.map((item) => (
-                    <article
-                      key={item.id}
-                      className={`alert-card-modern severity-${(item.severity || "low").toLowerCase()} ${selectedAlert?.id === item.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedAlert(item)}
-                    >
-                      <div className="alert-icon">
-                        {getAlertIcon(item.type)}
-                      </div>
-                      <div className="alert-info">
-                        <div className="alert-header">
-                          <span className={`severity-indicator ${(item.severity || 'low').toLowerCase()}`}>
-                            {item.severity || 'INFO'}
-                          </span>
-                          <h3>{item.title || item.type || "Alert"}</h3>
-                        </div>
-                        <p className="alert-hazard">{item.type || 'Unknown Hazard'}</p>
-                        <div className="alert-details">
-                          <span className="alert-location">
-                            <MapPin size={12} />
-                            {item.location?.name || item.location?.district || 'Location pending'}
-                          </span>
-                          <span className="alert-time">
-                            <Clock size={12} />
-                            {item.issued_at ? new Date(item.issued_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Time unavailable"}
-                          </span>
-                          <span className="alert-source">{item.source || 'Unknown'}</span>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="alert-arrow" />
-                    </article>
-                  ))}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {items.length > 0 && (
-                <div className="pagination">
-                  <button disabled>Previous</button>
-                  {[1, 2, 3, 4, 5].map(page => (
-                    <button key={page} className={page === 1 ? 'active' : ''}>{page}</button>
-                  ))}
-                  <span>...</span>
-                  <button>12</button>
-                  <button>Next</button>
-                </div>
-              )}
+          <div className="flex items-center gap-3">
+             <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input
+                type="text"
+                placeholder="Search alerts..."
+                className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
-
-            {/* Alert Detail Panel */}
-            {selectedAlert && (
-              <aside className="alert-detail-panel-modern">
-                <div className="detail-header">
-                  <div className="detail-title">
-                    <h2>{selectedAlert.title || selectedAlert.type || 'Alert Details'}</h2>
-                    <p>{selectedAlert.location?.name || selectedAlert.location?.district || 'Location'}</p>
-                  </div>
-                  <button className="close-detail" onClick={() => setSelectedAlert(null)}>
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div className="detail-meta">
-                  <span>Issue Time: {selectedAlert.issued_at ? new Date(selectedAlert.issued_at).toLocaleString() : 'Unknown'}</span>
-                  <span>Source: {selectedAlert.source || 'Unknown'}</span>
-                </div>
-
-                <div className="detail-tabs">
-                  <button className="active">Overview</button>
-                  <button>Affected Area</button>
-                  <button>Safety Instructions</button>
-                  <button>Source & History</button>
-                </div>
-
-                <div className="detail-content">
-                  <div className="detail-map-section">
-                    <div className="detail-map-placeholder">
-                      <Layers size={32} />
-                      <span>Map of Jaipur</span>
-                    </div>
-                    <div className="detail-legend">
-                      <span><i className="legend-dot critical" />Critical Risk</span>
-                      <span><i className="legend-dot high" />High Risk</span>
-                      <span><i className="legend-dot moderate" />Moderate Risk</span>
-                      <span><i className="legend-dot low" />Low Risk</span>
-                      <span><i className="legend-dot affected" />Affected Area</span>
-                    </div>
-                  </div>
-
-                  <div className="detail-summary">
-                    <div className="summary-grid">
-                      <SummaryItem label="Severity" value={selectedAlert.severity || 'Unknown'} color={getSeverityColor(selectedAlert.severity)} />
-                      <SummaryItem label="Hazard" value={selectedAlert.type || 'Unknown'} color="#6366f1" />
-                      <SummaryItem label="Confidence" value="96%" color="#10b981" />
-                      <SummaryItem label="Validity" value="3-6 Hours" color="#f59e0b" />
-                    </div>
-                  </div>
-
-                  <div className="detail-section">
-                    <h4>Impact</h4>
-                    <p>Potential for localized flooding in low-lying areas. Disruption to transportation and possible power outages. Residents in affected areas should remain vigilant.</p>
-                  </div>
-
-                  <div className="detail-section">
-                    <h4>Recommended Actions</h4>
-                    <ul>
-                      <li>Avoid low-lying areas and flood-prone zones</li>
-                      <li>Do not attempt to cross flooded roads or bridges</li>
-                      <li>Stay indoors and avoid unnecessary travel</li>
-                      <li>Keep emergency supplies ready and accessible</li>
-                      <li>Monitor official channels for updates</li>
-                      <li>Follow local authority instructions immediately</li>
-                    </ul>
-                  </div>
-
-                  <button className="view-full-details">
-                    View Full Details
-                  </button>
-                </div>
-              </aside>
-            )}
+            <button className="flex items-center gap-2 bg-gray-50 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors">
+              <Filter size={16} /> Filters
+            </button>
           </div>
-        </main>
+        </div>
+
+        <div className="divide-y divide-gray-50">
+          {alerts.map((alert) => (
+            <div key={alert.id} className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors group cursor-pointer">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 ${
+                alert.severity === 'Critical' ? 'bg-red-50 border-red-100 text-red-600' :
+                alert.severity === 'High' ? 'bg-orange-50 border-orange-100 text-orange-600' :
+                'bg-blue-50 border-blue-100 text-blue-600'
+              }`}>
+                {getAlertIcon(alert.type)}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <h4 className="text-sm font-black text-[#0f172a] truncate uppercase tracking-tight">{alert.title}</h4>
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
+                    alert.severity === 'Critical' ? 'bg-red-600 text-white' :
+                    alert.severity === 'High' ? 'bg-orange-500 text-white' :
+                    alert.severity === 'Medium' ? 'bg-yellow-500 text-white' :
+                    'bg-blue-600 text-white'
+                  }`}>
+                    {alert.severity}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  <span className="flex items-center gap-1.5"><MapPin size={12} className="text-gray-300" /> {alert.location}</span>
+                  <span className="flex items-center gap-1.5"><Clock size={12} className="text-gray-300" /> {alert.time}</span>
+                  <span className="flex items-center gap-1.5"><Shield size={12} className="text-gray-300" /> Source: {alert.source}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-right">
+                <div>
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
+                    alert.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    <div className={`w-1 h-1 rounded-full ${alert.status === 'Active' ? 'bg-green-600' : 'bg-gray-400'}`}></div>
+                    {alert.status}
+                  </span>
+                </div>
+                <button className="text-gray-300 group-hover:text-blue-600 transition-colors">
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 bg-gray-50 flex items-center justify-between border-t border-gray-100 text-xs font-bold text-gray-400">
+          <p>Showing 7 of 156 alerts</p>
+          <div className="flex items-center gap-2">
+            <button className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center">1</button>
+            <button className="w-8 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">2</button>
+            <button className="w-8 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">3</button>
+            <span>...</span>
+            <button className="px-3 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">Next</button>
+          </div>
+        </div>
       </div>
-    </main>
+    </OperationsShell>
   );
 }
 
-function getAlertIcon(type?: string) {
-  const typeLower = type?.toLowerCase() || '';
-  if (typeLower.includes('rain') || typeLower.includes('flood')) return <CloudLightning size={20} />;
-  if (typeLower.includes('fire')) return <Flame size={20} />;
-  if (typeLower.includes('heat')) return <Activity size={20} />;
-  if (typeLower.includes('lightning')) return <Zap size={20} />;
-  return <AlertTriangle size={20} />;
-}
-
-function getSeverityColor(severity?: string) {
-  const sev = severity?.toLowerCase() || '';
-  if (sev === 'critical') return '#ef4444';
-  if (sev === 'high') return '#f97316';
-  if (sev === 'medium') return '#eab308';
-  if (sev === 'low') return '#22c55e';
-  return '#6366f1';
-}
-
-function SummaryItem({ label, value, color }: { label: string; value: string; color: string }) {
+function SummaryCard({ label, value, icon, detail, color = "text-[#0f172a]" }: { label: string; value: string; icon: React.ReactNode; detail: string; color?: string }) {
   return (
-    <div className="summary-item">
-      <small>{label}</small>
-      <strong style={{ color }}>{value}</strong>
+    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
+        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 text-gray-400">
+          {icon}
+        </div>
+      </div>
+      <h4 className={`text-2xl font-black ${color}`}>{value}</h4>
+      <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-wide">{detail}</p>
     </div>
   );
+}
+
+function getAlertIcon(type: string) {
+  switch (type) {
+    case 'Weather': return <Cloud size={20} />;
+    case 'Flood': return <Zap size={20} />;
+    case 'Safety': return <Shield size={20} />;
+    case 'System': return <Info size={20} />;
+    case 'Utility': return <Activity size={20} />;
+    default: return <Bell size={20} />;
+  }
 }

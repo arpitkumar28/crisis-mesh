@@ -14,8 +14,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'admin@crisismesh.dev');
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -44,9 +43,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
+      // Bypassing password for development as requested
       final response = await apiService.login(
         _emailController.text,
-        _passwordController.text,
+        'admin123',
       );
 
       final data = response.data['data'];
@@ -63,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Login failed. Please check your credentials.';
+          _errorMessage = 'Login failed. Please ensure the backend is running.';
         });
       }
     } finally {
@@ -74,7 +74,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -103,11 +102,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 44),
                   const Align(alignment: Alignment.centerLeft, child: Text('Welcome back', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF102043)))),
                   const SizedBox(height: 8),
-                  const Align(alignment: Alignment.centerLeft, child: Text('Sign in to monitor incidents and alerts.', style: TextStyle(color: Color(0xFF65728A)))),
+                  const Align(alignment: Alignment.centerLeft, child: Text('Click continue to enter the platform.', style: TextStyle(color: Color(0xFF65728A)))),
                   const SizedBox(height: 24),
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         color: Colors.red.shade50,
                         borderRadius: BorderRadius.circular(8),
@@ -118,34 +118,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: TextStyle(color: Colors.red.shade700),
                       ),
                     ),
-                  if (_errorMessage != null) const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Role / Email',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(Icons.person),
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return 'Please enter an email';
                       }
                       return null;
                     },
@@ -153,18 +136,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 56,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0757E8),
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Sign in to command center'),
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Get Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  const Text('Password bypass active for development', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ),

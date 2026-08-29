@@ -7,6 +7,8 @@ import 'incidents_screen.dart';
 import 'devices_screen.dart';
 import 'map_screen.dart';
 import 'profile_screen.dart';
+import 'news_screen.dart';
+import 'weather_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Row(children: [Image.asset('assets/brand/crisismesh-icon.png', width: 27, height: 27), const SizedBox(width: 7), const Text('CRISIS', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .4)), const Text('MESH', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: .4, color: Color(0xFF09A86B)))]),
         actions: [
-          PopupMenuButton<String>(onSelected: (value) { if (value == 'incidents') Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Incidents')), body: const IncidentsScreen()))); if (value == 'logout') _logout(); }, itemBuilder: (context) => const [PopupMenuItem(value: 'incidents', child: Text('Incidents')), PopupMenuItem(value: 'logout', child: Text('Log out'))]),
+          PopupMenuButton<String>(onSelected: (value) { if (value == 'incidents') Navigator.of(context).push(MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Incidents')), body: const IncidentsScreen()))); if (value == 'weather') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WeatherScreen())); if (value == 'news') Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NewsScreen())); if (value == 'logout') _logout(); }, itemBuilder: (context) => const [PopupMenuItem(value: 'incidents', child: Text('Incidents')), PopupMenuItem(value: 'weather', child: Text('Weather')), PopupMenuItem(value: 'news', child: Text('News')), PopupMenuItem(value: 'logout', child: Text('Log out'))]),
         ],
       ),
       body: _screens[_index],

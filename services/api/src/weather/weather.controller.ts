@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -12,7 +12,20 @@ export class WeatherController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
-  async findAll() {
+  async findAll(@Query('latitude') latitude?: string, @Query('longitude') longitude?: string) {
+    if (latitude !== undefined && longitude !== undefined) {
+      const parsedLatitude = Number(latitude);
+      const parsedLongitude = Number(longitude);
+      if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
+        return { success: false, message: 'latitude and longitude must be valid numbers' };
+      }
+      return {
+        success: true,
+        message: 'Weather forecast retrieved successfully',
+        data: await this.weatherService.getForecastAt(parsedLatitude, parsedLongitude),
+        request_id: crypto.randomUUID(),
+      };
+    }
     const weather = await this.weatherService.findAll();
     return {
       success: true,

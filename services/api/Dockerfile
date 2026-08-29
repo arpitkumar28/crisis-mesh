@@ -38,10 +38,10 @@ USER nestjs
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-  CMD node -e "require('http').get('http://localhost:3001/api/v1/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:3002/api/v1/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3002
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

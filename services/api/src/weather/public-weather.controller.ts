@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseFloatPipe, Query } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 
-@Controller('v1/weather')
+@Controller('v1/public/weather')
 export class PublicWeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 

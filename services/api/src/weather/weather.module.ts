@@ -11,7 +11,7 @@ import { WeatherObservation } from '../entities/weather-observation.entity';
       WeatherObservation,
     ]),
   ],
-  controllers: [WeatherController, PublicWeatherController],
+  controllers: [PublicWeatherController, WeatherController],
   providers: [WeatherService],
   exports: [WeatherService],
 })

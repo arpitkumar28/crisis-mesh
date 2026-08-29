@@ -25,6 +25,8 @@ lib/
 lib64/
 !apps/mobile/lib/
 !apps/mobile/lib/**
+!apps/web/src/lib/
+!apps/web/src/lib/**
 parts/
 sdist/
 var/
