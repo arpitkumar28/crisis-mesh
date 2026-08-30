@@ -1,4 +1,12 @@
 {
+  "name": "crisis-mesh",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd apps/web && npm run build",
+    "install": "cd apps/web && npm install",
+    "dev": "cd apps/web && npm run dev"
+  },
   "dependencies": {
     "axios": "^1.20.0",
     "socket.io-client": "^4.8.3"
