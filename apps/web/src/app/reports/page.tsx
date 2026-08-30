@@ -4,7 +4,7 @@ import React from 'react';
 import {
   FileText, ChevronDown, Plus, Download,
   Trash2,
-  CheckCircle2, Info, Flame, LifeBuoy
+  Info, Flame, LifeBuoy
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
