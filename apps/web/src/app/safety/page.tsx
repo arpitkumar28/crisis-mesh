@@ -8,6 +8,7 @@ import {
   ArrowRight, FileText, Phone, Activity
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import Image from 'next/image';
 
 export default function SafetyPage() {
   const [activeHazard, setActiveHazard] = useState('Flood');
@@ -167,7 +168,7 @@ function VideoCard({ title, thumbnail, duration }: { title: string; thumbnail: s
   return (
     <div className="group cursor-pointer">
       <div className="relative aspect-video rounded-[24px] overflow-hidden mb-3 border border-gray-100 shadow-sm">
-        <img src={thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        <Image src={thumbnail} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
         <div className="absolute inset-0 bg-[#061a37]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
           <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-2xl scale-75 group-hover:scale-100 transition-all">
              <Play size={24} className="ml-1" />

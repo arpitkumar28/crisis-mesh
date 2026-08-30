@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Layers, Search, ZoomIn, ZoomOut,
   Navigation, MapPin, Clock,
@@ -31,7 +31,23 @@ export default function CommandMapPage() {
   const [loading, setLoading] = useState(true);
   const [entities, setEntities] = useState<MapEntity[]>([]);
 
-  const fetchMapData = async () => {
+  // Helper to parse PostGIS geography string
+  // This handles simple WKT "POINT(lng lat)" or common JSON formats
+  const parseGeo = useCallback((geo: any) => {
+    if (typeof geo === 'string' && geo.includes('POINT')) {
+      const match = geo.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
+      if (match) {
+        return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
+      }
+    }
+    if (geo && typeof geo === 'object' && geo.coordinates) {
+      return { lng: geo.coordinates[0], lat: geo.coordinates[1] };
+    }
+    // Fallback: If the backend already sends lat/lng in location object
+    return null;
+  }, []);
+
+  const fetchMapData = useCallback(async () => {
     setLoading(true);
     try {
       // Using the specialized map endpoint if available, otherwise fallback to separate ones
@@ -89,27 +105,12 @@ export default function CommandMapPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper to parse PostGIS geography string
-  // This handles simple WKT "POINT(lng lat)" or common JSON formats
-  const parseGeo = (geo: any) => {
-    if (typeof geo === 'string' && geo.includes('POINT')) {
-      const match = geo.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
-      if (match) {
-        return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
-      }
-    }
-    if (geo && typeof geo === 'object' && geo.coordinates) {
-      return { lng: geo.coordinates[0], lat: geo.coordinates[1] };
-    }
-    // Fallback: If the backend already sends lat/lng in location object
-    return null;
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parseGeo]);
 
   useEffect(() => {
     fetchMapData();
-  }, []);
+  }, [fetchMapData]);
 
   return (
     <OperationsShell eyebrow="Interactive geospatial disaster intelligence" title="Live Operational Map">

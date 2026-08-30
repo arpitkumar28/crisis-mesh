@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), { 
   ssr: false, 
@@ -61,9 +62,10 @@ export default function DroneSurveillancePage() {
               </div>
 
               <div className="aspect-video bg-[#0f172a] relative overflow-hidden group">
-                 <img 
+                 <Image 
                    src="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&q=80&w=1200" 
-                   className="w-full h-full object-cover opacity-80" 
+                   fill
+                   className="object-cover opacity-80" 
                    alt="Drone Feed"
                  />
                  

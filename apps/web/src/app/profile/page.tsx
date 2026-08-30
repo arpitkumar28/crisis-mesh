@@ -10,6 +10,7 @@ import {
 import { OperationsShell } from '@/components/operations-shell';
 import { apiClient } from '@/lib/api-client';
 import { Toast } from '@/lib/toast';
+import Image from 'next/image';
 
 interface UserProfile {
   id: string;
@@ -154,9 +155,9 @@ export default function ProfilePage() {
                    {/* Profile Photo Section */}
                    <div className="flex flex-col items-center shrink-0">
                       <div className="relative group">
-                         <div className="w-40 h-40 rounded-[48px] bg-[#061a37] flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-blue-900/20 border-4 border-white overflow-hidden">
+                         <div className="w-40 h-40 rounded-[48px] bg-[#061a37] flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-blue-900/20 border-4 border-white overflow-hidden relative">
                             {avatarPreview ? (
-                              <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
+                              <Image src={avatarPreview} alt="Profile" fill className="object-cover" />
                             ) : (
                               profile?.name?.charAt(0).toUpperCase() || 'A'
                             )}

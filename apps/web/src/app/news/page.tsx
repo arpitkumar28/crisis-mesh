@@ -5,6 +5,7 @@ import {
   Search, Bell, Share2, Bookmark, ExternalLink, Hash, ArrowUpRight
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import Image from 'next/image';
 
 const newsItems = [
   {
@@ -86,8 +87,8 @@ export default function NewsPage() {
             <div className="divide-y divide-gray-50">
               {newsItems.map((item) => (
                 <div key={item.id} className="p-8 flex gap-8 hover:bg-gray-50/50 transition-all group cursor-pointer">
-                  <div className="w-56 h-36 rounded-[24px] overflow-hidden shrink-0 border border-gray-100 shadow-sm">
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <div className="w-56 h-36 rounded-[24px] overflow-hidden shrink-0 border border-gray-100 shadow-sm relative">
+                    <Image src={item.image} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                   </div>
 
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
