@@ -35,7 +35,7 @@ export class DevicesController {
   }
 
   @Get('count')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDeviceCount() {
     const count = await this.devicesService.getDeviceCount();
     return {
@@ -46,7 +46,7 @@ export class DevicesController {
   }
 
   @Get('count/by-status')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDeviceCountByStatus() {
     const counts = await this.devicesService.getDeviceCountByStatus();
     return {
@@ -123,7 +123,7 @@ export class DevicesController {
   }
 
   @Get(':id/status/history')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST, UserRoleEnum.CITIZEN)
   async getDeviceStatusHistory(
     @Param('id') id: string,
     @Query('limit') limit?: string,
