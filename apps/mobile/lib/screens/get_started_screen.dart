@@ -16,7 +16,8 @@ class GetStartedScreen extends StatelessWidget {
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shield, size: 48, color: Color(0xFF0757E8)),
+                  Image.asset('assets/brand/crisismesh-icon.png',
+                      width: 48, height: 48),
                   SizedBox(width: 12),
                   Text(
                     'CRISIS',
@@ -55,19 +56,22 @@ class GetStartedScreen extends StatelessWidget {
               _RoleButton(
                 title: 'Continue as Citizen',
                 icon: Icons.person_outline,
-                onPressed: () => Navigator.pushNamed(context, '/login', arguments: 'CITIZEN'),
+                onPressed: () => Navigator.pushNamed(context, '/login',
+                    arguments: 'CITIZEN'),
               ),
               const SizedBox(height: 16),
               _RoleButton(
                 title: 'Continue as Responder',
                 icon: Icons.emergency_outlined,
-                onPressed: () => Navigator.pushNamed(context, '/login', arguments: 'RESPONDER'),
+                onPressed: () => Navigator.pushNamed(context, '/login',
+                    arguments: 'RESPONDER'),
               ),
               const SizedBox(height: 16),
               _RoleButton(
                 title: 'Continue as Authority',
                 icon: Icons.admin_panel_settings_outlined,
-                onPressed: () => Navigator.pushNamed(context, '/login', arguments: 'AUTHORITY'),
+                onPressed: () => Navigator.pushNamed(context, '/login',
+                    arguments: 'AUTHORITY'),
               ),
               const SizedBox(height: 32),
               TextButton(
@@ -101,13 +105,15 @@ class _RoleButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon),
-        label: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        label: Text(title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           foregroundColor: const Color(0xFF102043),
           elevation: 0,
           side: const BorderSide(color: Color(0xFFDCE3F0)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

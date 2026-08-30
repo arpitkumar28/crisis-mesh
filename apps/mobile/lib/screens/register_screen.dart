@@ -64,9 +64,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Center(
+                child: Image.asset('assets/brand/crisismesh-icon.png',
+                    width: 64, height: 64),
+              ),
+              const SizedBox(height: 16),
               const Text(
                 'Join CrisisMesh Network',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF102043)),
               ),
               const SizedBox(height: 8),
               const Text('Help us keep your community safe during disasters.'),
@@ -77,7 +85,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Full Name',
                   prefixIcon: Icon(Icons.person_outline),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter your name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -87,7 +96,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) => value == null || value.isEmpty ? 'Enter your email' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter your email' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -97,11 +107,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
-                validator: (value) => value != null && value.length < 6 ? 'Password too short' : null,
+                validator: (value) => value != null && value.length < 6
+                    ? 'Password too short'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -111,7 +126,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Confirm Password',
                   prefixIcon: Icon(Icons.lock_clock_outlined),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Confirm your password' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Confirm your password'
+                    : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -120,9 +137,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   backgroundColor: const Color(0xFF0757E8),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Register'),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Register'),
               ),
             ],
           ),

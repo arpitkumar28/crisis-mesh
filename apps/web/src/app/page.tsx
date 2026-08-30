@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  ShieldCheck, MapPin, Bell, Cloud, Activity,
+  MapPin, Bell, Cloud, Activity,
   Search, ChevronRight, ArrowRight, ChevronDown,
   Siren, Users, Globe, Menu, X,
   AlertTriangle, CloudRain, Droplets, Sun, Moon
@@ -44,8 +45,8 @@ export default function PublicHome() {
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform">
-               <ShieldCheck size={24} />
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform overflow-hidden">
+               <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={40} height={40} className="w-full h-full object-cover" />
             </div>
             <span className={`text-2xl font-black tracking-tighter ${scrolled ? 'text-[#061a37]' : 'text-[#061a37]'}`}>
               CRISIS<span className="text-[#3b82f6]">MESH</span>
@@ -275,8 +276,8 @@ export default function PublicHome() {
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex items-center gap-6 group hover:border-blue-500 transition-all cursor-pointer">
-                     <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600 border border-cyan-100 group-hover:bg-cyan-600 group-hover:text-white transition-all">
-                        <ShieldCheck size={32} />
+                     <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600 border border-cyan-100 group-hover:bg-cyan-600 group-hover:text-white transition-all overflow-hidden">
+                        <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={64} height={64} className="w-full h-full object-cover" />
                      </div>
                      <div>
                         <h4 className="text-lg font-black text-[#061a37]">Stay Informed</h4>
@@ -307,8 +308,8 @@ export default function PublicHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 mb-20">
             <div className="lg:col-span-4 space-y-6">
                <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                   <ShieldCheck size={18} />
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20 overflow-hidden">
+                   <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
                 </div>
                 <span className="text-xl font-black tracking-tighter text-[#061a37]">
                   CRISIS<span className="text-[#3b82f6]">MESH</span>

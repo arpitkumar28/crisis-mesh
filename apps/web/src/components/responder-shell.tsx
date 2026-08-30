@@ -1,11 +1,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { 
-  Activity, Shield, Clock, FileText, Boxes, 
-  MessageSquare, Navigation, AlertTriangle, 
+import Image from 'next/image';
+import {
+  Activity, Shield, Clock, FileText, Boxes,
+  MessageSquare, Navigation, AlertTriangle,
   Settings, ChevronDown, Search, Bell, User,
-  Menu, X, ShieldCheck
+  Menu, X
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -31,8 +32,8 @@ export function ResponderShell({ children, title, eyebrow }: { children: ReactNo
       <aside className="w-[240px] bg-[#061a37] text-white flex flex-col shrink-0 shadow-2xl">
         <div className="p-6 border-b border-white/5">
            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-                 <ShieldCheck size={20} />
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white overflow-hidden">
+                 <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
               </div>
               <span className="text-lg font-black tracking-tighter uppercase">Team<span className="text-blue-500">Alpha</span></span>
            </div>

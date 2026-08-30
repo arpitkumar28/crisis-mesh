@@ -1,9 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import {
   Activity, Bell, Boxes, LogOut, Map, Radio, AlertTriangle,
-  Building2, Cloud, FileText, ShieldCheck, Newspaper,
+  Building2, Cloud, FileText, Newspaper,
   Search, Globe, ChevronDown, MapPin, TrendingUp, Settings,
   Shield, History, User, Users, Lock, Database,
   Layers, MessageSquare, Truck, LifeBuoy, Info,
@@ -41,8 +42,8 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
       <header className="h-14 bg-[#061a37] flex items-center justify-between px-4 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center gap-6">
           <a href="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-              <ShieldCheck size={18} />
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg shadow-blue-500/20 overflow-hidden">
+              <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-black tracking-tighter text-white leading-none">

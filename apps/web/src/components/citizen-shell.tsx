@@ -1,11 +1,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { 
-  Activity, Map, Bell, AlertTriangle, 
-  ShieldCheck, Home, Phone, Settings,
+import Image from 'next/image';
+import {
+  Activity, Map, Bell, AlertTriangle,
+  Home, Phone, Settings,
   ChevronDown, Search, Globe, User,
-  Menu, X, Shield
+  Menu, X, Shield, ShieldCheck
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -31,8 +32,8 @@ export function CitizenShell({ children, title, subtitle }: { children: ReactNod
       <aside className="w-[240px] bg-[#061a37] text-white flex flex-col shrink-0 shadow-2xl z-50">
         <div className="p-6 border-b border-white/5">
            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-                 <ShieldCheck size={20} />
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white overflow-hidden">
+                 <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-black tracking-tighter uppercase">Citizen<span className="text-blue-500">View</span></span>
            </div>

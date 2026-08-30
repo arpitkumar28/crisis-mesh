@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Shield, Users, Zap, Target, Eye,
-  Heart, ArrowRight,
-  ShieldCheck,
+  Heart, ArrowRight, ShieldCheck,
   Radio
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
@@ -22,8 +22,8 @@ export default function AboutPage() {
 
            <div className="relative z-10 max-w-3xl">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-600/40 border border-blue-500">
-                  <ShieldCheck size={32} />
+                <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-600/40 border border-blue-500 overflow-hidden">
+                  <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={56} height={56} className="w-full h-full object-cover" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-[0.4em] text-blue-400">CrisisMesh Platform</span>
               </div>
@@ -121,7 +121,7 @@ export default function AboutPage() {
 function ValueItem({ title, icon }: { title: string; icon: React.ReactNode }) {
   return (
     <div className="bg-white p-8 rounded-[32px] border border-gray-200 shadow-sm hover:shadow-xl hover:border-blue-500/20 transition-all text-center flex flex-col items-center group">
-      <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 border border-gray-100 group-hover:scale-110 group-hover:bg-white transition-all">
+      <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 border border-gray-100 group-hover:scale-110 group-hover:bg-white transition-all overflow-hidden">
         {icon}
       </div>
       <h4 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.15em] leading-tight">{title}</h4>

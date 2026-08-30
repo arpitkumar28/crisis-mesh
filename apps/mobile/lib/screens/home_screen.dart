@@ -45,11 +45,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: Colors.white,
         elevation: 8,
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map_rounded), label: 'Map'),
-          NavigationDestination(icon: Icon(Icons.notifications_none_rounded), selectedIcon: Icon(Icons.notifications_rounded), label: 'Alerts'),
-          NavigationDestination(icon: Icon(Icons.sensors_outlined), selectedIcon: Icon(Icons.sensors_rounded), label: 'Sensors'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
+          NavigationDestination(
+              icon: Icon(Icons.grid_view_outlined),
+              selectedIcon: Icon(Icons.grid_view_rounded),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map_rounded),
+              label: 'Map'),
+          NavigationDestination(
+              icon: Icon(Icons.notifications_none_rounded),
+              selectedIcon: Icon(Icons.notifications_rounded),
+              label: 'Alerts'),
+          NavigationDestination(
+              icon: Icon(Icons.sensors_outlined),
+              selectedIcon: Icon(Icons.sensors_rounded),
+              label: 'Sensors'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile'),
         ],
       ),
     );
@@ -69,15 +84,27 @@ class DashboardTab extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text('Hello, ${user?.name ?? 'Amit'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text('Stay safe, stay updated', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Image.asset('assets/brand/crisismesh-icon.png',
+                width: 32, height: 32),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hello, ${user?.name ?? 'Amit'}',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text('Stay safe, stay updated',
+                    style: TextStyle(fontSize: 10, color: Colors.grey)),
+              ],
+            ),
           ],
         ),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded)),
+          IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.notifications_none_rounded)),
           IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
         ],
       ),
@@ -107,8 +134,9 @@ class DashboardTab extends ConsumerWidget {
                 error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
-              
-              const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+              const Text('Quick Actions',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               GridView.count(
                 shrinkWrap: true,
@@ -117,48 +145,115 @@ class DashboardTab extends ConsumerWidget {
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 children: [
-                  _QuickAction(icon: Icons.list_alt_rounded, label: 'Incidents', color: Colors.blue, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IncidentsScreen()))),
-                  _QuickAction(icon: Icons.sos_rounded, label: 'SOS', color: Colors.red, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SOSScreen()))),
-                  _QuickAction(icon: Icons.report_problem_outlined, label: 'Report', color: Colors.orange, onTap: () => Navigator.pushNamed(context, '/report-incident')),
-                  _QuickAction(icon: Icons.warning_amber_rounded, label: 'Alerts', color: Colors.amber, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AlertsScreen()))),
-                  _QuickAction(icon: Icons.home_repair_service_outlined, label: 'Shelters', color: Colors.teal, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SheltersScreen()))),
-                  _QuickAction(icon: Icons.cloud_outlined, label: 'Weather', color: Colors.lightBlue, onTap: () => Navigator.pushNamed(context, '/weather')),
-                  _QuickAction(icon: Icons.air_rounded, label: 'AQI', color: Colors.green, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AirQualityScreen()))),
-                  _QuickAction(icon: Icons.more_horiz_rounded, label: 'More', color: Colors.grey, onTap: () {}),
+                  _QuickAction(
+                      icon: Icons.list_alt_rounded,
+                      label: 'Incidents',
+                      color: Colors.blue,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const IncidentsScreen()))),
+                  _QuickAction(
+                      icon: Icons.sos_rounded,
+                      label: 'SOS',
+                      color: Colors.red,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SOSScreen()))),
+                  _QuickAction(
+                      icon: Icons.report_problem_outlined,
+                      label: 'Report',
+                      color: Colors.orange,
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/report-incident')),
+                  _QuickAction(
+                      icon: Icons.warning_amber_rounded,
+                      label: 'Alerts',
+                      color: Colors.amber,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AlertsScreen()))),
+                  _QuickAction(
+                      icon: Icons.home_repair_service_outlined,
+                      label: 'Shelters',
+                      color: Colors.teal,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SheltersScreen()))),
+                  _QuickAction(
+                      icon: Icons.cloud_outlined,
+                      label: 'Weather',
+                      color: Colors.lightBlue,
+                      onTap: () => Navigator.pushNamed(context, '/weather')),
+                  _QuickAction(
+                      icon: Icons.air_rounded,
+                      label: 'AQI',
+                      color: Colors.green,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AirQualityScreen()))),
+                  _QuickAction(
+                      icon: Icons.more_horiz_rounded,
+                      label: 'More',
+                      color: Colors.grey,
+                      onTap: () {}),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              const Text('Live Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Live Status',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _StatusMiniCard(label: 'Incidents', value: '${incidentStats.value?['total'] ?? 0}', color: Colors.blue)),
+                  Expanded(
+                      child: _StatusMiniCard(
+                          label: 'Incidents',
+                          value: '${incidentStats.value?['total'] ?? 0}',
+                          color: Colors.blue)),
                   const SizedBox(width: 12),
-                  Expanded(child: _StatusMiniCard(label: 'Alerts', value: '${alertStats.value?['total'] ?? 0}', color: Colors.orange)),
+                  Expanded(
+                      child: _StatusMiniCard(
+                          label: 'Alerts',
+                          value: '${alertStats.value?['total'] ?? 0}',
+                          color: Colors.orange)),
                   const SizedBox(width: 12),
-                  Expanded(child: _StatusMiniCard(label: 'Sensors', value: '124', color: Colors.green)),
+                  Expanded(
+                      child: _StatusMiniCard(
+                          label: 'Sensors', value: '124', color: Colors.green)),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Active Incidents', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text('Active Incidents',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   TextButton(onPressed: () {}, child: const Text('View All')),
                 ],
               ),
               ref.watch(incidentsProvider).when(
-                data: (incidents) {
-                  if (incidents.isEmpty) return const Center(child: Text('No active incidents'));
-                  return Column(
-                    children: incidents.take(3).map((incident) => _IncidentCard(incident: incident)).toList(),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Error: $e'),
-              ),
+                    data: (incidents) {
+                      if (incidents.isEmpty)
+                        return const Center(child: Text('No active incidents'));
+                      return Column(
+                        children: incidents
+                            .take(3)
+                            .map(
+                                (incident) => _IncidentCard(incident: incident))
+                            .toList(),
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Text('Error: $e'),
+                  ),
             ],
           ),
         ),
@@ -172,7 +267,8 @@ class _RiskCard extends StatelessWidget {
   final String location;
   final String severity;
 
-  const _RiskCard({required this.title, required this.location, required this.severity});
+  const _RiskCard(
+      {required this.title, required this.location, required this.severity});
 
   @override
   Widget build(BuildContext context) {
@@ -195,20 +291,31 @@ class _RiskCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                child: Text(severity, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4)),
+                child: Text(severity,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold)),
               ),
               const Icon(Icons.info_outline, color: Colors.white, size: 20),
             ],
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Row(
             children: [
               const Icon(Icons.location_on, color: Colors.white70, size: 14),
               const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(location,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),
@@ -218,9 +325,11 @@ class _RiskCard extends StatelessWidget {
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF0757E8),
               minimumSize: const Size(double.infinity, 44),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('View Details', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('View Details',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -234,7 +343,8 @@ class _RiskCardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 160,
-      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+          color: Colors.grey[300], borderRadius: BorderRadius.circular(16)),
     );
   }
 }
@@ -245,7 +355,11 @@ class _QuickAction extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickAction({required this.icon, required this.label, required this.color, required this.onTap});
+  const _QuickAction(
+      {required this.icon,
+      required this.label,
+      required this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -255,11 +369,15 @@ class _QuickAction extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+          Text(label,
+              style:
+                  const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -271,17 +389,23 @@ class _StatusMiniCard extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _StatusMiniCard({required this.label, required this.value, required this.color});
+  const _StatusMiniCard(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE4EAF4))),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE4EAF4))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: color)),
           Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
@@ -305,7 +429,9 @@ class _IncidentCard extends StatelessWidget {
             Container(
               width: 60,
               height: 60,
-              decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8)),
               child: const Icon(Icons.warning_amber_rounded, color: Colors.red),
             ),
             const SizedBox(width: 12),
@@ -316,18 +442,28 @@ class _IncidentCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(incident['type'] ?? 'Incident', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(incident['status'] ?? 'Active', style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+                      Text(incident['type'] ?? 'Incident',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(incident['status'] ?? 'Active',
+                          style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(incident['title'] ?? 'No Title', style: const TextStyle(fontSize: 12, color: Color(0xFF102043))),
+                  Text(incident['title'] ?? 'No Title',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF102043))),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 10, color: Colors.grey),
+                      const Icon(Icons.access_time,
+                          size: 10, color: Colors.grey),
                       const SizedBox(width: 4),
-                      Text('2 hours ago', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text('2 hours ago',
+                          style: const TextStyle(
+                              fontSize: 10, color: Colors.grey)),
                     ],
                   ),
                 ],

@@ -7,7 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { Toast } from '@/lib/toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, HelpCircle, Globe, ChevronDown } from 'lucide-react';
+import { HelpCircle, Globe, ChevronDown } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,8 +64,8 @@ export default function LoginPage() {
       {/* Top Header */}
       <header className="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg">
-            <ShieldCheck size={20} />
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg overflow-hidden">
+            <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
           </div>
           <span className="text-xl font-black tracking-tighter text-[#061a37]">
             CRISIS<span className="text-blue-600">MESH</span>
