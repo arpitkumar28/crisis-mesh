@@ -3,14 +3,13 @@
 import React from 'react';
 import {
   FileText, ChevronDown, Plus, Download,
-  Trash2,
-  Info, Flame, LifeBuoy
+  Trash2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 import {
   ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+  Cell,
   PieChart, Pie
 } from 'recharts';
 
