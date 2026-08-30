@@ -2,13 +2,8 @@
 
 import React from 'react';
 import {
-  Plus, Download, Filter, Search,
-  Truck, Users, Tool, Activity,
-  ChevronDown, MapPin, ExternalLink,
-  ChevronRight, MoreHorizontal,
-  CheckCircle2, AlertTriangle, XCircle, Building2,
-  Package, LifeBuoy, Shield, Boxes, ArrowUpRight,
-  Clock, Calendar, FileText, Wrench
+  Plus, Search, Activity,
+  AlertTriangle, Calendar, FileText
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import {

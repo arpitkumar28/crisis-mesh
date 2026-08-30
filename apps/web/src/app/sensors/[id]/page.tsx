@@ -2,17 +2,16 @@
 
 import React, { useState } from 'react';
 import {
-  ArrowLeft, Edit3, RefreshCw, ChevronDown, MapPin,
+  ChevronDown, MapPin,
   Droplets, Thermometer, Cloud, Battery, Signal,
   CheckCircle2, AlertTriangle, Info, Clock, ExternalLink,
-  Settings, Tool, FileText, Radio
+  Radio
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar
 } from 'recharts';
-import Image from 'next/image';
 
 const trendData = [
   { time: '02:00 PM', value: 1.5 },

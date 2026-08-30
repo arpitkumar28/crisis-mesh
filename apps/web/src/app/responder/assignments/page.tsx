@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { 
-  Shield, MapPin, Clock, AlertTriangle, 
-  CheckCircle2, ChevronRight, Navigation,
-  MoreHorizontal, Filter, Search, Calendar
+  Shield, MapPin, Clock, ChevronRight, Navigation,
+  Filter, Search
 } from 'lucide-react';
 import { ResponderShell } from '@/components/responder-shell';
 

@@ -2,15 +2,11 @@
 
 import React from 'react';
 import { 
-  TrendingUp, Activity, AlertTriangle, Cloud, 
-  MapPin, ChevronRight, ChevronDown, Info, Shield, 
-  CheckCircle2, RefreshCw, Filter, Search,
-  BarChart3, PieChart, Database, Zap
+  Activity, ChevronDown, CheckCircle2, RefreshCw, Database, Zap
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, BarChart, Bar, Cell
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
 } from 'recharts';
 
 const rainfallForecast = [

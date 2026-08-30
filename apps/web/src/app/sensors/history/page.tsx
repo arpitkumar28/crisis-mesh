@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  History, Calendar, Filter, Search, Download,
-  ChevronDown, RefreshCcw, Database, AlertCircle,
-  TrendingUp, Activity, CheckCircle2, Clock
+  Calendar, ChevronDown, RefreshCcw
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, LineChart, Line
+  ResponsiveContainer
 } from 'recharts';
 
 const trendData = [

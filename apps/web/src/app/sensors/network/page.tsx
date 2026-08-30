@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Radio, Map as MapIcon, List, Search, Filter, Plus, 
-  ChevronRight, ArrowUpRight, Droplets, Cloud, 
-  Wind, Thermometer, Activity, Zap, CheckCircle2,
-  AlertTriangle, Clock, Settings, Maximize2, MoreHorizontal
+  Map as MapIcon, Plus, 
+  ChevronDown, Droplets, Cloud, 
+  Wind, Thermometer, Activity, Zap,
+  Clock, Maximize2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
@@ -173,5 +173,5 @@ function HealthBar({ label, value, total = 100, sub = "%", color }: { label: str
 }
 
 function ChevronDownIcon() {
-  return <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 rotate-90" size={14} />;
+  return <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />;
 }

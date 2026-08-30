@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { 
-  Users, MapPin, Navigation, MessageSquare, 
+  Users, MapPin, Navigation, 
   CheckCircle2, Clock, AlertTriangle, Shield,
-  Plus, Camera, Send, Radio, LifeBuoy,
-  ChevronRight, MoreHorizontal, Activity,
-  Phone, Globe, Heart
+  Plus, Camera, Send, Radio,
+  ChevronRight
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';

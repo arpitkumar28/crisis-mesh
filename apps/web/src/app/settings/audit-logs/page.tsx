@@ -2,10 +2,9 @@
 
 import React from 'react';
 import { 
-  History, Search, Filter, Download, ChevronDown,
-  User, Shield, Radio, Bell, AlertTriangle, 
-  Clock, CheckCircle2, Info, ArrowUpRight,
-  Database, Lock, Eye, FileText
+  History, Search, Download, ChevronDown,
+  User, AlertTriangle, 
+  Clock, Lock, Eye, FileText
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { 
-  User, Mail, Phone, MapPin, Shield, 
-  Camera, CheckCircle2, ChevronRight,
-  Clock, Heart, Star, Navigation, 
-  Layout, Briefcase, LifeBuoy, Wrench,
+  Shield, 
+  Camera, CheckCircle2,
+  Star, Navigation, 
+  Radio, Briefcase, LifeBuoy, Wrench,
   PhoneCall, Map as MapIcon
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
@@ -172,8 +172,4 @@ function EquipItem({ icon, label }: { icon: React.ReactNode; label: string }) {
        <span className="text-[9px] font-black text-[#0f172a] uppercase">{label}</span>
     </div>
   );
-}
-
-function Radio({ size, className }: { size?: number; className?: string }) {
-  return <Layout size={size} className={className} />;
 }

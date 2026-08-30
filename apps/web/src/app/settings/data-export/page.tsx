@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { 
-  Download, FileText, Database, Share2, 
+  Download, Database, Share2, 
   Plus, Search, Filter, ChevronDown, 
   Clock, CheckCircle2, AlertCircle, RefreshCw,
   Calendar, Mail, Globe, HardDrive, History,

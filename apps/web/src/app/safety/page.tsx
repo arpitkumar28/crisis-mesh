@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import {
-  ShieldCheck, Search, Play, CheckCircle2,
-  AlertTriangle, XCircle, Briefcase, Droplets,
+  Play, CheckCircle2,
+  XCircle, Briefcase, Droplets,
   Flame, Zap, Wind, Thermometer,
-  ChevronRight, ArrowRight, Video, FileText, Phone, Activity
+  ArrowRight, FileText, Phone, Activity
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

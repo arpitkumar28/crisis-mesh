@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Radio, Bell, Clock, Database, Battery, Map as MapIcon,
-  AlertTriangle, Activity, Zap, Droplets, Wind,
-  Thermometer, MoreHorizontal, ArrowUpRight,
-  Filter, Download, ChevronDown, Plus, Search,
-  Cloud, Waves, Gauge, Loader2
+  Activity, Droplets, Wind,
+  Thermometer,
+  Gauge, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import {
