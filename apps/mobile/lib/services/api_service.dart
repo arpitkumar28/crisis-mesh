@@ -21,8 +21,9 @@ class ApiService {
       onRequest: (options, handler) {
         developer.log('🚀 [API REQUEST] ${options.method} ${options.path}',
             name: 'ApiService');
-        if (options.data != null)
+        if (options.data != null) {
           developer.log('📦 BODY: ${options.data}', name: 'ApiService');
+        }
         return handler.next(options);
       },
       onResponse: (response, handler) {
@@ -37,9 +38,10 @@ class ApiService {
             '❌ [API ERROR] ${e.response?.statusCode ?? "NETWORK"} ${e.requestOptions.path}',
             name: 'ApiService');
         developer.log('⚠️ MESSAGE: ${e.message}', name: 'ApiService');
-        if (e.response?.data != null)
+        if (e.response?.data != null) {
           developer.log('🔻 ERROR DATA: ${e.response?.data}',
               name: 'ApiService');
+        }
         return handler.next(e);
       },
     ));
@@ -58,8 +60,9 @@ class ApiService {
   String? get authToken => _token;
 
   void _applyAuth() {
-    if (_token != null)
+    if (_token != null) {
       _dio.options.headers['Authorization'] = 'Bearer $_token';
+    }
   }
 
   // Auth API

@@ -58,7 +58,7 @@ class _AirQualityScreenState extends ConsumerState<AirQualityScreen> {
                         value: aqi / 500,
                         strokeWidth: 15,
                         color: color,
-                        backgroundColor: color.withOpacity(0.1),
+                        backgroundColor: color.withValues(alpha: 0.1),
                       ),
                     ),
                     Column(

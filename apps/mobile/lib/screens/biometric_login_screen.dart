@@ -102,7 +102,7 @@ class _BiometricLoginScreenState extends ConsumerState<BiometricLoginScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0757E8).withOpacity(0.1),
+                    color: const Color(0xFF0757E8).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: _isAuthenticating 

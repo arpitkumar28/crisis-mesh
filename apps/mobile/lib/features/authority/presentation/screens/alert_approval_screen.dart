@@ -6,68 +6,82 @@ class AlertApprovalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Alert Approval'),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
-              ),
-              child: const Row(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.pending_actions, color: Colors.orange),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Pending Review: Requested by Operator Amit Verma',
-                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFD),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE4EAF4)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Flood Warning',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF102043),
+                          ),
+                        ),
+                        const Text(
+                          'Jaipur District',
+                          style: TextStyle(color: Color(0xFF65728A), fontSize: 14),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(
+                              '26 Aug 2023, 10:00 PM',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Message',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF102043),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Heavy rainfall expected in low lying areas. People are advised to stay indoors and move to safer places.',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF65728A),
+                      height: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Alert Details',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
-            ),
-            const SizedBox(height: 16),
-            _buildDetailField('Type', 'Flood Warning'),
-            _buildDetailField('Severity', 'CRITICAL', isCritical: true),
-            _buildDetailField('Target Areas', 'Jaipur District, Sector 5, Sector 8'),
-            _buildDetailField('Message', 'Heavy rainfall expected. Residents in low lying areas are advised to move to higher ground immediately. Emergency shelters are open at Community Hall.'),
-            const SizedBox(height: 24),
-            const Text(
-              'Impact Prediction',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFD),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Column(
-                children: [
-                  _ImpactRow(label: 'Population at Risk', value: '45,000+'),
-                  Divider(height: 20),
-                  _ImpactRow(label: 'Infrastructure Risk', value: 'High'),
-                  Divider(height: 20),
-                  _ImpactRow(label: 'Confidence Level', value: '87%'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
@@ -76,67 +90,31 @@ class AlertApprovalScreen extends StatelessWidget {
                       backgroundColor: const Color(0xFF09A86B),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: const Text('Approve & Broadcast', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE94D4D),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
                     ),
-                    child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailField(String label, String value, {bool isCritical = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF65728A), fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isCritical ? Colors.red : const Color(0xFF102043),
-            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ImpactRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ImpactRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Color(0xFF65728A))),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF102043))),
-      ],
     );
   }
 }

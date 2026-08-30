@@ -54,7 +54,7 @@ class _SheltersScreenState extends ConsumerState<SheltersScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                             child: const Icon(Icons.home_work_outlined, color: Colors.blue),
                           ),
                           const SizedBox(width: 12),
@@ -82,7 +82,7 @@ class _SheltersScreenState extends ConsumerState<SheltersScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _ShelterInfo(icon: Icons.people_outline, label: 'Capacity', value: '${shelter['capacity'] ?? 0}'),
-                          _ShelterInfo(icon: Icons.near_me_outlined, label: 'Distance', value: '2.4 km'),
+                          const _ShelterInfo(icon: Icons.near_me_outlined, label: 'Distance', value: '2.4 km'),
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(

@@ -64,7 +64,7 @@ class SOSTrackingScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 const Text('Help is on the way. Please stay where you are.', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 32),
-                _StatusStep(
+                const _StatusStep(
                   title: 'Signal Received',
                   subtitle: 'Emergency services have been notified.',
                   isActive: true,
@@ -140,7 +140,7 @@ class _StatusStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? Colors.black : Colors.grey)),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),

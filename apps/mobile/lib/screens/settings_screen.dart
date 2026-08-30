@@ -34,7 +34,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: const Text('Receive alerts and updates'),
             value: _pushNotifications,
             onChanged: (val) => setState(() => _pushNotifications = val),
-            activeColor: const Color(0xFF0757E8),
+            activeThumbColor: const Color(0xFF0757E8),
           ),
           _buildSectionHeader('Privacy & Storage'),
           SwitchListTile(
@@ -42,7 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: const Text('Share location during emergencies'),
             value: _locationSharing,
             onChanged: (val) => setState(() => _locationSharing = val),
-            activeColor: const Color(0xFF0757E8),
+            activeThumbColor: const Color(0xFF0757E8),
           ),
           ListTile(
             title: const Text('Clear Cache'),

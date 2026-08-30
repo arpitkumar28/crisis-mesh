@@ -79,9 +79,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     children: [
                       Text(notification['message'] ?? ''),
                       const SizedBox(height: 4),
-                      Text(
+                      const Text(
                         '2 hours ago', // In real app, parse created_at
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
                       ),
                     ],
                   ),

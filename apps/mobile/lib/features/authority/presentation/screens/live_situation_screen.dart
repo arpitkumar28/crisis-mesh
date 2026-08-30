@@ -8,10 +8,36 @@ class LiveSituationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Live Situation'),
+        title: Column(
+          children: [
+            const Text(
+              'Live Situation',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF102043),
+              ),
+            ),
+            Text(
+              'Rajasthan',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white.withValues(alpha: 0.9),
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF102043)),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Color(0xFF102043)),
+            onPressed: () {},
+          ),
         ],
       ),
       body: Stack(
@@ -19,31 +45,30 @@ class LiveSituationScreen extends StatelessWidget {
           FlutterMap(
             options: const MapOptions(
               initialCenter: LatLng(26.9124, 75.7873),
-              initialZoom: 11,
+              initialZoom: 12,
             ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.crisismesh.mobile',
               ),
-              // Simulating heatmaps or large incident clusters
               CircleLayer(
                 circles: [
                   CircleMarker(
                     point: const LatLng(26.9124, 75.7873),
-                    color: Colors.red.withValues(alpha: 0.3),
+                    color: Colors.red.withValues(alpha: 0.2),
                     borderStrokeWidth: 2,
-                    borderColor: Colors.red,
+                    borderColor: Colors.red.withValues(alpha: 0.5),
                     useRadiusInMeter: true,
-                    radius: 2000,
+                    radius: 1000,
                   ),
                   CircleMarker(
-                    point: const LatLng(26.8500, 75.8200),
-                    color: Colors.orange.withValues(alpha: 0.3),
+                    point: const LatLng(26.9300, 75.8000),
+                    color: Colors.orange.withValues(alpha: 0.2),
                     borderStrokeWidth: 2,
-                    borderColor: Colors.orange,
+                    borderColor: Colors.orange.withValues(alpha: 0.5),
                     useRadiusInMeter: true,
-                    radius: 1500,
+                    radius: 800,
                   ),
                 ],
               ),
@@ -53,98 +78,109 @@ class LiveSituationScreen extends StatelessWidget {
                     point: LatLng(26.9124, 75.7873),
                     width: 40,
                     height: 40,
-                    child: Icon(Icons.warning, color: Colors.red, size: 30),
+                    child: Icon(Icons.location_on, color: Colors.red, size: 40),
                   ),
                   Marker(
-                    point: LatLng(26.8500, 75.8200),
+                    point: LatLng(26.9300, 75.8000),
                     width: 40,
                     height: 40,
-                    child: Icon(Icons.local_fire_department, color: Colors.orange, size: 30),
+                    child: Icon(Icons.location_on, color: Colors.orange, size: 40),
                   ),
                 ],
               ),
             ],
           ),
-          _buildSummaryOverlay(),
-          _buildMapControls(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryOverlay() {
-    return Positioned(
-      top: 16,
-      left: 16,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10),
-          ],
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _SummaryItem(label: 'Incidents', value: '12', color: Colors.red),
-            _SummaryItem(label: 'Affected', value: '3.2k', color: Colors.orange),
-            _SummaryItem(label: 'Responders', value: '45', color: Colors.blue),
-            _SummaryItem(label: 'Critical', value: '4', color: Colors.purple),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMapControls() {
-    return Positioned(
-      bottom: 100,
-      right: 16,
-      child: Column(
-        children: [
-          _MapFab(icon: Icons.layers, onPressed: () {}),
-          const SizedBox(height: 8),
-          _MapFab(icon: Icons.my_location, onPressed: () {}),
+          Positioned(
+            bottom: 24,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _LegendItem(color: Colors.red, label: 'Critical'),
+                  _LegendItem(color: Colors.orange, label: 'Medium'),
+                  _LegendItem(color: Colors.blue, label: 'Low'),
+                  _LegendItem(color: Colors.green, label: 'Safe'),
+                ],
+              ),
+            ),
+          ),
+          const Positioned(
+            bottom: 100,
+            right: 20,
+            child: Column(
+              children: [
+                const _MapButton(icon: Icons.add),
+                SizedBox(height: 8),
+                const _MapButton(icon: Icons.remove),
+                SizedBox(height: 16),
+                const _MapButton(icon: Icons.my_location, color: const Color(0xFF0757E8)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SummaryItem extends StatelessWidget {
-  final String label;
-  final String value;
+class _LegendItem extends StatelessWidget {
   final Color color;
+  final String label;
 
-  const _SummaryItem({required this.label, required this.value, required this.color});
+  const _LegendItem({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF65728A))),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
 }
 
-class _MapFab extends StatelessWidget {
+class _MapButton extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onPressed;
+  final Color? color;
 
-  const _MapFab({required this.icon, required this.onPressed});
+  const _MapButton({required this.icon, this.color});
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.small(
-      heroTag: null,
-      onPressed: onPressed,
-      backgroundColor: Colors.white,
-      child: Icon(icon, color: const Color(0xFF102043)),
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+        ],
+      ),
+      child: Icon(icon, color: color ?? const Color(0xFF102043), size: 20),
     );
   }
 }

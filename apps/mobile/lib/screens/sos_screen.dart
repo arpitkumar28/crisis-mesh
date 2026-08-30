@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 import '../services/app_messenger.dart';
 import 'sos_tracking_screen.dart';
@@ -37,11 +36,10 @@ class _SOSScreenState extends State<SOSScreen> {
     });
 
     try {
-      // In production, this would capture GPS coordinates first
       final response = await crisisApi.createIncident({
         'title': 'SOS EMERGENCY SIGNAL',
         'description': 'User triggered SOS emergency button.',
-        'type': 'MEDICAL', // Default for SOS if not specified
+        'type': 'MEDICAL',
         'severity': 'CRITICAL',
         'is_sos': true,
       });
@@ -65,43 +63,62 @@ class _SOSScreenState extends State<SOSScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFD92835),
       body: SafeArea(
-        child: Center(
+        child: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 0.8,
+              colors: [Color(0xFFF23D4B), Color(0xFFD92835)],
+            ),
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.sos, size: 120, color: Colors.white),
-              const SizedBox(height: 24),
+              const Spacer(),
               const Text(
-                'SOS Emergency',
-                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                'EMERGENCY',
+                style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 4),
               ),
-              const SizedBox(height: 8),
               const Text(
-                'Tap to send emergency alert',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                'SOS',
+                style: TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 60),
+              
               if (!_timerStarted && !_isSending)
                 GestureDetector(
                   onTap: _startSOS,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, spreadRadius: 5),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'SOS',
-                        style: TextStyle(color: Color(0xFFD92835), fontSize: 48, fontWeight: FontWeight.w900),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Animated outer rings
+                      Container(
+                        width: 240,
+                        height: 240,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
+                      Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 30, spreadRadius: 5),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.touch_app_rounded, color: Color(0xFFD92835), size: 80),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
               if (_timerStarted)
                 Column(
                   children: [
@@ -109,47 +126,64 @@ class _SOSScreenState extends State<SOSScreen> {
                       alignment: Alignment.center,
                       children: [
                         SizedBox(
-                          width: 200,
-                          height: 200,
+                          width: 220,
+                          height: 220,
                           child: CircularProgressIndicator(
                             value: _countdown / 3.0,
-                            strokeWidth: 10,
+                            strokeWidth: 8,
                             color: Colors.white,
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
                           ),
                         ),
                         Text(
                           _countdown.ceil().toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 72, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.white, fontSize: 80, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 40),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _timerStarted = false;
-                        _countdown = 3.0;
-                      }),
-                      child: const Text('CANCEL', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 48),
+                    const Text(
+                      'Alerting responders in...',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ],
                 ),
+
               if (_isSending)
                 const Column(
                   children: [
                     CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 20),
-                    Text('Sending Emergency Signal...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 24),
+                    Text('Connecting to Command Center...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
-              const SizedBox(height: 60),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  'Your location and identity will be sent to the emergency response team.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+
+              const Spacer(),
+              if (_timerStarted)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: TextButton(
+                    onPressed: () => setState(() {
+                      _timerStarted = false;
+                      _countdown = 3.0;
+                    }),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: const Text('CANCEL ALERT', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+                  child: Text(
+                    'Tap and hold to send\nemergency alert\n\nYour location will be\nshared instantly.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

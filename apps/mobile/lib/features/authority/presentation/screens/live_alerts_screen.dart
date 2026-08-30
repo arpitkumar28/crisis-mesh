@@ -6,47 +6,60 @@ class LiveAlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Live Alerts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_alert, color: Color(0xFF0757E8)),
-            onPressed: () {},
-          ),
-        ],
+        title: const Text('Active Alerts'),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          _buildFilterBar(),
+          _buildFilterTabs(),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
-                _buildAlertItem(
-                  title: 'Heavy Rainfall Warning',
+                _buildAlertCard(
+                  type: 'Heavy Rainfall',
                   location: 'Jaipur District',
-                  severity: 'HIGH',
-                  status: 'ACTIVE',
-                  time: '10 mins ago',
-                  type: 'Weather',
+                  time: '12m ago',
+                  severity: 'High',
+                  color: Colors.orange,
                 ),
-                _buildAlertItem(
-                  title: 'Flood Alert - Sector 5',
-                  location: 'Mansarovar, Jaipur',
-                  severity: 'CRITICAL',
-                  status: 'ACTIVE',
-                  time: '25 mins ago',
-                  type: 'Flood',
+                _buildAlertCard(
+                  type: 'Flood Warning',
+                  location: 'Tonk',
+                  time: '45m ago',
+                  severity: 'Critical',
+                  color: Colors.red,
                 ),
-                _buildAlertItem(
-                  title: 'Thunderstorm Warning',
-                  location: 'Tonk Road Area',
-                  severity: 'MEDIUM',
-                  status: 'EXPIRED',
-                  time: '2 hours ago',
-                  type: 'Weather',
+                _buildAlertCard(
+                  type: 'Thunderstorm',
+                  location: 'Dausa',
+                  time: '1h ago',
+                  severity: 'Medium',
+                  color: Colors.blue,
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0757E8),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('View All Alerts',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         ],
@@ -54,136 +67,94 @@ class LiveAlertsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterBar() {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE4EAF4))),
-      ),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
+  Widget _buildFilterTabs() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
         children: [
-          _buildFilterChip('All Alerts', true),
-          _buildFilterChip('Critical', false),
-          _buildFilterChip('Weather', false),
-          _buildFilterChip('Geological', false),
+          _buildTab('All 23', true),
+          const SizedBox(width: 8),
+          _buildTab('High 05', false),
+          const SizedBox(width: 8),
+          _buildTab('Critical 02', false),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isActive) {
+  Widget _buildTab(String label, bool active) {
     return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF0757E8).withValues(alpha: 0.1) : Colors.white,
+        color: active ? const Color(0xFF0757E8) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isActive ? const Color(0xFF0757E8) : const Color(0xFFE4EAF4)),
+        border: Border.all(
+          color: active ? const Color(0xFF0757E8) : const Color(0xFFE4EAF4),
+        ),
       ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? const Color(0xFF0757E8) : const Color(0xFF65728A),
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: active ? Colors.white : const Color(0xFF65728A),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildAlertItem({
-    required String title,
-    required String location,
-    required String severity,
-    required String status,
-    required String time,
+  Widget _buildAlertCard({
     required String type,
+    required String location,
+    required String time,
+    required String severity,
+    required Color color,
   }) {
-    Color severityColor;
-    switch (severity) {
-      case 'CRITICAL':
-        severityColor = Colors.red;
-        break;
-      case 'HIGH':
-        severityColor = Colors.orange;
-        break;
-      default:
-        severityColor = Colors.blue;
-    }
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE4EAF4)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: severityColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  type,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF102043),
+                  ),
                 ),
-                child: Text(
-                  severity,
-                  style: TextStyle(color: severityColor, fontSize: 10, fontWeight: FontWeight.bold),
+                const SizedBox(height: 4),
+                Text(
+                  location,
+                  style: const TextStyle(color: Color(0xFF65728A), fontSize: 13),
                 ),
-              ),
-              Text(time, style: const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF65728A)),
-              const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: Color(0xFF65728A), fontSize: 13)),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Status: $status',
+                severity,
                 style: TextStyle(
+                  color: color,
                   fontWeight: FontWeight.bold,
-                  color: status == 'ACTIVE' ? Colors.green : Colors.grey,
                   fontSize: 12,
                 ),
               ),
-              Row(
-                children: [
-                  TextButton(onPressed: () {}, child: const Text('View Details')),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0757E8),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    child: const Text('Broadcast'),
-                  ),
-                ],
+              const SizedBox(height: 4),
+              Text(
+                time,
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
               ),
             ],
           ),

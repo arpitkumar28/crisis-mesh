@@ -9,7 +9,6 @@ class ResponderAvailabilityScreen extends StatefulWidget {
 
 class _ResponderAvailabilityScreenState extends State<ResponderAvailabilityScreen> {
   bool _isOnDuty = true;
-  final String _currentShift = 'Morning (08:00 AM - 04:00 PM)';
   String _status = 'Available';
 
   @override
