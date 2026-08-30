@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import '../config/app_config.dart';
 import '../models/information_models.dart';
 
 class ApiService {
@@ -9,9 +9,9 @@ class ApiService {
   final String baseUrl;
 
   ApiService({String? baseUrl})
-      : baseUrl = baseUrl ?? (Platform.isAndroid ? 'http://10.0.2.2:3002/api/' : 'http://localhost:3002/api/'),
+      : baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _dio = Dio(BaseOptions(
-          baseUrl: baseUrl ?? (Platform.isAndroid ? 'http://10.0.2.2:3002/api/' : 'http://localhost:3002/api/'),
+          baseUrl: baseUrl ?? AppConfig.apiBaseUrl,
           headers: {'Content-Type': 'application/json'},
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 5),
@@ -19,19 +19,27 @@ class ApiService {
     // Console Logging Interceptors
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        developer.log('🚀 [API REQUEST] ${options.method} ${options.path}', name: 'ApiService');
-        if (options.data != null) developer.log('📦 BODY: ${options.data}', name: 'ApiService');
+        developer.log('🚀 [API REQUEST] ${options.method} ${options.path}',
+            name: 'ApiService');
+        if (options.data != null)
+          developer.log('📦 BODY: ${options.data}', name: 'ApiService');
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        developer.log('✅ [API RESPONSE] ${response.statusCode} ${response.requestOptions.path}', name: 'ApiService');
+        developer.log(
+            '✅ [API RESPONSE] ${response.statusCode} ${response.requestOptions.path}',
+            name: 'ApiService');
         developer.log('📄 DATA: ${response.data}', name: 'ApiService');
         return handler.next(response);
       },
       onError: (DioException e, handler) {
-        developer.log('❌ [API ERROR] ${e.response?.statusCode ?? "NETWORK"} ${e.requestOptions.path}', name: 'ApiService');
+        developer.log(
+            '❌ [API ERROR] ${e.response?.statusCode ?? "NETWORK"} ${e.requestOptions.path}',
+            name: 'ApiService');
         developer.log('⚠️ MESSAGE: ${e.message}', name: 'ApiService');
-        if (e.response?.data != null) developer.log('🔻 ERROR DATA: ${e.response?.data}', name: 'ApiService');
+        if (e.response?.data != null)
+          developer.log('🔻 ERROR DATA: ${e.response?.data}',
+              name: 'ApiService');
         return handler.next(e);
       },
     ));
@@ -50,7 +58,8 @@ class ApiService {
   String? get authToken => _token;
 
   void _applyAuth() {
-    if (_token != null) _dio.options.headers['Authorization'] = 'Bearer $_token';
+    if (_token != null)
+      _dio.options.headers['Authorization'] = 'Bearer $_token';
   }
 
   // Auth API
@@ -80,7 +89,10 @@ class ApiService {
     final body = response.data;
     final data = body is Map<String, dynamic> ? body['data'] : null;
     if (data is! List) return const [];
-    return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    return data
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
   Map<String, dynamic>? dataFrom(Response response) {
@@ -212,7 +224,8 @@ class ApiService {
 
   Future<Response> getDeviceStatusHistory(String id, {int limit = 50}) async {
     _applyAuth();
-    return await _dio.get('v1/devices/$id/status/history', queryParameters: {'limit': limit});
+    return await _dio.get('v1/devices/$id/status/history',
+        queryParameters: {'limit': limit});
   }
 
   // Districts API
@@ -259,9 +272,11 @@ class ApiService {
   }
 
   // Telemetry API
-  Future<Response> getTelemetryByDevice(String deviceId, {int limit = 50}) async {
+  Future<Response> getTelemetryByDevice(String deviceId,
+      {int limit = 50}) async {
     _applyAuth();
-    return await _dio.get('v1/telemetry/device/$deviceId', queryParameters: {'limit': limit});
+    return await _dio.get('v1/telemetry/device/$deviceId',
+        queryParameters: {'limit': limit});
   }
 
   Future<Response> getTelemetryBySensor(String sensorId) async {
@@ -284,7 +299,9 @@ class ApiService {
   Future<WeatherData> getWeather(double latitude, double longitude) async {
     try {
       final response = await _dio.get('v1/public/weather/$latitude/$longitude');
-      final data = response.data is Map<String, dynamic> ? response.data['data'] : response.data;
+      final data = response.data is Map<String, dynamic>
+          ? response.data['data']
+          : response.data;
       return WeatherData.fromJson(Map<String, dynamic>.from(data as Map));
     } catch (e) {
       developer.log('ApiService ERROR (Weather)', error: e);
@@ -295,9 +312,15 @@ class ApiService {
   Future<List<NewsArticle>> getNews() async {
     try {
       final response = await _dio.get('v1/news');
-      final data = response.data is Map<String, dynamic> ? response.data['data'] : response.data;
+      final data = response.data is Map<String, dynamic>
+          ? response.data['data']
+          : response.data;
       if (data is List) {
-        return data.whereType<Map>().map((item) => NewsArticle.fromJson(Map<String, dynamic>.from(item))).toList();
+        return data
+            .whereType<Map>()
+            .map(
+                (item) => NewsArticle.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -317,7 +340,7 @@ class ApiService {
   }
 
   Future<Response> getAirQuality(double lat, double lon) async {
-    // Fallback to weather endpoint if air quality specific endpoint doesn't exist, 
+    // Fallback to weather endpoint if air quality specific endpoint doesn't exist,
     // or just return mock data if not in backend yet.
     // Based on app.module.ts, there is no AirQualityModule, but maybe it's in Weather or Telemetry.
     // Let's assume there's a public endpoint or it's part of weather.

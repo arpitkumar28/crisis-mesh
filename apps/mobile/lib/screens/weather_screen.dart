@@ -22,7 +22,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
   void _loadWeather() {
     setState(() {
-      _weatherFuture = ApiService().getWeather(latitude, longitude);
+      _weatherFuture = crisisApi.getWeather(latitude, longitude);
     });
   }
 
@@ -109,17 +109,20 @@ class _WeatherScreenState extends State<WeatherScreen> {
                             children: [
                               _WeatherMetric(
                                 label: 'Temperature',
-                                value: '${weather.temperature?.toStringAsFixed(1) ?? "—"}°C',
+                                value:
+                                    '${weather.temperature?.toStringAsFixed(1) ?? "—"}°C',
                                 icon: Icons.device_thermostat,
                               ),
                               _WeatherMetric(
                                 label: 'Humidity',
-                                value: '${weather.humidity?.toStringAsFixed(0) ?? "—"}%',
+                                value:
+                                    '${weather.humidity?.toStringAsFixed(0) ?? "—"}%',
                                 icon: Icons.water_drop,
                               ),
                               _WeatherMetric(
                                 label: 'Wind',
-                                value: '${weather.windSpeed?.toStringAsFixed(1) ?? "—"} km/h',
+                                value:
+                                    '${weather.windSpeed?.toStringAsFixed(1) ?? "—"} km/h',
                                 icon: Icons.air,
                               ),
                             ],
@@ -130,17 +133,20 @@ class _WeatherScreenState extends State<WeatherScreen> {
                             children: [
                               _WeatherMetric(
                                 label: 'Precipitation',
-                                value: '${weather.precipitation?.toStringAsFixed(1) ?? "—"} mm',
+                                value:
+                                    '${weather.precipitation?.toStringAsFixed(1) ?? "—"} mm',
                                 icon: Icons.grain,
                               ),
                               _WeatherMetric(
                                 label: 'Pressure',
-                                value: '${weather.pressure?.toStringAsFixed(0) ?? "—"} mb',
+                                value:
+                                    '${weather.pressure?.toStringAsFixed(0) ?? "—"} mb',
                                 icon: Icons.compress,
                               ),
                               _WeatherMetric(
                                 label: 'Visibility',
-                                value: '${weather.visibility != null ? (weather.visibility! / 1000).toStringAsFixed(1) : "—"} km',
+                                value:
+                                    '${weather.visibility != null ? (weather.visibility! / 1000).toStringAsFixed(1) : "—"} km',
                                 icon: Icons.visibility,
                               ),
                             ],
@@ -148,7 +154,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           const SizedBox(height: 12),
                           Text(
                             'Last Updated: ${weather.observedAt}',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -156,7 +163,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Hourly Forecast
-                  if (weather.forecast != null && weather.forecast!['time'] != null)
+                  if (weather.forecast != null &&
+                      weather.forecast!['time'] != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -175,21 +183,30 @@ class _WeatherScreenState extends State<WeatherScreen> {
                               height: 150,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: (weather.forecast!['time'] as List).length < 12
+                                itemCount: (weather.forecast!['time'] as List)
+                                            .length <
+                                        12
                                     ? (weather.forecast!['time'] as List).length
                                     : 12,
                                 itemBuilder: (context, index) {
-                                  final times = weather.forecast!['time'] as List;
-                                  final temps = weather.forecast!['temperature_2m'] as List;
-                                  final codes = weather.forecast!['weather_code'] as List;
+                                  final times =
+                                      weather.forecast!['time'] as List;
+                                  final temps = weather
+                                      .forecast!['temperature_2m'] as List;
+                                  final codes =
+                                      weather.forecast!['weather_code'] as List;
 
                                   return Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          times[index].toString().substring(11, 16),
+                                          times[index]
+                                              .toString()
+                                              .substring(11, 16),
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         const SizedBox(height: 8),

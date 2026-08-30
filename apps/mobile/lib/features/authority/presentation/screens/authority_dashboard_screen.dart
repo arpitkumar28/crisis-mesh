@@ -11,10 +11,12 @@ class AuthorityDashboardScreen extends ConsumerStatefulWidget {
   const AuthorityDashboardScreen({super.key});
 
   @override
-  ConsumerState<AuthorityDashboardScreen> createState() => _AuthorityDashboardScreenState();
+  ConsumerState<AuthorityDashboardScreen> createState() =>
+      _AuthorityDashboardScreenState();
 }
 
-class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScreen> {
+class _AuthorityDashboardScreenState
+    extends ConsumerState<AuthorityDashboardScreen> {
   final _api = crisisApi;
   late Future<Map<String, dynamic>> _dashboardData;
   StreamSubscription<SocketEvent>? _eventsSubscription;
@@ -70,11 +72,14 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
                 _buildLiveStatusOverview(metrics),
                 const SizedBox(height: 24),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.between,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Critical Alerts',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF102043)),
                     ),
                     if (alerts.length > 5)
                       TextButton(
@@ -85,20 +90,28 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
                 ),
                 const SizedBox(height: 12),
                 if (alerts.isEmpty)
-                  const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No active alerts', style: TextStyle(color: Colors.grey)))),
+                  const Center(
+                      child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text('No active alerts',
+                              style: TextStyle(color: Colors.grey)))),
                 ...alerts.take(3).map((alert) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildAlertCard(
-                    title: alert['title'] ?? 'Alert',
-                    location: alert['location']?['name'] ?? 'Unknown Location',
-                    severity: alert['severity'] ?? 'UNKNOWN',
-                    time: _formatTime(alert['issued_at']),
-                  ),
-                )),
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildAlertCard(
+                        title: alert['title'] ?? 'Alert',
+                        location:
+                            alert['location']?['name'] ?? 'Unknown Location',
+                        severity: alert['severity'] ?? 'UNKNOWN',
+                        time: _formatTime(alert['issued_at']),
+                      ),
+                    )),
                 const SizedBox(height: 24),
                 const Text(
                   'Resource Overview',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF102043)),
                 ),
                 const SizedBox(height: 12),
                 _buildResourceStats(metrics),
@@ -158,9 +171,12 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('Active Incidents', '${metrics['open_incidents'] ?? 0}', Colors.red),
-              _buildStatItem('Critical Alerts', '${metrics['critical_alerts'] ?? 0}', Colors.orange),
-              _buildStatItem('Online Devices', '${metrics['online_devices'] ?? 0}', Colors.blue),
+              _buildStatItem('Active Incidents',
+                  '${metrics['open_incidents'] ?? 0}', Colors.red),
+              _buildStatItem('Critical Alerts',
+                  '${metrics['critical_alerts'] ?? 0}', Colors.orange),
+              _buildStatItem('Online Devices',
+                  '${metrics['online_devices'] ?? 0}', Colors.blue),
             ],
           ),
         ],
@@ -173,13 +189,17 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
       children: [
         Text(
           value,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+              fontSize: 24, fontWeight: FontWeight.bold, color: color),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF65728A), fontWeight: FontWeight.w500),
+          style: const TextStyle(
+              fontSize: 10,
+              color: Color(0xFF65728A),
+              fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -197,11 +217,15 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
       decoration: BoxDecoration(
         color: isCritical ? const Color(0xFFFFEFF0) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isCritical ? Colors.red.withValues(alpha: 0.2) : const Color(0xFFE4EAF4)),
+        border: Border.all(
+            color: isCritical
+                ? Colors.red.withValues(alpha: 0.2)
+                : const Color(0xFFE4EAF4)),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_rounded, color: isCritical ? Colors.red : Colors.orange, size: 32),
+          Icon(Icons.warning_rounded,
+              color: isCritical ? Colors.red : Colors.orange, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -211,16 +235,22 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF102043)),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF102043)),
                 ),
-                Text('$location · $time', style: const TextStyle(color: Color(0xFF65728A), fontSize: 13)),
+                Text('$location · $time',
+                    style: const TextStyle(
+                        color: Color(0xFF65728A), fontSize: 13)),
               ],
             ),
           ),
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: isCritical ? Colors.red : const Color(0xFF0757E8),
+              backgroundColor:
+                  isCritical ? Colors.red : const Color(0xFF0757E8),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               elevation: 0,
@@ -235,14 +265,25 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
   Widget _buildResourceStats(Map metrics) {
     return Row(
       children: [
-        Expanded(child: _buildSimpleStatCard('Devices', '${metrics['total_devices'] ?? 0}', Icons.sensors, Colors.blue)),
+        Expanded(
+            child: _buildSimpleStatCard(
+                'Devices',
+                '${metrics['total_devices'] ?? 0}',
+                Icons.sensors,
+                Colors.blue)),
         const SizedBox(width: 12),
-        Expanded(child: _buildSimpleStatCard('Active Alerts', '${metrics['active_alerts'] ?? 0}', Icons.notifications_active, Colors.orange)),
+        Expanded(
+            child: _buildSimpleStatCard(
+                'Active Alerts',
+                '${metrics['active_alerts'] ?? 0}',
+                Icons.notifications_active,
+                Colors.orange)),
       ],
     );
   }
 
-  Widget _buildSimpleStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildSimpleStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -257,8 +298,12 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
+              Text(value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
             ],
           ),
         ],
@@ -275,21 +320,32 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
       crossAxisSpacing: 12,
       childAspectRatio: 2.5,
       children: [
-        _buildActionTile(context, Icons.add_alert, 'Create Alert', const Color(0xFF0757E8), () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const AlertCreationScreen()));
+        _buildActionTile(
+            context, Icons.add_alert, 'Create Alert', const Color(0xFF0757E8),
+            () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AlertCreationScreen()));
         }),
-        _buildActionTile(context, Icons.map, 'Live Situation', Colors.green, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveSituationScreen()));
+        _buildActionTile(context, Icons.map, 'Live Situation', Colors.green,
+            () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const LiveSituationScreen()));
         }),
-        _buildActionTile(context, Icons.analytics, 'Sensors', Colors.purple, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const SensorIntelligenceScreen()));
+        _buildActionTile(context, Icons.analytics, 'Sensors', Colors.purple,
+            () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const SensorIntelligenceScreen()));
         }),
-        _buildActionTile(context, Icons.settings, 'Settings', Colors.grey, () {}),
+        _buildActionTile(
+            context, Icons.settings, 'Settings', Colors.grey, () {}),
       ],
     );
   }
 
-  Widget _buildActionTile(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _buildActionTile(BuildContext context, IconData icon, String label,
+      Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -303,7 +359,8 @@ class _AuthorityDashboardScreenState extends ConsumerState<AuthorityDashboardScr
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: TextStyle(color: color, fontWeight: FontWeight.bold)),
           ],
         ),
       ),

@@ -1,6 +1,19 @@
-# crisis_mesh
+# CrisisMesh mobile
 
-A new Flutter project.
+The Flutter app uses the same NestJS API and Socket.IO service as the web app.
+Release builds point to the deployed CrisisMesh API by default.
+
+## Run against another environment
+
+```bash
+flutter run \
+  --dart-define=CRISISMESH_API_URL=https://your-api.example.com \
+  --dart-define=CRISISMESH_WS_URL=https://your-api.example.com
+```
+
+Use an origin only: do not append `/api` or `/api/v1`. The app adds `/api/`
+itself and uses `/ws` for Socket.IO. Never pass database URLs, JWT secrets, or
+provider keys through `--dart-define`.
 
 ## Getting Started
 

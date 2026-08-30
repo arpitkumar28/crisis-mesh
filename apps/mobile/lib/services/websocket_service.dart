@@ -1,7 +1,7 @@
 import 'package:socket_io_client/socket_io_client.dart' as io;
-import 'dart:io';
 import 'dart:developer' as developer;
 import 'dart:async';
+import '../config/app_config.dart';
 
 class WebSocketService {
   io.Socket? _socket;
@@ -10,11 +10,7 @@ class WebSocketService {
 
   Stream<SocketEvent> get events => _events.stream;
 
-  WebSocketService({String? wsUrl})
-      : wsUrl = wsUrl ??
-            (Platform.isAndroid
-                ? 'http://10.0.2.2:3002'
-                : 'http://localhost:3002');
+  WebSocketService({String? wsUrl}) : wsUrl = wsUrl ?? AppConfig.socketUrl;
 
   void connect(String token) {
     if (_socket != null && _socket!.connected) {

@@ -11,35 +11,43 @@ class DistrictIntelligenceScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
-          _buildDistrictSelector(),
-          const SizedBox(height: 24),
-          _buildRiskSummary(),
-          const SizedBox(height: 24),
-          const Text(
-            'Environmental Intelligence',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
-          ),
-          const SizedBox(height: 12),
-          _buildIntelligenceGrid(),
-          const SizedBox(height: 24),
-          _buildRiskTrendCard(),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0757E8),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('View Full Report', style: TextStyle(fontWeight: FontWeight.bold)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDistrictSelector(),
+            const SizedBox(height: 24),
+            _buildRiskSummary(),
+            const SizedBox(height: 24),
+            const Text(
+              'Environmental Intelligence',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF102043)),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            _buildIntelligenceGrid(),
+            const SizedBox(height: 24),
+            _buildRiskTrendCard(),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0757E8),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('View Full Report',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -60,8 +68,11 @@ class DistrictIntelligenceScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Jaipur District', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('Rajasthan, India', style: TextStyle(color: Color(0xFF65728A), fontSize: 12)),
+                Text('Jaipur District',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('Rajasthan, India',
+                    style: TextStyle(color: Color(0xFF65728A), fontSize: 12)),
               ],
             ),
           ),
@@ -93,9 +104,13 @@ class DistrictIntelligenceScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: TextStyle(
+                    color: color, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(value,
+                style: TextStyle(
+                    color: color, fontSize: 24, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -111,15 +126,20 @@ class DistrictIntelligenceScreen extends StatelessWidget {
       crossAxisSpacing: 12,
       childAspectRatio: 1.3,
       children: [
-        _buildIntelCard('Rainfall', '42mm', 'High', Icons.umbrella, Colors.blue),
-        _buildIntelCard('Water Level', '9.2m', 'Normal', Icons.water, Colors.cyan),
-        _buildIntelCard('Soil Moisture', '64%', 'Alert', Icons.landscape, Colors.brown),
-        _buildIntelCard('Sensors Active', '124/130', 'Good', Icons.sensors, Colors.green),
+        _buildIntelCard(
+            'Rainfall', '42mm', 'High', Icons.umbrella, Colors.blue),
+        _buildIntelCard(
+            'Water Level', '9.2m', 'Normal', Icons.water, Colors.cyan),
+        _buildIntelCard(
+            'Soil Moisture', '64%', 'Alert', Icons.landscape, Colors.brown),
+        _buildIntelCard(
+            'Sensors Active', '124/130', 'Good', Icons.sensors, Colors.green),
       ],
     );
   }
 
-  Widget _buildIntelCard(String label, String value, String status, IconData icon, Color color) {
+  Widget _buildIntelCard(
+      String label, String value, String status, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -141,15 +161,23 @@ class DistrictIntelligenceScreen extends StatelessWidget {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(status,
+                    style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
             ],
           ),
         ],
@@ -168,7 +196,8 @@ class DistrictIntelligenceScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Risk Trend (24h)', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Risk Trend (24h)',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           SizedBox(
             height: 100,
@@ -192,10 +221,14 @@ class DistrictIntelligenceScreen extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('08:00', style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
-              Text('12:00', style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
-              Text('16:00', style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
-              Text('20:00', style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
+              Text('08:00',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
+              Text('12:00',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
+              Text('16:00',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
+              Text('20:00',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF65728A))),
             ],
           ),
         ],
