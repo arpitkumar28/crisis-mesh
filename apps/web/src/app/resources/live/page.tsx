@@ -3,9 +3,7 @@
 import React from 'react';
 import { 
   Truck, MapPin, Navigation, Radio, Activity,
-  Users, Tool, Shield, CheckCircle2, AlertTriangle,
-  Search, Filter, ChevronRight, MoreHorizontal,
-  Maximize2, Box, Package, LifeBuoy
+  Users, Search, LifeBuoy
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
