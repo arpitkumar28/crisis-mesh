@@ -1,11 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  HelpCircle, Search, Book, User, Bell, 
-  Activity, FileText, Settings, Mail, 
-  PhoneCall, Ticket, ExternalLink, ChevronRight,
-  ShieldCheck, Globe, Lock, Cpu
+import {
+  Search, Book, User, Bell, FileText, Settings, Mail, PhoneCall, Ticket, ExternalLink, ChevronRight, Cpu
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

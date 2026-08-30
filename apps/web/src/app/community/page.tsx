@@ -3,9 +3,8 @@
 import React from 'react';
 import { 
   Users, MessageSquare, Megaphone, Calendar, 
-  MapPin, ChevronRight, Plus, Search, 
-  Filter, Heart, Share2, Info, Globe,
-  CheckCircle2, Star, MousePointer2
+  MapPin, Plus, Search, 
+  Heart, Share2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';

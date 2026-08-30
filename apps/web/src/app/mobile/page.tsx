@@ -1,11 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  Smartphone, Download, Map as MapIcon, Bell, 
-  Activity, Shield, Info, ChevronRight, 
-  Zap, Heart, Share2, Globe, CheckCircle2,
-  Apple, Play, QrCode
+import {
+  Map as MapIcon, Bell, Activity, Shield, Zap, CheckCircle2, Apple, Play, QrCode
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

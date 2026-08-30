@@ -1,16 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  AlertTriangle, MapPin, Shield, Users, 
-  ChevronRight, Calendar, Clock, Info,
-  Camera, Plus, Search, CheckCircle2
+import React from 'react';
+import {
+  ChevronRight, Calendar, CheckCircle2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 
 export default function IncidentCreation() {
-  const [step, setStep] = useState(1);
-
   return (
     <OperationsShell eyebrow="Register and create new incident" title="Incident Creation">
       <div className="flex items-center justify-between mb-8">
@@ -24,11 +20,11 @@ export default function IncidentCreation() {
         {/* Left: Step Indicator */}
         <div className="col-span-12 lg:col-span-3 space-y-4">
            <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm p-4">
-              <StepItem number={1} label="Incident Details" active={step === 1} completed={step > 1} />
-              <StepItem number={2} label="Location" active={step === 2} completed={step > 2} />
-              <StepItem number={3} label="Impact & Severity" active={step === 3} completed={step > 3} />
-              <StepItem number={4} label="Resources Needed" active={step === 4} completed={step > 4} />
-              <StepItem number={5} label="Review & Create" active={step === 5} completed={step > 5} />
+              <StepItem number={1} label="Incident Details" active={true} completed={false} />
+              <StepItem number={2} label="Location" active={false} completed={false} />
+              <StepItem number={3} label="Impact & Severity" active={false} completed={false} />
+              <StepItem number={4} label="Resources Needed" active={false} completed={false} />
+              <StepItem number={5} label="Review & Create" active={false} completed={false} />
            </div>
         </div>
 

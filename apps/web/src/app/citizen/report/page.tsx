@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { 
-  AlertTriangle, MapPin, Camera, Send, 
-  ChevronRight, Info, Shield, Droplets,
-  Flame, Zap, Activity, Clock, CheckCircle2,
-  Image as ImageIcon, Upload, X
+  AlertTriangle, MapPin, 
+  Info, Droplets,
+  Flame, Zap, Activity, Clock,
+  Upload
 } from 'lucide-react';
-import { OperationsShell } from '@/components/operations-shell';
 
 const hazardTypes = [
   { id: 'flood', label: 'Flood', icon: <Droplets size={20} /> },

@@ -2,10 +2,7 @@
 
 import React from 'react';
 import { 
-  Bell, CheckCircle2, XCircle, Clock, 
-  Search, Filter, ChevronRight, MoreVertical,
-  AlertTriangle, Shield, Info, User,
-  Check, X, Send, Smartphone, MessageSquare, Mail, Globe,
+  Bell, AlertTriangle, Smartphone, MessageSquare, Mail,
   Download, RefreshCw, BarChart3
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';

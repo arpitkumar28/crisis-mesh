@@ -79,7 +79,7 @@ class LiveAlertsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF0757E8).withOpacity(0.1) : Colors.white,
+        color: isActive ? const Color(0xFF0757E8).withValues(alpha: 0.1) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isActive ? const Color(0xFF0757E8) : const Color(0xFFE4EAF4)),
       ),
@@ -133,7 +133,7 @@ class LiveAlertsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: severityColor.withOpacity(0.1),
+                  color: severityColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

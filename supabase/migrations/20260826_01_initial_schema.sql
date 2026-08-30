@@ -159,10 +159,13 @@ CREATE INDEX idx_geographic_locations_location ON geographic_locations USING GIS
 CREATE TABLE profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
     phone VARCHAR(20),
     name VARCHAR(200) NOT NULL,
     profile_picture_url TEXT,
     location_id UUID REFERENCES geographic_locations(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT true,
+    last_login_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

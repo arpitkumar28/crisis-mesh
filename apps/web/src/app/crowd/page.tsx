@@ -2,15 +2,15 @@
 
 import React from 'react';
 import { 
-  Users, Map as MapIcon, ChevronDown, Search, Maximize2, 
-  Navigation, Radio, TrendingUp, AlertTriangle, 
-  MousePointer2, ArrowUpRight, ArrowDownRight
+  Search, Maximize2, 
+  Navigation, 
+  ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 import { 
   ResponsiveContainer, 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area
 } from 'recharts';
 

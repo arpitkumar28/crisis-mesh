@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { 
-  Video, Radio, Battery, Wifi, Maximize2, 
+import {
+  Video, Battery, Maximize2,
   Navigation, Camera, Play, Square, RefreshCw,
-  Plus, MoreHorizontal, MapPin, Activity, Shield
+  Activity, Shield
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';

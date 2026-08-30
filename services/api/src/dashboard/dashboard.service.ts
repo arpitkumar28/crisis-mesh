@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Repository, Between } from 'typeorm';
 import { Alert, AlertSeverity, AlertStatus } from '../entities/alert.entity';
 import { Device, DeviceStatus } from '../entities/device.entity';
 import { Incident, IncidentStatus } from '../entities/incident.entity';
@@ -16,7 +16,17 @@ export class DashboardService {
   ) {}
 
   async getOverview() {
-    const [totalDevices, onlineDevices, activeAlerts, criticalAlerts, openIncidents, latestAlerts, latestIncidents, latestReadings] = await Promise.all([
+    const now = new Date();
+    const [
+      totalDevices, 
+      onlineDevices, 
+      activeAlerts, 
+      criticalAlerts, 
+      openIncidents, 
+      latestAlerts, 
+      latestIncidents, 
+      latestReadings
+    ] = await Promise.all([
       this.devices.count(),
       this.devices.count({ where: { status: DeviceStatus.ONLINE } }),
       this.alerts.count({ where: { status: AlertStatus.ACTIVE } }),
@@ -27,6 +37,9 @@ export class DashboardService {
       this.readings.find({ relations: { sensor: { device: true } }, order: { timestamp: 'DESC' }, take: 10 }),
     ]);
 
+    // Generate historical trends for the last 7 days using native Date methods
+    const trends = await this.getHistoricalTrends(7);
+
     return {
       metrics: {
         total_devices: totalDevices,
@@ -35,6 +48,7 @@ export class DashboardService {
         critical_alerts: criticalAlerts,
         open_incidents: openIncidents,
       },
+      trends,
       alerts: latestAlerts,
       incidents: latestIncidents,
       telemetry: latestReadings.map((reading) => ({
@@ -48,8 +62,41 @@ export class DashboardService {
         quality_flag: reading.quality_flag,
         timestamp: reading.timestamp,
       })),
-      generated_at: new Date().toISOString(),
+      generated_at: now.toISOString(),
     };
+  }
+
+  private async getHistoricalTrends(days: number) {
+    const trendData = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      const [high, med, low] = await Promise.all([
+        this.alerts.count({ where: { severity: AlertSeverity.CRITICAL, issued_at: Between(start, end) } }),
+        this.alerts.count({ where: { severity: AlertSeverity.HIGH, issued_at: Between(start, end) } }),
+        this.alerts.count({ where: { severity: In([AlertSeverity.MEDIUM, AlertSeverity.LOW]), issued_at: Between(start, end) } }),
+      ]);
+
+      const day = start.getDate().toString().padStart(2, '0');
+      const month = monthNames[start.getMonth()];
+
+      trendData.push({
+        name: `${day} ${month}`,
+        high,
+        med,
+        low,
+      });
+    }
+    return trendData;
   }
 
   async getPublicMap() {

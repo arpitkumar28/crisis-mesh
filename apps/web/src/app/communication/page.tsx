@@ -3,9 +3,7 @@
 import React from 'react';
 import { 
   MessageSquare, Send, Bell, Mail, Phone, 
-  Smartphone, Radio, Users, ChevronRight, 
-  Search, Filter, Plus, Clock, CheckCircle2,
-  AlertTriangle, Info, History, LayoutGrid
+  Smartphone, ChevronRight
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

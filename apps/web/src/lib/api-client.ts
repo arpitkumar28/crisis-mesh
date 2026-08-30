@@ -11,14 +11,15 @@ function getApiClient() {
     }
 
     apiClientInstance = axios.create({
-      baseURL: `${API_BASE_URL.replace(/\/+$/, '')}/v1`,
+      baseURL: `${API_BASE_URL.replace(/\/+$/, '')}/api/v1`,
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token and logging
     apiClientInstance.interceptors.request.use((config) => {
+      console.log(`🚀 [API REQUEST] ${config.method?.toUpperCase()} ${config.url}`, config.data || '');
       const token = localStorage.getItem('access_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -26,14 +27,20 @@ function getApiClient() {
       return config;
     });
 
-    // Response interceptor to handle errors
+    // Response interceptor to handle errors and logging
     apiClientInstance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log(`✅ [API RESPONSE] ${response.status} ${response.config.url}`, response.data);
+        return response;
+      },
       (error) => {
+        console.error(`❌ [API ERROR] ${error.response?.status || 'NETWORK'} ${error.config?.url}`, error.response?.data || error.message);
         if (error.response?.status === 401) {
           // Clear token and redirect to login
           localStorage.removeItem('access_token');
-          window.location.href = '/login';
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }

@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  Bell, MapPin, AlertTriangle, MessageSquare, 
-  CheckCircle2, ChevronRight, Info, Calendar,
-  Clock, Shield, Globe, Search
+  CheckCircle2, ChevronRight, Calendar
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 
 export default function AlertCreation() {
-  const [step, setStep] = useState(1);
+  const step: number = 1;
 
   return (
     <OperationsShell eyebrow="Create and publish new alerts" title="Alert Creation">

@@ -95,7 +95,8 @@ export default function SettingsPage() {
                    <div>
                       <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Security Settings</h4>
                       <div className="space-y-4">
-                         <ToggleRow label="Two-Factor Authentication" active />
+                         {/* Two-Factor Authentication commented out */}
+                         {/* <ToggleRow label="Two-Factor Authentication" active /> */}
                          <ToggleRow label="IP Whitelisting" />
                          <ToggleRow label="Auto-Logout Session" desc="30 minutes of inactivity" active />
                       </div>

@@ -1,12 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  Navigation, MapPin, Truck, Users, Clock, 
-  ChevronRight, ArrowRight, Search, Filter, 
-  Plus, Download, CheckCircle2, AlertTriangle, 
-  Shield, Activity, Share2, Info, Maximize2,
-  Navigation2, Map as MapIcon, Route
+import {
+  MapPin, Route, Share2, Info
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';

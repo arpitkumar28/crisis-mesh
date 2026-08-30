@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ArrowLeft, MapPin, Activity, AlertTriangle, Bell,
+  ArrowLeft, MapPin, Activity, Bell,
   Cloud, Droplets, Wind, Gauge, Info, ChevronRight,
-  TrendingUp, TrendingDown, Shield, Home, Phone,
-  Building, CheckCircle2, Factory, Thermometer
+  TrendingUp, Shield, Home, Building
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -17,10 +16,8 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 });
 
 export default function DistrictDetailPage() {
-  const params = useParams();
   const router = useRouter();
   const districtName = "Jaipur District, Rajasthan";
-  const [activeTab, setActiveTab] = useState('Overview');
 
   return (
     <OperationsShell eyebrow="Comprehensive overview of district status and resources" title={districtName}>

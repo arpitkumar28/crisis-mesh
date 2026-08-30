@@ -10,7 +10,11 @@ class WebSocketService {
 
   Stream<SocketEvent> get events => _events.stream;
 
-  WebSocketService({String? wsUrl}) : wsUrl = wsUrl ?? (Platform.isAndroid ? 'http://10.0.2.2:3001' : 'http://localhost:3001');
+  WebSocketService({String? wsUrl})
+      : wsUrl = wsUrl ??
+            (Platform.isAndroid
+                ? 'http://10.0.2.2:3002'
+                : 'http://localhost:3002');
 
   void connect(String token) {
     if (_socket != null && _socket!.connected) {

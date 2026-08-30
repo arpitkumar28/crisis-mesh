@@ -31,7 +31,7 @@ class LiveSituationScreen extends StatelessWidget {
                 circles: [
                   CircleMarker(
                     point: const LatLng(26.9124, 75.7873),
-                    color: Colors.red.withOpacity(0.3),
+                    color: Colors.red.withValues(alpha: 0.3),
                     borderStrokeWidth: 2,
                     borderColor: Colors.red,
                     useRadiusInMeter: true,
@@ -39,7 +39,7 @@ class LiveSituationScreen extends StatelessWidget {
                   ),
                   CircleMarker(
                     point: const LatLng(26.8500, 75.8200),
-                    color: Colors.orange.withOpacity(0.3),
+                    color: Colors.orange.withValues(alpha: 0.3),
                     borderStrokeWidth: 2,
                     borderColor: Colors.orange,
                     useRadiusInMeter: true,
@@ -47,19 +47,19 @@ class LiveSituationScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              MarkerLayer(
+              const MarkerLayer(
                 markers: [
                   Marker(
-                    point: const LatLng(26.9124, 75.7873),
+                    point: LatLng(26.9124, 75.7873),
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.warning, color: Colors.red, size: 30),
+                    child: Icon(Icons.warning, color: Colors.red, size: 30),
                   ),
                   Marker(
-                    point: const LatLng(26.8500, 75.8200),
+                    point: LatLng(26.8500, 75.8200),
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.local_fire_department, color: Colors.orange, size: 30),
+                    child: Icon(Icons.local_fire_department, color: Colors.orange, size: 30),
                   ),
                 ],
               ),
@@ -83,7 +83,7 @@ class LiveSituationScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10),
           ],
         ),
         child: const Row(

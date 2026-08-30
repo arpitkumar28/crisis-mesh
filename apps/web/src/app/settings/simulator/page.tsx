@@ -5,7 +5,7 @@ import {
   Cpu, Activity, Zap, Radio, RefreshCw, 
   Settings, Play, Square, AlertTriangle, 
   CheckCircle2, Clock, Battery, HardDrive,
-  ChevronRight, MoreHorizontal, Database
+  ChevronRight, MoreHorizontal, Database, History
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import { 

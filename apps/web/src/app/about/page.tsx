@@ -2,10 +2,10 @@
 
 import React from 'react';
 import {
-  Shield, Globe, Users, Zap, Target, Eye,
-  Heart, CheckCircle2, ArrowRight, MessageSquare,
-  ShieldCheck, Activity, Map as MapIcon, Database,
-  Radio, Info, LayoutGrid
+  Shield, Users, Zap, Target, Eye,
+  Heart, ArrowRight,
+  ShieldCheck,
+  Radio
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

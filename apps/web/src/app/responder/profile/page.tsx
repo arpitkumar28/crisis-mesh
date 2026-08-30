@@ -5,7 +5,7 @@ import {
   User, Mail, Phone, MapPin, Shield, 
   Camera, CheckCircle2, ChevronRight,
   Clock, Heart, Star, Navigation, 
-  Layout, Briefcase, Tool, LifeBuoy,
+  Layout, Briefcase, LifeBuoy, Wrench,
   PhoneCall, Map as MapIcon
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
@@ -76,7 +76,7 @@ export default function ResponderProfile() {
                     <EquipItem icon={<LifeBuoy size={16} />} label="Life Jacket" />
                     <EquipItem icon={<Radio size={16} />} label="Rescue Radio" />
                     <EquipItem icon={<Briefcase size={16} />} label="First Aid Kit" />
-                    <EquipItem icon={<Tool size={16} />} label="VHF Radio" />
+                    <EquipItem icon={<Wrench size={16} />} label="VHF Radio" />
                  </div>
                  <button className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-all">View All Equipment</button>
               </div>

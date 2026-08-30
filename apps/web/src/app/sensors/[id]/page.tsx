@@ -5,7 +5,7 @@ import {
   ArrowLeft, Edit3, RefreshCw, ChevronDown, MapPin,
   Droplets, Thermometer, Cloud, Battery, Signal,
   CheckCircle2, AlertTriangle, Info, Clock, ExternalLink,
-  Settings, Tool, FileText
+  Settings, Tool, FileText, Radio
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import {

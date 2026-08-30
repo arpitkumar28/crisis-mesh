@@ -3,10 +3,10 @@
 import React from 'react';
 import { 
   AlertTriangle, MapPin, Home, Phone, 
-  Search, ChevronRight, Bell, Info, 
+  ChevronRight, 
   ShieldCheck, Activity, Navigation, 
-  CloudRain, Zap, Heart, Share2, 
-  BookOpen, HelpCircle, PhoneCall
+  Zap, Share2, 
+  PhoneCall
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';

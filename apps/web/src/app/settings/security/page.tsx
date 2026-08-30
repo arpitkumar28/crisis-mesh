@@ -133,7 +133,8 @@ export default function SecurityCenterPage() {
               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-8">
                  42 privileged accounts are currently active. Zero-trust policy is enforced for all cross-region data transfers.
               </p>
-              <div className="space-y-4">
+              {/* MFA section commented out */}
+              {/* <div className="space-y-4">
                  <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest">
                     <span className="text-gray-500">MFA Adoption</span>
                     <span className="text-green-500">100%</span>
@@ -141,7 +142,7 @@ export default function SecurityCenterPage() {
                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 w-full"></div>
                  </div>
-              </div>
+              </div> */}
            </div>
         </div>
       </div>

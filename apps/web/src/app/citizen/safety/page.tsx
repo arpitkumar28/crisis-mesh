@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { 
-  ShieldCheck, Search, CheckCircle2, AlertTriangle, 
-  XCircle, Briefcase, Droplets, Flame, Zap, Wind, 
-  Thermometer, ChevronRight, Play, BookOpen, 
-  Info, Activity, Phone, Download, LayoutGrid
+  ShieldCheck, CheckCircle2, AlertTriangle, 
+  Droplets, Flame, Wind, 
+  Thermometer, ChevronRight, 
+  Activity, Download
 } from 'lucide-react';
 
 const categories = [

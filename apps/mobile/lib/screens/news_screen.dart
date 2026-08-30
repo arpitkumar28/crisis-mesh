@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 import '../models/information_models.dart';
 
 class NewsScreen extends StatefulWidget {
-  const NewsScreen({Key? key}) : super(key: key);
+  const NewsScreen({super.key});
 
   @override
   State<NewsScreen> createState() => _NewsScreenState();
@@ -16,12 +16,12 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   void initState() {
     super.initState();
-    _newsFuture = ApiService().getNews();
+    _newsFuture = crisisApi.getNews();
   }
 
   void _retry() {
     setState(() {
-      _newsFuture = ApiService().getNews();
+      _newsFuture = crisisApi.getNews();
     });
   }
 
@@ -29,16 +29,13 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Official News Feed'),
-        centerTitle: true,
+        title: const Text('News & Updates'),
       ),
       body: FutureBuilder<List<NewsArticle>>(
         future: _newsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -48,164 +45,79 @@ class _NewsScreenState extends State<NewsScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}'),
+                  const Text('Failed to load news'),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _retry,
-                    child: const Text('Retry'),
-                  ),
+                  ElevatedButton(onPressed: _retry, child: const Text('Retry')),
                 ],
               ),
             );
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.newspaper, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('No articles available'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _retry,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
+          final articles = snapshot.data ?? [];
+          if (articles.isEmpty) {
+            return const Center(child: Text('No news updates available.'));
           }
 
-          final articles = snapshot.data!;
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: articles.length,
             itemBuilder: (context, index) {
               final article = articles[index];
-              return NewsArticleCard(
-                article: article,
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () async {
+                    if (await canLaunchUrl(Uri.parse(article.url))) {
+                      await launchUrl(Uri.parse(article.url));
+                    }
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (article.imageUrl != null)
+                        Image.network(
+                          article.imageUrl!,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(height: 200, color: Colors.grey[200], child: const Icon(Icons.image)),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              article.title,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              article.description ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(article.source ?? 'Official Source', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0757E8))),
+                                Text(article.publishedAt?.split('T')[0] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );
         },
       ),
     );
-  }
-}
-
-class NewsArticleCard extends StatelessWidget {
-  final NewsArticle article;
-
-  const NewsArticleCard({required this.article, Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (article.imageUrl != null)
-            Image.network(
-              article.imageUrl!,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  Container(
-                    height: 180,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported),
-                  ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  article.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  article.description ?? 'No summary',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (article.source != null) ...[
-                      Text(
-                        article.source!,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    if (article.severity != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getSeverityColor(article.severity!),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          article.severity!,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (article.publishedAt != null)
-                  Text(
-                    'Published: ${DateTime.parse(article.publishedAt!).toLocal()}',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (await canLaunchUrl(Uri.parse(article.url))) {
-                        await launchUrl(Uri.parse(article.url),
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: const Text('Read Article'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getSeverityColor(String severity) {
-    switch (severity.toUpperCase()) {
-      case 'CRITICAL':
-        return Colors.red;
-      case 'HIGH':
-        return Colors.orange;
-      case 'MEDIUM':
-        return Colors.yellow;
-      default:
-        return Colors.green;
-    }
   }
 }

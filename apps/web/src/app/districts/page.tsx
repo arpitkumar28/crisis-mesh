@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import {
-  MapPin, Search, Filter, Plus, Download,
-  ChevronRight, ArrowUpRight, Shield, Bell,
-  Activity, AlertTriangle, Users, Building,
+  MapPin, Search, Filter, Plus,
+  ChevronRight, Shield,
+  AlertTriangle, Users,
   ChevronDown, Map as MapIcon, Globe
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';

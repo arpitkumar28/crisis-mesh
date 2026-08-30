@@ -2,12 +2,10 @@
 
 import React, { useState } from 'react';
 import { 
-  AlertTriangle, MapPin, Phone, Shield, 
-  Navigation, Users, MessageSquare, Share2,
-  ChevronRight, Info, Activity, Heart,
-  PhoneCall, Zap, Map as MapIcon, Globe
+  AlertTriangle, MapPin, Shield, 
+  Navigation, MessageSquare, Share2,
+  Heart
 } from 'lucide-react';
-import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), { 

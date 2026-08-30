@@ -9,7 +9,7 @@ class ResponderAvailabilityScreen extends StatefulWidget {
 
 class _ResponderAvailabilityScreenState extends State<ResponderAvailabilityScreen> {
   bool _isOnDuty = true;
-  String _currentShift = 'Morning (08:00 AM - 04:00 PM)';
+  final String _currentShift = 'Morning (08:00 AM - 04:00 PM)';
   String _status = 'Available';
 
   @override
@@ -105,7 +105,7 @@ class _ResponderAvailabilityScreenState extends State<ResponderAvailabilityScree
           Switch(
             value: _isOnDuty,
             onChanged: (val) => setState(() => _isOnDuty = val),
-            activeColor: const Color(0xFF09A86B),
+            activeThumbColor: const Color(0xFF09A86B),
           ),
         ],
       ),

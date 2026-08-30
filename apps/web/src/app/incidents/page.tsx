@@ -1,36 +1,79 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle, RefreshCw, Filter, Search,
-  ChevronDown, Plus, Download, ChevronRight,
-  MoreHorizontal, Calendar, MapPin, Clock,
-  CheckCircle2, AlertCircle, Info, TrendingUp
+  ChevronDown, Plus, MapPin,
+  CheckCircle2, AlertCircle, Info, TrendingUp, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import { apiClient } from '@/lib/api-client';
+import { format } from 'date-fns';
+import { Toast } from '@/lib/toast';
 
-const incidents = [
-  { id: 'INC-042', title: 'Urban Flooding', type: 'Flood', location: 'Malviya Nagar, Jaipur', status: 'Active', severity: 'High', reported: '2 min ago', time: '10 Aug 2026, 02:15 PM', author: 'Local Authority' },
-  { id: 'INC-041', title: 'Village Waterlogging', type: 'Flood', location: 'Sanganer, Jaipur', status: 'Active', severity: 'High', reported: '15 min ago', time: '10 Aug 2026, 02:00 PM', author: 'System Alert' },
-  { id: 'INC-040', title: 'Power Line Down', type: 'Utility', location: 'Vaishali Nagar, Jaipur', status: 'Active', severity: 'Medium', reported: '32 min ago', time: '10 Aug 2026, 01:45 PM', author: 'Citizen Report' },
-  { id: 'INC-039', title: 'Traffic Disruption', type: 'Other', location: 'Ajmeri Gate, Jaipur', status: 'Monitoring', severity: 'Low', reported: '1h ago', time: '10 Aug 2026, 01:15 PM', author: 'Traffic Police' },
-  { id: 'INC-038', title: 'Road Washout', type: 'Infrastructure', location: 'Amer Road, Jaipur', status: 'Active', severity: 'High', reported: '2h ago', time: '10 Aug 2026, 12:15 PM', author: 'Local Authority' },
-  { id: 'INC-037', title: 'Dust Storm', type: 'Weather', location: 'Jhotwara, Jaipur', status: 'Resolved', severity: 'Low', reported: '4h ago', time: '10 Aug 2026, 10:15 AM', author: 'IMD' },
-  { id: 'INC-036', title: 'Wall Collapse', type: 'Structure', location: 'Old City, Jaipur', status: 'Resolved', severity: 'High', reported: '5h ago', time: '10 Aug 2026, 09:15 AM', author: 'Emergency Dept' },
-];
+interface Incident {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  severity: string;
+  reported_at: string;
+  location?: {
+    name: string;
+  };
+  reporter?: {
+    name: string;
+  };
+}
 
 export default function IncidentsPage() {
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    resolved: 0,
+    critical: 0
+  });
+
+  const fetchIncidents = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/incidents');
+      const data = response.data.data;
+      setIncidents(data);
+
+      const active = data.filter((i: any) => ['REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(i.status)).length;
+      const resolved = data.filter((i: any) => i.status === 'RESOLVED').length;
+      const critical = data.filter((i: any) => i.severity === 'CRITICAL').length;
+
+      setStats({
+        total: data.length,
+        active,
+        resolved,
+        critical
+      });
+    } catch (error) {
+      console.error('Failed to fetch incidents:', error);
+      Toast.error('Failed to load incidents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIncidents();
+  }, []);
+
   return (
     <OperationsShell eyebrow="Track and manage all active and past incidents" title="Incidents">
-      {/* Top Summary Cards (Screen 3 style) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <SummaryCard label="Total Incidents" value="128" detail="+12 since last 7 days" icon={<AlertTriangle size={20} />} />
-        <SummaryCard label="Active Incidents" value="24" detail="+4 in last 7 days" icon={<AlertCircle size={20} className="text-red-500" />} />
-        <SummaryCard label="Resolved Incidents" value="96" detail="84% of last 7 days" icon={<CheckCircle2 size={20} className="text-green-500" />} />
-        <SummaryCard label="Critical Incidents" value="6" detail="2 urgent attention req." icon={<Info size={20} className="text-orange-500" />} />
+        <SummaryCard label="Total Incidents" value={stats.total.toString()} detail="Registered in system" icon={<AlertTriangle size={20} />} />
+        <SummaryCard label="Active Incidents" value={stats.active.toString()} detail="Requiring action" icon={<AlertCircle size={20} className="text-red-500" />} />
+        <SummaryCard label="Resolved Incidents" value={stats.resolved.toString()} detail="Successfully closed" icon={<CheckCircle2 size={20} className="text-green-500" />} />
+        <SummaryCard label="Critical Incidents" value={stats.critical.toString()} detail="Urgent attention" icon={<Info size={20} className="text-orange-500" />} />
       </div>
 
-      {/* Toolbar (Screen 3 style) */}
       <div className="bg-white rounded-[32px] border border-gray-200 p-6 mb-8 flex flex-wrap items-center justify-between gap-6 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <FilterSelect label="All Districts" />
@@ -51,107 +94,118 @@ export default function IncidentsPage() {
               className="pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-[11px] font-black w-64 focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
             />
           </div>
-          <button className="p-3 border border-gray-200 rounded-2xl text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all bg-white">
-            <RefreshCw size={18} />
+          <button 
+            onClick={fetchIncidents}
+            disabled={loading}
+            className="p-3 border border-gray-200 rounded-2xl text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all bg-white disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
           </button>
-          <button className="flex items-center gap-2 bg-[#061a37] text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-blue-600 transition-all">
+          <button 
+            onClick={() => window.location.href = '/incidents/create'}
+            className="flex items-center gap-2 bg-[#061a37] text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-blue-600 transition-all"
+          >
             <Plus size={16} /> New Incident
           </button>
         </div>
       </div>
 
-      {/* Incidents Table (Screen 3 style) */}
       <div className="bg-white rounded-[40px] border border-gray-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-100">
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Incident ID</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Incident Type</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Hazard Type</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Location</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Risk Level</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
-              <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Reported By</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {incidents.map((incident) => (
-              <tr
-                key={incident.id}
-                className="hover:bg-gray-50 transition-all cursor-pointer group"
-                onClick={() => window.location.href = `/incidents/${incident.id}`}
-              >
-                <td className="px-8 py-5">
-                  <span className="text-[11px] font-black text-blue-600">#{incident.id}</span>
-                </td>
-                <td className="px-8 py-5">
-                  <span className="text-xs font-black text-[#0f172a] uppercase">{incident.title}</span>
-                </td>
-                <td className="px-8 py-5">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{incident.type}</span>
-                </td>
-                <td className="px-8 py-5">
-                  <div className="flex items-center gap-2 text-[11px] font-black text-[#0f172a]">
-                    <MapPin size={12} className="text-gray-400" />
-                    {incident.location}
-                  </div>
-                </td>
-                <td className="px-8 py-5">
-                  <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase ${
-                    incident.severity === 'Critical' ? 'bg-red-50 text-red-600 border border-red-100' :
-                    incident.severity === 'High' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                    incident.severity === 'Medium' ? 'bg-yellow-50 text-yellow-600 border border-yellow-100' :
-                    'bg-blue-50 text-blue-600 border border-blue-100'
-                  }`}>
-                    {incident.severity}
-                  </span>
-                </td>
-                <td className="px-8 py-5">
-                  <div className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest ${
-                    incident.status === 'Active' ? 'text-green-600' :
-                    incident.status === 'Monitoring' ? 'text-blue-600' :
-                    'text-gray-400'
-                  }`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${
-                      incident.status === 'Active' ? 'bg-green-600 animate-pulse' :
-                      incident.status === 'Monitoring' ? 'bg-blue-600' :
-                      'bg-gray-400'
-                    }`}></div>
-                    {incident.status}
-                  </div>
-                </td>
-                <td className="px-8 py-5 text-right">
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-[#0f172a] uppercase">{incident.author}</span>
-                    <span className="text-[8px] text-gray-400 font-bold uppercase mt-1 tracking-widest">{incident.time}</span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+            <Loader2 size={40} className="animate-spin mb-4" />
+            <p className="text-xs font-black uppercase tracking-widest">Loading Incidents...</p>
+          </div>
+        ) : incidents.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+            <AlertCircle size={40} className="mb-4" />
+            <p className="text-xs font-black uppercase tracking-widest">No incidents found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Incident ID</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Incident Title</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Type</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Location</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Severity</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
+                  <th className="px-8 py-6 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Reported By</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {incidents.map((incident) => (
+                  <tr
+                    key={incident.id}
+                    className="hover:bg-gray-50 transition-all cursor-pointer group"
+                    onClick={() => window.location.href = `/incidents/${incident.id}`}
+                  >
+                    <td className="px-8 py-5">
+                      <span className="text-[10px] font-black text-blue-600">#{incident.id.substring(0, 8)}</span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="text-xs font-black text-[#0f172a] uppercase">{incident.title}</span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{incident.type}</span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2 text-[11px] font-black text-[#0f172a]">
+                        <MapPin size={12} className="text-gray-400" />
+                        {incident.location?.name || 'Unknown Location'}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase ${
+                        incident.severity === 'CRITICAL' ? 'bg-red-50 text-red-600 border border-red-100' :
+                        incident.severity === 'HIGH' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                        incident.severity === 'MEDIUM' ? 'bg-yellow-50 text-yellow-600 border border-yellow-100' :
+                        'bg-blue-50 text-blue-600 border border-blue-100'
+                      }`}>
+                        {incident.severity}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest ${
+                        ['REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(incident.status) ? 'text-green-600' :
+                        incident.status === 'RESOLVED' ? 'text-blue-600' :
+                        'text-gray-400'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          ['REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(incident.status) ? 'bg-green-600 animate-pulse' :
+                          incident.status === 'RESOLVED' ? 'bg-blue-600' :
+                          'bg-gray-400'
+                        }`}></div>
+                        {incident.status}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-[#0f172a] uppercase">{incident.reporter?.name || 'Anonymous'}</span>
+                        <span className="text-[8px] text-gray-400 font-bold uppercase mt-1 tracking-widest">
+                          {format(new Date(incident.reported_at), 'dd MMM yyyy, hh:mm a')}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Pagination (Screen 3 style) */}
         <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Showing 7 of 128 Incidents</span>
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+            Showing {incidents.length} Incidents
+          </span>
           <div className="flex items-center gap-2">
             <PaginationButton label="Prev" disabled />
             <div className="flex gap-1 mx-2">
               <PaginationNumber number={1} active />
-              <PaginationNumber number={2} />
-              <PaginationNumber number={3} />
-              <PaginationNumber number="..." />
-              <PaginationNumber number={15} />
             </div>
-            <PaginationButton label="Next" />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Show</span>
-            <select className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-[10px] font-black focus:outline-none shadow-sm">
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-            </select>
+            <PaginationButton label="Next" disabled={incidents.length < 10} />
           </div>
         </div>
       </div>

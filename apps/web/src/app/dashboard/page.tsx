@@ -1,45 +1,70 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  AlertTriangle, Bell, Activity, Users,
-  Map as MapIcon, ChevronDown, Plus, Download,
-  TrendingUp, Home, Shield, Cloud, Info, Clock,
-  MapPin, Send, LayoutGrid, Users2, FileText,
-  ChevronRight, MoreHorizontal, MousePointer2,
-  Navigation, Maximize2, Radio, Zap, Flame,
-  Stethoscope, Truck, LifeBuoy, Filter, Search,
-  ArrowUpRight
+  Map as MapIcon, ChevronDown, Zap, Search, Maximize2, ArrowUpRight, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 import {
   ResponsiveContainer,
   PieChart, Pie, Cell,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
+import { apiClient } from '@/lib/api-client';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-blue-50 flex items-center justify-center font-bold text-blue-900/20 text-4xl">Loading Map...</div>
 });
 
-const riskSummaryData = [
-  { name: 'High Risk', value: 25, color: '#ef4444' },
-  { name: 'Medium Risk', value: 45, color: '#f97316' },
-  { name: 'Low Risk', value: 30, color: '#22c55e' },
-];
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
 
-const historicalTrendData = [
-  { name: '18 Sep', high: 45, med: 30, low: 25 },
-  { name: '19 Sep', high: 52, med: 28, low: 20 },
-  { name: '20 Sep', high: 48, med: 35, low: 17 },
-  { name: '21 Sep', high: 61, med: 25, low: 14 },
-  { name: '22 Sep', high: 55, med: 30, low: 15 },
-  { name: '23 Sep', high: 45, med: 35, low: 20 },
-];
+  const fetchDashboardData = async () => {
+    try {
+      const response = await apiClient.get('/dashboard/overview');
+      setData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-export default function HeatmapRiskAnalysis() {
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const metrics = data?.metrics || {
+    total_devices: 0,
+    online_devices: 0,
+    active_alerts: 0,
+    critical_alerts: 0,
+    open_incidents: 0
+  };
+
+  const riskSummaryData = [
+    { name: 'High Risk', value: metrics.critical_alerts, color: '#ef4444' },
+    { name: 'Medium Risk', value: Math.max(0, metrics.active_alerts - metrics.critical_alerts), color: '#f97316' },
+    { name: 'Low Risk', value: metrics.online_devices, color: '#22c55e' },
+  ];
+
+  // Using real trend data from backend
+  const historicalTrendData = data?.trends || [];
+
+  if (loading) {
+    return (
+      <OperationsShell eyebrow="Visualization intensity and vulnerability" title="Heatmap & Risk Analysis">
+        <div className="h-[60vh] flex flex-col items-center justify-center text-gray-400">
+          <Loader2 size={40} className="animate-spin mb-4" />
+          <p className="text-xs font-black uppercase tracking-widest">Synchronizing Intelligence...</p>
+        </div>
+      </OperationsShell>
+    );
+  }
+
   return (
     <OperationsShell eyebrow="Visualization intensity and vulnerability" title="Heatmap & Risk Analysis">
       {/* Top Filter Bar */}
@@ -49,8 +74,11 @@ export default function HeatmapRiskAnalysis() {
           <FilterSelect label="Time Range" value="Last 7 Days" />
           <FilterSelect label="District" value="Jaipur" />
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all">
-          <Zap size={14} /> Generate
+        <button 
+          onClick={fetchDashboardData}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+        >
+          <Zap size={14} /> Refresh
         </button>
       </div>
 
@@ -69,7 +97,10 @@ export default function HeatmapRiskAnalysis() {
               </div>
             </div>
             <div className="flex-1 relative bg-blue-50">
-              <LiveMap entities={[]} />
+              <LiveMap entities={[
+                ...(data?.incidents || []).map((i: any) => ({ ...i, entityType: 'incident' })),
+                ...(data?.alerts || []).map((a: any) => ({ ...a, entityType: 'alert' }))
+              ]} />
 
               {/* Floating Map Legend */}
               <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-gray-200/50">
@@ -82,34 +113,31 @@ export default function HeatmapRiskAnalysis() {
             </div>
           </div>
 
-          {/* Bottom Grid: Risk by Area & Factors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             {/* Risk-by-Area */}
-             <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-bold text-[#0f172a] text-sm">Risk-by-Area (Top 5)</h3>
-                  <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">View All</button>
-                </div>
-                <div className="space-y-4">
-                  <AreaRiskItem label="Malviya Nagar" value={92} level="High" color="bg-red-500" />
-                  <AreaRiskItem label="Jhalana" value={78} level="High" color="bg-red-500" />
-                  <AreaRiskItem label="Sanganer" value={65} level="Medium" color="bg-orange-500" />
-                  <AreaRiskItem label="Chaksu" value={58} level="Medium" color="bg-orange-500" />
-                  <AreaRiskItem label="Kotputli" value={42} level="Low" color="bg-green-500" />
-                </div>
-             </div>
-
-             {/* Risk Factors */}
-             <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm p-6">
-                <h3 className="font-bold text-[#0f172a] text-sm mb-6">Risk Factors Contribution</h3>
-                <div className="space-y-4">
-                  <FactorItem label="Rainfall Intensity" percent={85} />
-                  <FactorItem label="River / Water Level" percent={72} />
-                  <FactorItem label="Land Elevation" percent={45} />
-                  <FactorItem label="Population Density" percent={90} />
-                  <FactorItem label="Drainage Capacity" percent={30} />
-                </div>
-             </div>
+          {/* Trend Analysis Chart */}
+          <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm p-6">
+            <h3 className="font-bold text-[#0f172a] text-sm mb-6 uppercase tracking-wider">7-Day Alert Trend</h3>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={historicalTrendData}>
+                  <defs>
+                    <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
+                  <Tooltip 
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                    labelStyle={{fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', marginBottom: '4px'}}
+                  />
+                  <Area type="monotone" dataKey="high" stroke="#ef4444" fillOpacity={1} fill="url(#colorHigh)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="med" stroke="#f97316" fill="transparent" strokeWidth={2} strokeDasharray="5 5" />
+                  <Area type="monotone" dataKey="low" stroke="#22c55e" fill="transparent" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
@@ -140,8 +168,10 @@ export default function HeatmapRiskAnalysis() {
                 </ResponsiveContainer>
               </div>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Overall Risk</p>
-                <p className="text-3xl font-black text-red-500">High</p>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Alerts</p>
+                <p className={`text-3xl font-black ${metrics.critical_alerts > 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  {metrics.active_alerts}
+                </p>
               </div>
             </div>
 
@@ -152,70 +182,54 @@ export default function HeatmapRiskAnalysis() {
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
                       <span className="text-[8px] font-bold text-gray-500 uppercase">{item.name}</span>
                     </div>
-                    <span className="text-xs font-black text-[#0f172a]">{item.value}%</span>
+                    <span className="text-xs font-black text-[#0f172a]">{item.value}</span>
                  </div>
                ))}
             </div>
 
             <div className="pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
                <div>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vulnerability Index</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Open Incidents</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-[#0f172a]">72</span>
-                    <span className="text-[10px] font-bold text-gray-400">/ 100</span>
+                    <span className="text-2xl font-black text-[#0f172a]">{metrics.open_incidents}</span>
                   </div>
-                  <span className="text-[8px] font-black px-1.5 py-0.5 bg-red-100 text-red-600 rounded uppercase tracking-tighter">High</span>
+                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${
+                    metrics.open_incidents > 5 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                  }`}>
+                    {metrics.open_incidents > 5 ? 'High Load' : 'Stable'}
+                  </span>
                </div>
                <div className="text-right">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Trend Analysis</p>
-                  <div className="flex items-center justify-end gap-1 text-red-500">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Network Health</p>
+                  <div className="flex items-center justify-end gap-1 text-green-500">
                     <ArrowUpRight size={16} />
-                    <span className="text-2xl font-black">8%</span>
+                    <span className="text-2xl font-black">{metrics.total_devices > 0 ? Math.round((metrics.online_devices / metrics.total_devices) * 100) : 0}%</span>
                   </div>
-                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">vs last week</span>
+                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Availability</span>
                </div>
             </div>
           </div>
 
-          {/* Historical Risk Trend */}
-          <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-               <h3 className="font-bold text-[#0f172a] text-sm">Historical Risk Trend</h3>
-               <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-               </div>
-            </div>
-
-            <div className="h-[240px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={historicalTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }}
-                    dy={10}
-                  />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                  />
-                  <Line type="monotone" dataKey="high" stroke="#ef4444" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="med" stroke="#f97316" strokeWidth={3} dot={false} />
-                  <Line type="monotone" dataKey="low" stroke="#22c55e" strokeWidth={3} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="mt-6 flex items-center justify-between px-2">
-               <TrendLegend color="bg-red-500" label="High" />
-               <TrendLegend color="bg-orange-500" label="Medium" />
-               <TrendLegend color="bg-green-500" label="Low" />
-            </div>
+          {/* Recent Alerts Feed */}
+          <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm p-6 overflow-hidden">
+             <h3 className="font-bold text-[#0f172a] text-sm mb-6">Live Alerts</h3>
+             <div className="space-y-4">
+               {(data?.alerts || []).length > 0 ? (
+                 data.alerts.map((alert: any) => (
+                   <div key={alert.id} className="flex gap-4 p-3 bg-gray-50 rounded-xl">
+                     <div className={`w-1 h-full rounded-full ${
+                       alert.severity === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-500'
+                     }`}></div>
+                     <div>
+                       <p className="text-[10px] font-black text-[#0f172a] uppercase">{alert.title}</p>
+                       <p className="text-[8px] text-gray-500 mt-1">{alert.description}</p>
+                     </div>
+                   </div>
+                 ))
+               ) : (
+                 <p className="text-[10px] text-gray-400 font-bold uppercase py-4 text-center">No active alerts</p>
+               )}
+             </div>
           </div>
         </div>
       </div>
@@ -231,45 +245,6 @@ function FilterSelect({ label, value }: { label: string; value: string }) {
         {value}
         <ChevronDown size={12} className="text-gray-400" />
       </button>
-    </div>
-  );
-}
-
-function AreaRiskItem({ label, value, level, color }: { label: string; value: number; level: string; color: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-[#0f172a]">{label}</span>
-        <div className="flex items-center gap-2">
-          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className={`h-full ${color}`} style={{ width: `${value}%` }}></div>
-          </div>
-          <span className={`text-[9px] font-black uppercase ${color.replace('bg-', 'text-')}`}>{level}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FactorItem({ label, percent }: { label: string; percent: number }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[10px] font-bold text-gray-600">{label}</span>
-      <div className="flex items-center gap-3">
-        <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-blue-600" style={{ width: `${percent}%` }}></div>
-        </div>
-        <span className="text-[9px] font-black text-[#0f172a] w-6">{percent}%</span>
-      </div>
-    </div>
-  );
-}
-
-function TrendLegend({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-       <div className={`w-1.5 h-1.5 rounded-full ${color}`}></div>
-       <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
     </div>
   );
 }

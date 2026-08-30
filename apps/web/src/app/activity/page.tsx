@@ -2,10 +2,8 @@
 
 import React, { useState } from 'react';
 import { 
-  History, Search, Filter, Download, ChevronDown,
-  User, Shield, Radio, Bell, AlertTriangle, 
-  Clock, CheckCircle2, Info, ArrowUpRight,
-  UserPlus, Settings, Database
+  Download, ChevronDown,
+  Clock
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 
@@ -29,7 +27,11 @@ export default function ActivityLogPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
-            <select className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 pr-10 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+            <select 
+              className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 pr-10 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
               <option>All Users</option>
               <option>Admin</option>
               <option>Operators</option>

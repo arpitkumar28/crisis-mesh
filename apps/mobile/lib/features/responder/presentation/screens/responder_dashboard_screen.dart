@@ -137,7 +137,7 @@ class ResponderDashboardScreen extends ConsumerWidget {
           Switch(
             value: true,
             onChanged: (v) {},
-            activeColor: const Color(0xFF09A86B),
+            activeThumbColor: const Color(0xFF09A86B),
           ),
         ],
       ),
@@ -258,7 +258,7 @@ class ResponderDashboardScreen extends ConsumerWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color),
@@ -312,7 +312,7 @@ class ResponderDashboardScreen extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.emergency_outlined, color: Colors.blue),

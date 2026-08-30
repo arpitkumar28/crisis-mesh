@@ -1,11 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  ShoppingCart, Search, ChevronDown, Plus, Download, 
-  Package, Truck, AlertTriangle, CheckCircle2, 
-  Clock, ArrowUpRight, Filter, MoreVertical,
-  Building2, Box, ListChecks, FileText
+import {
+  ShoppingCart, Search, Plus, Truck, MoreVertical, Building2, FileText
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

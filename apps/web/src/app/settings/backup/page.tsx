@@ -4,7 +4,7 @@ import React from 'react';
 import { 
   Database, RefreshCw, Download, Upload, 
   CheckCircle2, AlertCircle, Clock, Save,
-  HardDrive, History, Plus, FileText, ChevronDown
+  HardDrive, History, Plus, FileText, ChevronDown, MoreHorizontal
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

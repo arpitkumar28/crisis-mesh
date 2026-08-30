@@ -2,10 +2,7 @@
 
 import React from 'react';
 import {
-  FileText, Image as ImageIcon, Video, Download,
-  Search, Filter, Plus, ChevronRight, Share2,
-  Newspaper, Globe, User, Clock, CheckCircle2,
-  ExternalLink, Mail
+  FileText, Image as ImageIcon, Video, Download, Plus, Share2, Newspaper, Globe, Mail
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

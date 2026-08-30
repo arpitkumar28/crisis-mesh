@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { 
-  User, Mail, Phone, MapPin, Calendar, 
+  User, Phone, MapPin, 
   ChevronRight, Camera, CheckCircle2, 
-  Settings, Bell, Shield, Globe, 
-  MessageSquare, Layout, LogOut,
-  Clock, Heart, Plus
+  Settings, Bell, Globe, 
+  Layout,
+  Heart, Plus
 } from 'lucide-react';
 import { CitizenShell } from '@/components/citizen-shell';
 

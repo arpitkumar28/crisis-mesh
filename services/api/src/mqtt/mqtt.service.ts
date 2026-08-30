@@ -26,14 +26,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const brokerUrl = this.configService.mqttBrokerUrl;
       
       this.client = mqtt.connect(brokerUrl, {
         clientId: 'crisis-mesh-backend',
         clean: true,
         connectTimeout: 4000,
-        reconnectPeriod: 0, // Disable reconnection
+        reconnectPeriod: 5000, // Enabled reconnection (P1 Fix)
       });
 
       this.client.on('connect', () => {
@@ -51,17 +51,12 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('error', (error) => {
-        this.logger.warn(`⚠️  MQTT connection error: ${error.message} - continuing without MQTT`);
-        // Don't reject - allow app to start without MQTT
+        this.logger.warn(`⚠️  MQTT connection error: ${error.message} - attempt to reconnect in 5s`);
         resolve();
       });
 
       this.client.on('offline', () => {
-        this.logger.warn('⚠️  MQTT client offline - disabling reconnection');
-        if (this.client) {
-          this.client.end();
-          this.client = null;
-        }
+        this.logger.warn('⚠️  MQTT client offline - waiting for reconnection...');
       });
 
       this.client.on('message', (topic, payload) => {
@@ -72,7 +67,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           retain: false,
         };
         
-        // Find matching handler
         for (const [pattern, handler] of this.messageHandlers) {
           if (this.topicMatches(pattern, topic)) {
             try {
@@ -107,7 +101,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private topicMatches(pattern: string, topic: string): boolean {
-    // Convert MQTT wildcard pattern to regex
     const regexPattern = pattern
       .replace('+', '[^/]+')
       .replace('#', '.*');
@@ -123,7 +116,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     
-    // Subscribe to the pattern
     this.client.subscribe(pattern, { qos: 1 as any }, (error) => {
       if (error) {
         this.logger.error(`Failed to subscribe to ${pattern}: ${error.message}`);

@@ -1,11 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  Terminal, Code2, Cpu, Share2, 
-  Database, ShieldCheck, ChevronRight, 
-  ExternalLink, Copy, Download,
-  Globe, Lock, Zap, Book
+import {
+  Terminal, Globe, Zap, ShieldCheck, Database, Copy, ExternalLink
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 
@@ -137,9 +134,9 @@ export default function DeveloperPortal() {
                  Get started with our API in minutes. Generate your API key from the dashboard and follow our implementation guide.
               </p>
               <div className="bg-black/40 rounded-xl p-4 font-mono text-[10px] text-blue-300 mb-8 border border-white/5">
-                 <span className="text-gray-500"># Install CrisisMesh SDK</span> <br />
+                 <span className="text-gray-500">{/* # Install CrisisMesh SDK */}</span> <br />
                  npm install @crisismesh/sdk <br /><br />
-                 <span className="text-gray-500">// Initialize client</span> <br />
+                 <span className="text-gray-500">{/* // Initialize client */}</span> <br />
                  const cm = new CrisisMesh(&apos;API_KEY&apos;);
               </div>
               <button className="w-full py-4 bg-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">

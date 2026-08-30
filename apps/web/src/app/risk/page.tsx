@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
   TrendingUp, Activity, AlertTriangle, Cloud, 
-  MapPin, ChevronRight, Info, Shield, 
+  MapPin, ChevronRight, ChevronDown, Info, Shield, 
   CheckCircle2, RefreshCw, Filter, Search,
   BarChart3, PieChart, Database, Zap
 } from 'lucide-react';
@@ -137,7 +137,7 @@ export default function AIPredictionsPage() {
                        </li>
                        <li className="flex gap-3 text-xs font-bold text-gray-400 leading-relaxed uppercase tracking-widest">
                           <CheckCircle2 size={16} className="text-green-500 shrink-0" />
-                          Issue "Alert Level 2" for Mansarovar Lake residential belt.
+                          Issue &quot;Alert Level 2&quot; for Mansarovar Lake residential belt.
                        </li>
                     </ul>
                  </div>

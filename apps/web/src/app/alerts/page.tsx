@@ -1,35 +1,100 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Bell, AlertTriangle, Shield, Cloud, Activity,
   MapPin, Clock, Info, Filter, Search,
-  ChevronRight, MoreHorizontal, CheckCircle2,
-  AlertCircle, Zap, Flame, ExternalLink, ChevronDown
+  ChevronRight, CheckCircle2,
+  AlertCircle, Zap, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import { apiClient } from '@/lib/api-client';
+import { wsClient } from '@/lib/websocket-client';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { formatDistanceToNow } from 'date-fns';
+import { Toast } from '@/lib/toast';
 
-const alerts = [
-  { id: 'AL-902', title: 'Heavy Rainfall Warning', type: 'Weather', location: 'Jaipur, Rajasthan', severity: 'High', source: 'IMD', time: '2 min ago', status: 'Active' },
-  { id: 'AL-901', title: 'Water Level Critical', type: 'Flood', location: 'Mansarovar, Jaipur', severity: 'Critical', source: 'CrisisMesh', time: '15 min ago', status: 'Active' },
-  { id: 'AL-900', title: 'Flash Flood Watch', type: 'Weather', location: 'Sanganer, Jaipur', severity: 'High', source: 'IMD', time: '32 min ago', status: 'Active' },
-  { id: 'AL-899', title: 'Road Closure Notice', type: 'Safety', location: 'Ajmeri Gate, Jaipur', severity: 'Medium', source: 'Authority', time: '1h ago', status: 'Active' },
-  { id: 'AL-898', title: 'Cyclone Watch', type: 'Weather', location: 'Odisha Coast', severity: 'Medium', source: 'IMD', time: '2h ago', status: 'Active' },
-  { id: 'AL-897', title: 'Sensor Offline Alert', type: 'System', location: 'Jhotwara Node', severity: 'Low', source: 'System', time: '4h ago', status: 'Resolved' },
-  { id: 'AL-896', title: 'Power Outage Warning', type: 'Utility', location: 'Vaishali Nagar', severity: 'Medium', source: 'System', time: '5h ago', status: 'Active' },
-];
+interface Alert {
+  id: string;
+  title: string;
+  type: string;
+  description: string;
+  severity: string;
+  status: string;
+  source: string;
+  issued_at: string;
+  location?: {
+    name: string;
+  };
+}
 
 export default function AlertsPage() {
   const [selectedTab, setSelectedTab] = useState('All Alerts');
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuthStore();
+
+  const fetchAlerts = async () => {
+    try {
+      const response = await apiClient.get('/alerts');
+      setAlerts(response.data.data);
+    } catch (error) {
+      console.error('Failed to fetch alerts:', error);
+      Toast.error('Failed to load alerts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+
+    if (token) {
+      wsClient.connect(token);
+      
+      const handleAlertCreated = (newAlert: any) => {
+        setAlerts(prev => [newAlert, ...prev]);
+        Toast.info(`New Alert: ${newAlert.message || newAlert.title}`);
+      };
+
+      const handleAlertUpdated = (updatedAlert: any) => {
+        setAlerts(prev => prev.map(a => a.id === updatedAlert.alert_id ? { ...a, ...updatedAlert } : a));
+      };
+
+      wsClient.on('alert.created', handleAlertCreated);
+      wsClient.on('alert.updated', handleAlertUpdated);
+
+      return () => {
+        wsClient.off('alert.created', handleAlertCreated);
+        wsClient.off('alert.updated', handleAlertUpdated);
+      };
+    }
+  }, [token]);
+
+  const filteredAlerts = alerts.filter(alert => {
+    if (selectedTab === 'All Alerts') return true;
+    if (selectedTab === 'Active') return alert.status === 'ACTIVE';
+    if (selectedTab === 'Resolved') return alert.status === 'RESOLVED';
+    if (selectedTab === 'CrisisMesh') return alert.source === 'CrisisMesh';
+    if (selectedTab === 'Official Alerts') return alert.source !== 'CrisisMesh' && alert.source !== 'System';
+    return true;
+  });
+
+  const stats = {
+    total: alerts.length,
+    active: alerts.filter(a => a.status === 'ACTIVE').length,
+    critical: alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'ACTIVE').length,
+    resolvedToday: alerts.filter(a => a.status === 'RESOLVED').length, // Simplified for now
+  };
 
   return (
     <OperationsShell eyebrow="Monitor and manage all active alerts and notifications" title="Alerts Center">
       {/* Top Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <SummaryCard label="Total Alerts" value="156" icon={<Bell size={20} />} detail="+18 since last 24h" />
-        <SummaryCard label="Active Alerts" value="18" icon={<AlertTriangle size={20} className="text-orange-500" />} detail="6 Immediate action req." color="text-orange-500" />
-        <SummaryCard label="Critical Alerts" value="4" icon={<AlertCircle size={20} className="text-red-500" />} detail="2 Unacknowledged" color="text-red-500" />
-        <SummaryCard label="Resolved Today" value="32" icon={<CheckCircle2 size={20} className="text-green-500" />} detail="Avg. time: 45 min" color="text-green-500" />
+        <SummaryCard label="Total Alerts" value={stats.total.toString()} icon={<Bell size={20} />} detail="All recorded notifications" />
+        <SummaryCard label="Active Alerts" value={stats.active.toString()} icon={<AlertTriangle size={20} className="text-orange-500" />} detail="Immediate action req." color="text-orange-500" />
+        <SummaryCard label="Critical Alerts" value={stats.critical.toString()} icon={<AlertCircle size={20} className="text-red-500" />} detail="High priority threats" color="text-red-500" />
+        <SummaryCard label="Resolved Alerts" value={stats.resolvedToday.toString()} icon={<CheckCircle2 size={20} className="text-green-500" />} detail="Successfully handled" color="text-green-500" />
       </div>
 
       {/* Toolbar & Tabs */}
@@ -58,72 +123,107 @@ export default function AlertsPage() {
                 className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
-            <button className="flex items-center gap-2 bg-gray-50 border border-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors">
-              <Filter size={16} /> Filters
+            <button 
+              onClick={fetchAlerts}
+              className="p-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
         </div>
 
         <div className="divide-y divide-gray-50">
-          {alerts.map((alert) => (
-            <div key={alert.id} className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors group cursor-pointer">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 ${
-                alert.severity === 'Critical' ? 'bg-red-50 border-red-100 text-red-600' :
-                alert.severity === 'High' ? 'bg-orange-50 border-orange-100 text-orange-600' :
-                'bg-blue-50 border-blue-100 text-blue-600'
-              }`}>
-                {getAlertIcon(alert.type)}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <h4 className="text-sm font-black text-[#0f172a] truncate uppercase tracking-tight">{alert.title}</h4>
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
-                    alert.severity === 'Critical' ? 'bg-red-600 text-white' :
-                    alert.severity === 'High' ? 'bg-orange-500 text-white' :
-                    alert.severity === 'Medium' ? 'bg-yellow-500 text-white' :
-                    'bg-blue-600 text-white'
-                  }`}>
-                    {alert.severity}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  <span className="flex items-center gap-1.5"><MapPin size={12} className="text-gray-300" /> {alert.location}</span>
-                  <span className="flex items-center gap-1.5"><Clock size={12} className="text-gray-300" /> {alert.time}</span>
-                  <span className="flex items-center gap-1.5"><Shield size={12} className="text-gray-300" /> Source: {alert.source}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-right">
-                <div>
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
-                    alert.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <div className={`w-1 h-1 rounded-full ${alert.status === 'Active' ? 'bg-green-600' : 'bg-gray-400'}`}></div>
-                    {alert.status}
-                  </span>
-                </div>
-                <button className="text-gray-300 group-hover:text-blue-600 transition-colors">
-                  <ChevronRight size={20} />
-                </button>
-              </div>
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+              <Loader2 size={40} className="animate-spin mb-4" />
+              <p className="text-xs font-black uppercase tracking-widest">Loading Alerts...</p>
             </div>
-          ))}
+          ) : filteredAlerts.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center text-gray-400">
+              <Bell size={40} className="mb-4 opacity-20" />
+              <p className="text-xs font-black uppercase tracking-widest">No alerts found</p>
+            </div>
+          ) : (
+            filteredAlerts.map((alert) => (
+              <div key={alert.id} className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors group cursor-pointer">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 ${
+                  alert.severity === 'CRITICAL' ? 'bg-red-50 border-red-100 text-red-600' :
+                  alert.severity === 'HIGH' ? 'bg-orange-50 border-orange-100 text-orange-600' :
+                  'bg-blue-50 border-blue-100 text-blue-600'
+                }`}>
+                  {getAlertIcon(alert.type)}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h4 className="text-sm font-black text-[#0f172a] truncate uppercase tracking-tight">{alert.title}</h4>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
+                      alert.severity === 'CRITICAL' ? 'bg-red-600 text-white' :
+                      alert.severity === 'HIGH' ? 'bg-orange-500 text-white' :
+                      alert.severity === 'MEDIUM' ? 'bg-yellow-500 text-white' :
+                      'bg-blue-600 text-white'
+                    }`}>
+                      {alert.severity}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5"><MapPin size={12} className="text-gray-300" /> {alert.location?.name || 'Unknown Location'}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={12} className="text-gray-300" /> {formatDistanceToNow(new Date(alert.issued_at), { addSuffix: true })}</span>
+                    <span className="flex items-center gap-1.5"><Shield size={12} className="text-gray-300" /> Source: {alert.source}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-right">
+                  <div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
+                      alert.status === 'ACTIVE' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${alert.status === 'ACTIVE' ? 'bg-green-600 animate-pulse' : 'bg-gray-400'}`}></div>
+                      {alert.status}
+                    </span>
+                  </div>
+                  <button className="text-gray-300 group-hover:text-blue-600 transition-colors">
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
-        <div className="p-4 bg-gray-50 flex items-center justify-between border-t border-gray-100 text-xs font-bold text-gray-400">
-          <p>Showing 7 of 156 alerts</p>
-          <div className="flex items-center gap-2">
-            <button className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center">1</button>
-            <button className="w-8 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">2</button>
-            <button className="w-8 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">3</button>
-            <span>...</span>
-            <button className="px-3 h-8 rounded bg-white border border-gray-200 text-gray-600 flex items-center justify-center">Next</button>
+        {!loading && filteredAlerts.length > 0 && (
+          <div className="p-4 bg-gray-50 flex items-center justify-between border-t border-gray-100 text-xs font-bold text-gray-400">
+            <p>Showing {filteredAlerts.length} alerts</p>
+            <div className="flex items-center gap-2">
+              <button className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center">1</button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </OperationsShell>
+  );
+}
+
+function RefreshCw({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M3 21v-5h5" />
+    </svg>
   );
 }
 
@@ -143,12 +243,11 @@ function SummaryCard({ label, value, icon, detail, color = "text-[#0f172a]" }: {
 }
 
 function getAlertIcon(type: string) {
-  switch (type) {
-    case 'Weather': return <Cloud size={20} />;
-    case 'Flood': return <Zap size={20} />;
-    case 'Safety': return <Shield size={20} />;
-    case 'System': return <Info size={20} />;
-    case 'Utility': return <Activity size={20} />;
-    default: return <Bell size={20} />;
-  }
+  const t = type.toLowerCase();
+  if (t.includes('weather')) return <Cloud size={20} />;
+  if (t.includes('flood')) return <Zap size={20} />;
+  if (t.includes('safety') || t.includes('security')) return <Shield size={20} />;
+  if (t.includes('system')) return <Info size={20} />;
+  if (t.includes('utility') || t.includes('power')) return <Activity size={20} />;
+  return <Bell size={20} />;
 }

@@ -2,9 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  Newspaper, Search, Filter, Bell, ChevronRight,
-  Clock, Share2, Bookmark, ExternalLink, Hash,
-  AlertTriangle, CheckCircle2, Info, ArrowUpRight
+  Search, Bell, Clock, Share2, Bookmark, ExternalLink, Hash, ArrowUpRight
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

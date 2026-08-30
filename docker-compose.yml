@@ -1,4 +1,24 @@
 services:
+  # PostgreSQL Database with PostGIS
+  postgres:
+    image: postgis/postgis:14-3.3-alpine
+    container_name: crisis-mesh-postgres
+    environment:
+      POSTGRES_USER: crisis_mesh
+      POSTGRES_PASSWORD: crisis_mesh_password
+      POSTGRES_DB: crisis_mesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crisis-mesh-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crisis_mesh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # MQTT Broker
   mqtt:
     image: eclipse-mosquitto:2
@@ -27,7 +47,7 @@ services:
     environment:
       NODE_ENV: development
       API_PORT: 3002
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://crisis_mesh:crisis_mesh_password@postgres:5432/crisis_mesh
       MQTT_BROKER_URL: mqtt://mqtt:1883
       JWT_SECRET: ${JWT_SECRET}
       NEWS_API_KEY: ${NEWS_API_KEY}
@@ -36,6 +56,7 @@ services:
     ports:
       - "3002:3002"
     depends_on:
+      - postgres
       - mqtt
     volumes:
       - ./services/api/src:/app/src
@@ -86,5 +107,6 @@ networks:
     driver: bridge
 
 volumes:
+  postgres_data:
   mosquitto_data:
   mosquitto_logs:

@@ -1,17 +1,12 @@
 'use client';
 
 import React from 'react';
-import { 
-  MessageSquare, Star, Users, CheckCircle2, 
-  BarChart3, PieChart, Filter, Search, 
-  Download, ChevronRight, MoreHorizontal,
-  ThumbsUp, ThumbsDown, AlertCircle, Heart,
-  Activity, Clock, FileText, ClipboardList
+import {
+  Star, Users, CheckCircle2, ThumbsUp, ThumbsDown, AlertCircle, Activity, ClipboardList
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
-import { 
-  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
+import {
+  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from 'recharts';
 
 const surveyStats = [

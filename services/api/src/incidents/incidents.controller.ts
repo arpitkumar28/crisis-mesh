@@ -75,7 +75,7 @@ export class IncidentsController {
   }
 
   @Get('count')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
+  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
   async getCount() {
     const count = await this.incidentsService.getIncidentCount();
     return {
@@ -87,7 +87,7 @@ export class IncidentsController {
   }
 
   @Get('count/by-status')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.ANALYST)
+  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
   async getCountByStatus() {
     const counts = await this.incidentsService.getIncidentCountByStatus();
     return {

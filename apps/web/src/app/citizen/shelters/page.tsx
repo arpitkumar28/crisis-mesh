@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { 
-  Home, MapPin, Navigation, Search, 
-  Filter, ChevronRight, CheckCircle2, 
-  AlertTriangle, Phone, Globe, Shield,
-  Heart, Building2, Navigation2
+  Home, Navigation, Search, 
+  Filter, CheckCircle2, 
+  AlertTriangle, Phone, Globe,
+  Heart, Navigation2
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 

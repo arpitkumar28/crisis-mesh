@@ -40,19 +40,19 @@ class LiveResponseMapScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              MarkerLayer(
+              const MarkerLayer(
                 markers: [
                   Marker(
-                    point: const LatLng(26.9224, 75.7773),
+                    point: LatLng(26.9224, 75.7773),
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.navigation, color: Color(0xFF0757E8), size: 30),
+                    child: Icon(Icons.navigation, color: Color(0xFF0757E8), size: 30),
                   ),
                   Marker(
-                    point: const LatLng(26.9124, 75.7873),
+                    point: LatLng(26.9124, 75.7873),
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+                    child: Icon(Icons.location_on, color: Colors.red, size: 35),
                   ),
                 ],
               ),
@@ -73,7 +73,7 @@ class LiveResponseMapScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.timer, color: Color(0xFF0757E8), size: 20),
@@ -113,15 +113,15 @@ class LiveResponseMapScreen extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 16,
             right: 16,
             child: Column(
               children: [
                 _MapToolButton(icon: Icons.my_location),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _MapToolButton(icon: Icons.add),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _MapToolButton(icon: Icons.remove),
               ],
             ),
@@ -163,7 +163,7 @@ class _MapToolButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
           )
         ],

@@ -3,28 +3,65 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { apiClient } from '@/lib/api-client';
+import { Toast } from '@/lib/toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Mail, Lock, ChevronRight, AlertTriangle, Info, HelpCircle, Globe, ChevronDown } from 'lucide-react';
+import { ShieldCheck, Info, HelpCircle, Globe, ChevronDown, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const [email, setEmail] = useState('district.mgr@jaipur.gov.in');
-  const [step, setStep] = useState(1); // 1: Login, 2: MFA
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  // const [step, setStep] = useState(1); // 1: Login, 2: MFA (Verification) - MFA commented out
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep(2);
+    setLoading(true);
+    
+    try {
+      const response = await apiClient.post('/auth/login', {
+        email,
+        password,
+      });
+
+      if (response.data.success) {
+        const { access_token, user } = response.data.data;
+        
+        // Store token in cookies for middleware and localStorage for API client
+        document.cookie = `access_token=${access_token}; path=/; max-age=86400; SameSite=Lax`;
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Update auth store
+        setAuth({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.roles?.[0] || 'User',
+        }, access_token);
+
+        Toast.success('Login successful');
+        router.push('/dashboard');
+      } else {
+        Toast.error(response.data.message || 'Login failed');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      Toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleMFA = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Mock login success
-    const mockUser = { id: '1', name: 'Arpit Kumar', role: 'Authority', email: 'admin@crisismesh.gov.in' };
-    setAuth(mockUser, 'mock_token');
-    router.push('/dashboard');
-  };
+  // const handleStep1 = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   // In a real production system, this would trigger an MFA code email/SMS
+  //   // For this implementation, we move to the verification UI step
+  //   setStep(2);
+  // };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -49,8 +86,9 @@ export default function LoginPage() {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6 bg-[#f8fafc]">
-        {step === 1 ? (
-          /* Screen 76: Authority / Admin Login */
+        {/* MFA commented out - showing login form directly */}
+        {/* {step === 1 ? ( */}
+          /* Authority / Admin Login */
           <div className="w-full max-w-[900px] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100">
             <div className="md:w-1/2 bg-[#061a37] p-12 flex flex-col justify-end relative overflow-hidden text-white">
               <Image
@@ -85,7 +123,7 @@ export default function LoginPage() {
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Use your official credentials</p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-6">
+              <form onSubmit={handleLoginSubmit} className="space-y-6">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username / Email</label>
                   <input
@@ -93,7 +131,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#0f172a] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
-                    placeholder="district.mgr@jaipur.gov.in"
+                    placeholder="e.g. admin@crisismesh.gov.in"
                     required
                   />
                 </div>
@@ -104,7 +142,8 @@ export default function LoginPage() {
                   </div>
                   <input
                     type="password"
-                    defaultValue="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-[#0f172a] focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
                     placeholder="••••••••"
                     required
@@ -120,7 +159,7 @@ export default function LoginPage() {
                   type="submit"
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 transition-all"
                 >
-                  Login
+                  Continue
                 </button>
               </form>
 
@@ -139,12 +178,12 @@ export default function LoginPage() {
               <p className="mt-10 text-center text-[9px] font-black text-gray-400 uppercase tracking-widest">Authorized Access Only</p>
             </div>
           </div>
-        ) : (
-          /* Screen 75: Authentication & MFA */
+        {/* ) : (
+          /* Multi-Factor Authentication UI - COMMENTED OUT
           <div className="w-full max-w-[800px] bg-white rounded-[40px] shadow-2xl p-16 border border-gray-100 flex flex-col md:flex-row gap-16">
             <div className="md:w-1/2">
-              <h3 className="text-3xl font-black text-[#0f172a] mb-4 uppercase tracking-tighter">Sign in to your account</h3>
-              <p className="text-xs font-bold text-gray-400 mb-10">Enter your credentials to access your dashboard.</p>
+              <h3 className="text-3xl font-black text-[#0f172a] mb-4 uppercase tracking-tighter">Security Verification</h3>
+              <p className="text-xs font-bold text-gray-400 mb-10">We've sent a verification code to your official device.</p>
 
               <div className="space-y-6">
                  <div>
@@ -153,28 +192,29 @@ export default function LoginPage() {
                  </div>
                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3">
                     <Info size={16} className="text-blue-600" />
-                    <p className="text-[9px] font-black text-blue-600 uppercase">Authenticated by government AD service</p>
+                    <p className="text-[9px] font-black text-blue-600 uppercase">Verification required for authority access</p>
                  </div>
               </div>
             </div>
 
             <div className="md:w-1/2">
               <h3 className="text-xl font-black text-[#0f172a] mb-2 uppercase tracking-tighter">Multi-Factor Authentication</h3>
-              <p className="text-[10px] font-black text-gray-400 uppercase mb-8">Enter the 6-digit code from your authenticator app.</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-8">Enter the code to complete the secure login.</p>
 
-              <form onSubmit={handleMFA}>
+              <form onSubmit={handleLoginSubmit}>
                 <div className="grid grid-cols-6 gap-2 mb-6">
-                   {[2, 4, 7, 8, 3, 1].map((n, i) => (
+                   {[0, 0, 0, 0, 0, 0].map((_, i) => (
                      <input
                        key={i}
                        type="text"
-                       defaultValue={n}
-                       className="w-full aspect-square border-2 border-gray-100 rounded-xl text-center text-xl font-black text-[#0f172a] focus:border-blue-600 outline-none transition-all"
+                       maxLength={1}
+                       className="w-full aspect-square border-2 border-gray-100 rounded-xl text-center text-xl font-black text-[#0f172a] focus:border-blue-600 outline-none transition-all bg-gray-50"
+                       required
                      />
                    ))}
                 </div>
 
-                <p className="text-center text-[10px] font-black text-gray-400 uppercase mb-8">Code expires in <span className="text-red-500">24s</span></p>
+                <p className="text-center text-[10px] font-black text-gray-400 uppercase mb-8">Didn't receive code? <button type="button" className="text-blue-600">Resend</button></p>
 
                 <div className="flex items-center gap-2 mb-8">
                    <input type="checkbox" id="trust" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
@@ -183,16 +223,24 @@ export default function LoginPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 mb-6 transition-all"
+                  disabled={loading}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 mb-6 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                 >
-                  Verify & Continue
+                  {loading && <Loader2 size={16} className="animate-spin" />}
+                  Verify & Login
                 </button>
 
-                <button type="button" className="w-full text-center text-[10px] font-black text-blue-600 uppercase hover:underline">Use backup code</button>
+                <button 
+                  type="button" 
+                  onClick={() => setStep(1)}
+                  className="w-full text-center text-[10px] font-black text-blue-600 uppercase hover:underline"
+                >
+                  Back to login
+                </button>
               </form>
             </div>
           </div>
-        )}
+        )} */}
       </main>
 
       <footer className="h-14 border-t border-gray-100 flex items-center justify-between px-6 bg-white shrink-0 text-[10px] font-black text-gray-400 uppercase tracking-widest">

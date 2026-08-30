@@ -33,13 +33,13 @@ class NavigationScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              MarkerLayer(
+              const MarkerLayer(
                 markers: [
                   Marker(
-                    point: const LatLng(26.9124, 75.7873),
+                    point: LatLng(26.9124, 75.7873),
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                    child: Icon(Icons.location_on, color: Colors.red, size: 40),
                   ),
                 ],
               ),
@@ -58,7 +58,7 @@ class NavigationScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 10,
                   )
                 ],
@@ -104,7 +104,7 @@ class NavigationScreen extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                   )
                 ],

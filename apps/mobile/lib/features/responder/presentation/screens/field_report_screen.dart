@@ -33,7 +33,7 @@ class _FieldReportScreenState extends State<FieldReportScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _status,
+              initialValue: _status,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: const Color(0xFFF8FAFD),

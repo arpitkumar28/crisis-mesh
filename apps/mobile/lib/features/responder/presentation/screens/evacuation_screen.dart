@@ -10,8 +10,10 @@ class EvacuationScreen extends StatelessWidget {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Evacuation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('INC-2048', style: TextStyle(fontSize: 12, color: Color(0xFF65728A))),
+            Text('Evacuation',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('INC-2048',
+                style: TextStyle(fontSize: 12, color: Color(0xFF65728A))),
           ],
         ),
       ),
@@ -54,9 +56,11 @@ class EvacuationScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFF0757E8),
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Mark Evacuation Point', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Mark Evacuation Point',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -76,7 +80,8 @@ class EvacuationScreen extends StatelessWidget {
         children: [
           Text(
             'Evacuated',
-            style: TextStyle(color: Color(0xFF65728A), fontWeight: FontWeight.w500),
+            style: TextStyle(
+                color: Color(0xFF65728A), fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 8),
           Row(
@@ -86,7 +91,10 @@ class EvacuationScreen extends StatelessWidget {
             children: [
               Text(
                 '356',
-                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+                style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF102043)),
               ),
               SizedBox(width: 8),
               Text(
@@ -103,7 +111,8 @@ class EvacuationScreen extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
+      style: const TextStyle(
+          fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF102043)),
     );
   }
 
@@ -121,13 +130,16 @@ class EvacuationScreen extends StatelessWidget {
             backgroundColor: Color(0xFFE8F7EF),
             child: Icon(Icons.location_on, color: Color(0xFF09A86B)),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Community Hall', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('Sector 5, Mansarovar', style: TextStyle(color: Color(0xFF65728A), fontSize: 13)),
+                Text('Community Hall',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text('Sector 5, Mansarovar',
+                    style: TextStyle(color: Color(0xFF65728A), fontSize: 13)),
               ],
             ),
           ),
@@ -156,7 +168,8 @@ class EvacuationScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(zone, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(count, style: const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
+            Text(count,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF65728A))),
           ],
         ),
         const SizedBox(height: 8),

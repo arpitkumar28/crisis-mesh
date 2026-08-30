@@ -30,7 +30,7 @@ class _AlertCreationScreenState extends State<AlertCreationScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _type,
+              initialValue: _type,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: const Color(0xFFF8FAFD),

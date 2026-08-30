@@ -1,12 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Users, MapPin, Truck, Home, Clock,
-  ChevronRight, Search, CheckCircle2,
-  AlertTriangle, Shield, Activity,
-  Navigation, LifeBuoy, Zap, Play,
-  Pause, Check, ExternalLink
+  Users, Truck, Activity,
+  Navigation, LifeBuoy, Pause, Check
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
@@ -17,8 +14,6 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 });
 
 export default function EvacuationExecution() {
-  const [step, setStep] = useState(4); // Screen 83 shows step 4: Execution
-
   return (
     <OperationsShell eyebrow="Manage evacuation operations" title="Evacuation Execution">
       {/* Top Header Section */}

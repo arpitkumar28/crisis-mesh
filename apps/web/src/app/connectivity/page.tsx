@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { 
-  Zap, Wifi, Signal, Battery, Activity, Search, 
-  ChevronDown, AlertTriangle, Radio, Server,
-  ArrowUpRight, Clock, RefreshCw
+  Zap, Wifi, Signal, Activity, Search, 
+  AlertTriangle, Radio, RefreshCw
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import { 

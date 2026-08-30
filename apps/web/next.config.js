@@ -2,13 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  async rewrites() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:3002/api/:path*',
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
       },
-    ];
+    ],
   },
 };
 

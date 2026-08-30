@@ -1,17 +1,13 @@
 'use client';
 
 import React from 'react';
-import { 
-  Heart, Users, TrendingUp, DollarSign, 
-  Download, Filter, Search, Plus, 
-  ChevronRight, ArrowUpRight, CheckCircle2,
-  Clock, Activity, PieChart, BarChart3,
-  CreditCard, Wallet, Banknote
+import {
+  Heart, Users, DollarSign, CheckCircle2, Activity, Wallet
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, BarChart, Bar, Cell 
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
 } from 'recharts';
 
 const donationData = [

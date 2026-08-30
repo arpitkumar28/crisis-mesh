@@ -2,10 +2,9 @@
 
 import React from 'react';
 import { 
-  AlertTriangle, Bell, Zap, Activity, Clock, 
+  AlertTriangle, Bell, Activity, Clock, 
   Map as MapIcon, ChevronRight, Share2, MessageSquare,
-  Smartphone, Mail, Info, Globe, Shield, Radio,
-  Filter, Search, Plus, Download, BarChart3
+  Smartphone, Mail, Plus, BarChart3
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
