@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  AlertTriangle, CheckCircle2, Info, ChevronRight, Navigation, Loader2, Clock
+  AlertTriangle, CheckCircle2, Navigation, Loader2, Clock
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';

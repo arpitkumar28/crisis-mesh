@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Layers, Search, Maximize2, ZoomIn, ZoomOut,
-  Navigation, MapPin, Settings, Clock, ArrowUpRight,
+  Layers, Search, ZoomIn, ZoomOut,
+  Navigation, MapPin, Clock,
   Loader2, RefreshCw
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';

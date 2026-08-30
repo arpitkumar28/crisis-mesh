@@ -2,10 +2,8 @@
 
 import React from 'react';
 import {
-  FileText, Search, ChevronDown, Plus, Download,
-  Users, Home, AlertTriangle, TrendingUp,
-  MapPin, Clock, Calendar, ArrowUpRight,
-  Filter, MoreVertical, Layout, Trash2,
+  FileText, ChevronDown, Plus, Download,
+  Trash2,
   CheckCircle2, Info, Flame, LifeBuoy
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';

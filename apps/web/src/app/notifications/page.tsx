@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import {
   Bell, Mail, MessageSquare, Smartphone, Globe,
-  ChevronRight, Save, Shield, AlertTriangle,
-  CheckCircle2, Info, Clock, Lock, User, Plus
+  ChevronRight, Save, AlertTriangle,
+  Info, Clock
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 

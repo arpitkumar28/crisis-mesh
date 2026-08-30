@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Bell, AlertTriangle, Shield, Cloud, Activity,
-  MapPin, Clock, Info, Filter, Search,
+  MapPin, Clock, Info, Search,
   ChevronRight, CheckCircle2,
   AlertCircle, Zap, Loader2
 } from 'lucide-react';

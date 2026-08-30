@@ -7,19 +7,17 @@ import { apiClient } from '@/lib/api-client';
 import { Toast } from '@/lib/toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Info, HelpCircle, Globe, ChevronDown, Loader2 } from 'lucide-react';
+import { ShieldCheck, HelpCircle, Globe, ChevronDown } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   // const [step, setStep] = useState(1); // 1: Login, 2: MFA (Verification) - MFA commented out
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     
     try {
       const response = await apiClient.post('/auth/login', {
@@ -51,8 +49,6 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error('Login failed:', error);
       Toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -88,7 +84,7 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center p-6 bg-[#f8fafc]">
         {/* MFA commented out - showing login form directly */}
         {/* {step === 1 ? ( */}
-          /* Authority / Admin Login */
+          {/* Authority / Admin Login */}
           <div className="w-full max-w-[900px] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100">
             <div className="md:w-1/2 bg-[#061a37] p-12 flex flex-col justify-end relative overflow-hidden text-white">
               <Image

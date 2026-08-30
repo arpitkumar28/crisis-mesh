@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck, MapPin, Bell, Cloud, Activity,
-  Search, ChevronRight, ArrowRight, Shield,
-  Siren, Users, Globe, ExternalLink, Menu, X,
-  Zap, AlertTriangle, CloudRain, Droplets
+  Search, ChevronRight, ArrowRight, ChevronDown,
+  Siren, Users, Globe, Menu, X,
+  AlertTriangle, CloudRain, Droplets, Sun, Moon
 } from 'lucide-react';
-import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
@@ -19,12 +18,23 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 export default function PublicHome() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    // Toggle dark mode on document
+    if (!isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] font-sans">
@@ -55,8 +65,16 @@ export default function PublicHome() {
           </div>
 
           <div className="hidden lg:flex items-center gap-4">
+             <button
+               onClick={toggleTheme}
+               className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-[#061a37] transition-colors"
+               title="Toggle theme"
+             >
+                {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
+                {isDarkMode ? 'Dark' : 'Light'}
+             </button>
              <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-[#061a37] transition-colors">
-                <Globe size={16} /> English <ChevronDownIcon />
+                <Globe size={16} /> English <ChevronDown size={14} />
              </button>
              <Link href="/login" className="px-6 py-3 bg-[#061a37] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-blue-600 transition-all">
                 Authority Login
@@ -399,8 +417,4 @@ function RegionStat({ label, value }: { label: string; value: string }) {
        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
     </div>
   );
-}
-
-function ChevronDownIcon() {
-  return <ChevronRight className="rotate-90 text-gray-300" size={14} />;
 }
