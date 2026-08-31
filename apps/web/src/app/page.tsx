@@ -88,81 +88,118 @@ export default function PublicHome() {
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg">
+            <div className="max-w-7xl mx-auto px-6 py-4 space-y-1">
+              {['Home', 'Live Map', 'States', 'Districts', 'Alerts', 'News', 'Safety', 'Resources'].map((item) => (
+                <Link
+                  key={item}
+                  href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`}
+                  className="block px-4 py-3 text-sm font-black uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item}
+                </Link>
+              ))}
+              <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                >
+                  {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
+                  {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                </button>
+                <Link
+                  href="/login"
+                  className="w-full flex items-center justify-center px-4 py-3 bg-[#061a37] text-white font-black uppercase tracking-wider text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Authority Login
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-50/50 -skew-x-12 translate-x-20 pointer-events-none"></div>
+      <section className="relative pt-20 pb-12 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div className="absolute top-0 right-0 w-full lg:w-1/2 h-full bg-blue-50/50 -skew-x-12 translate-x-12 lg:translate-x-20 pointer-events-none opacity-50 lg:opacity-100"></div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-            <div className="lg:col-span-6 space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-full border border-red-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+            <div className="lg:col-span-6 space-y-6 lg:space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-full border border-red-100">
                 <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
-                <span className="text-[10px] font-black uppercase tracking-widest italic">Live Safety Monitoring Active</span>
+                <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest italic">Live Safety Monitoring Active</span>
               </div>
 
-              <h1 className="text-5xl lg:text-7xl font-black text-[#061a37] leading-[1.1] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-7xl font-black text-[#061a37] leading-[1.2] lg:leading-[1.1] tracking-tight">
                 India&apos;s Integrated <br />
-                <span className="text-[#3b82f6]">Disaster Intel</span> Platform.
+                <span className="text-blue-600">Disaster Intel</span> Platform.
               </h1>
 
-              <p className="text-xl text-gray-500 font-medium leading-relaxed max-w-lg">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 font-medium leading-relaxed max-w-lg">
                 Real-time alerts, AI-driven risk prediction, and coordinated
                 emergency response to keep communities safe and resilient.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="relative flex-1 max-w-md">
-                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                    <input
                      type="text"
                      placeholder="Search district or hazard..."
-                     className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-bold shadow-2xl shadow-blue-900/5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                     className="w-full pl-12 pr-4 py-3 sm:py-4 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-sm font-bold shadow-lg sm:shadow-2xl shadow-blue-900/5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                    />
                 </div>
-                <button className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
-                  View Live Map <ChevronRight size={20} />
+                <button className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-lg sm:shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shrink-0">
+                  Live Map <ChevronRight size={18} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-8 pt-8">
+              <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-4 sm:pt-8">
                 <div className="space-y-1">
-                   <h4 className="text-3xl font-black text-[#061a37]">766</h4>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Districts Tracked</p>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">766</h4>
+                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Districts Tracked</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-3xl font-black text-[#061a37]">24/7</h4>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Monitoring</p>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">24/7</h4>
+                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Live Monitoring</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-3xl font-black text-[#061a37]">AI</h4>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Risk Prediction</p>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">AI</h4>
+                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Risk Prediction</p>
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-6 relative h-[500px]">
-               <div className="absolute inset-0 bg-[#061a37] rounded-[40px] shadow-2xl overflow-hidden border-8 border-white group">
+            <div className="lg:col-span-6 relative h-80 sm:h-96 lg:h-[500px]">
+               <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group">
                   <LiveMap entities={[]} />
-                  <div className="absolute top-6 right-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 max-w-[200px]">
-                    <div className="flex items-center gap-2 mb-3 text-red-600">
-                       <AlertTriangle size={18} />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Incident Alert</span>
+                  <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
+                    <div className="flex items-center gap-2 mb-2 sm:mb-3 text-red-600">
+                       <AlertTriangle size={16} />
+                       <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest">Incident Alert</span>
                     </div>
-                    <p className="text-xs font-black text-[#061a37]">Urban Flooding reported in Jaipur South</p>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase mt-2">2 minutes ago</p>
+                    <p className="text-[11px] sm:text-xs font-black text-[#061a37]">Urban Flooding reported in Jaipur South</p>
+                    <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase mt-2">2 minutes ago</p>
                   </div>
                </div>
                {/* Floating elements */}
-               <div className="absolute -bottom-8 -left-8 p-6 bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-[240px] hidden md:block animate-bounce-slow">
+               <div className="absolute -bottom-6 -left-6 sm:-bottom-8 sm:-left-8 p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-gray-100 max-w-[180px] sm:max-w-[240px] hidden sm:block animate-bounce-slow">
                   <div className="flex items-center gap-3 mb-4">
                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                        <Activity size={24} />
+                        <Activity size={20} />
                      </div>
                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase">Mesh Health</p>
-                        <p className="text-lg font-black text-[#061a37]">98.2%</p>
+                        <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase">Mesh Health</p>
+                        <p className="text-base sm:text-lg font-black text-[#061a37]">98.2%</p>
                      </div>
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
