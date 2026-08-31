@@ -1,57 +1,72 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Search, Bell, Share2, Bookmark, ExternalLink, Hash, ArrowUpRight
+  Search, Bell, Share2, Bookmark, ExternalLink, Hash, ArrowUpRight, RefreshCw
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import Image from 'next/image';
-
-const newsItems = [
-  {
-    id: 1,
-    title: 'Heavy rainfall warning for Jaipur district',
-    excerpt: 'IMD has issued a heavy rainfall warning for Jaipur and surrounding areas for next 24 hours. Citizens are advised to stay indoors...',
-    source: 'IMD Official',
-    time: '12 min ago',
-    category: 'Weather',
-    severity: 'OFFICIAL',
-    image: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 2,
-    title: 'Waterlogging reported in several low-lying areas',
-    excerpt: 'Following heavy rains, waterlogging has been reported in Malviya Nagar, Mansarovar, and old city areas. Traffic diversions in place...',
-    source: 'Local News',
-    time: '45 min ago',
-    category: 'Incident',
-    severity: 'LOCAL NEWS',
-    image: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 3,
-    title: 'NDRF team deployed for flood relief',
-    excerpt: 'Rajasthan Government has requested NDRF deployment for flood relief operations in eastern Rajasthan. Team Alpha on standby...',
-    source: 'Govt. Release',
-    time: '2 hours ago',
-    category: 'Relief',
-    severity: 'OFFICIAL',
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 4,
-    title: 'Traffic advisory issued for NH-48 Road',
-    excerpt: 'Due to waterlogging near Ajmer Road, traffic has been diverted from NH-48 towards alternate routes. Expect delays...',
-    source: 'Traffic Police',
-    time: '3 hours ago',
-    category: 'Traffic',
-    severity: 'OFFICIAL',
-    image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&q=80&w=600'
-  }
-];
+import apiClient from '@/lib/api-client';
 
 export default function NewsPage() {
   const [activeTab, setActiveTab] = useState('All News');
+  const [newsData, setNewsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchNewsData = async (query?: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const endpoint = query ? `/news?query=${query}` : '/news';
+      const response = await apiClient.get(endpoint);
+      setNewsData(response.data.data || []);
+    } catch (err) {
+      setError('Failed to load news data. Please try again.');
+      console.error('News API Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNewsData();
+  }, []);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'Weather Updates') {
+      fetchNewsData('weather');
+    } else if (tab === 'Official Updates') {
+      fetchNewsData('disaster');
+    } else {
+      fetchNewsData();
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity?.toUpperCase()) {
+      case 'HIGH':
+      case 'CRITICAL':
+        return 'bg-red-100 text-red-600';
+      case 'MEDIUM':
+        return 'bg-orange-100 text-orange-600';
+      default:
+        return 'bg-blue-100 text-blue-600';
+    }
+  };
+
+  const getTimeAgo = (publishedAt: string) => {
+    if (!publishedAt) return 'Recently';
+    const diff = Date.now() - new Date(publishedAt).getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
 
   return (
     <OperationsShell eyebrow="Stay informed with the latest news and official updates" title="News & Updates">
@@ -64,7 +79,7 @@ export default function NewsPage() {
                 {['All News', 'Official Updates', 'Weather Updates', 'Local News', 'Media Reports'].map(tab => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => handleTabChange(tab)}
                     className={`text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap pb-2 transition-all relative ${
                       activeTab === tab ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
                     }`}
@@ -80,49 +95,73 @@ export default function NewsPage() {
                   type="text"
                   placeholder="Search news..."
                   className="pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-[11px] font-black w-48 focus:outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  onChange={(e) => fetchNewsData(e.target.value)}
                 />
               </div>
             </div>
 
             <div className="divide-y divide-gray-50">
-              {newsItems.map((item) => (
-                <div key={item.id} className="p-8 flex gap-8 hover:bg-gray-50/50 transition-all group cursor-pointer">
-                  <div className="w-56 h-36 rounded-[24px] overflow-hidden shrink-0 border border-gray-100 shadow-sm relative">
-                    <Image src={item.image} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                  </div>
-
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${
-                        item.severity === 'OFFICIAL' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {item.severity}
-                      </span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{item.time}</span>
-                    </div>
-
-                    <h3 className="text-xl font-black text-[#0f172a] mb-3 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">{item.title}</h3>
-                    <p className="text-xs font-medium text-gray-500 mb-6 line-clamp-2 leading-relaxed">{item.excerpt}</p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                        <span className="text-[#0f172a]">{item.source}</span>
-                        <span>•</span>
-                        <span>{item.category}</span>
-                      </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Share2 size={16} /></button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Bookmark size={16} /></button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><ExternalLink size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
+              {loading ? (
+                <div className="p-12 flex items-center justify-center">
+                  <RefreshCw size={32} className="animate-spin text-blue-600" />
                 </div>
-              ))}
+              ) : error ? (
+                <div className="p-12 text-center">
+                  <p className="text-red-500 mb-4">{error}</p>
+                  <button onClick={() => fetchNewsData()} className="text-blue-600 font-black uppercase tracking-widest hover:underline">
+                    Retry
+                  </button>
+                </div>
+              ) : newsData.length === 0 ? (
+                <div className="p-12 text-center text-gray-400">
+                  No news articles available
+                </div>
+              ) : (
+                newsData.map((item, index) => (
+                  <div key={index} className="p-8 flex gap-8 hover:bg-gray-50/50 transition-all group cursor-pointer">
+                    {item.imageUrl && (
+                      <div className="w-56 h-36 rounded-[24px] overflow-hidden shrink-0 border border-gray-100 shadow-sm relative">
+                        <Image src={item.imageUrl} alt={item.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${getSeverityColor(item.severity)}`}>
+                          {item.severity || 'INFO'}
+                        </span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{getTimeAgo(item.publishedAt)}</span>
+                      </div>
+
+                      <h3 className="text-xl font-black text-[#0f172a] mb-3 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">{item.title}</h3>
+                      <p className="text-xs font-medium text-gray-500 mb-6 line-clamp-2 leading-relaxed">{item.description || 'No description available'}</p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                          <span className="text-[#0f172a]">{item.source || 'News Source'}</span>
+                          <span>•</span>
+                          <span>{item.category || 'General'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                          {item.url && (
+                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                              <ExternalLink size={16} />
+                            </a>
+                          )}
+                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Share2 size={16} /></button>
+                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Bookmark size={16} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="p-6 bg-gray-50 text-center border-t border-gray-100">
-               <button className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] hover:underline">Load Previous Updates</button>
+               <button onClick={() => fetchNewsData()} className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] hover:underline flex items-center justify-center gap-2">
+                 <RefreshCw size={12} /> Refresh News
+               </button>
             </div>
           </div>
         </div>
@@ -134,7 +173,11 @@ export default function NewsPage() {
             <h3 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em] mb-8">Popular Topics</h3>
             <div className="flex flex-wrap gap-2">
               {['#Flood', '#JaipurRain', '#Alerts', '#Traffic', '#Weather', '#Relief', '#NDMA', '#IMD'].map(tag => (
-                <button key={tag} className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[9px] font-black text-gray-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all flex items-center gap-1.5 uppercase tracking-widest">
+                <button 
+                  key={tag} 
+                  onClick={() => fetchNewsData(tag.substring(1))}
+                  className="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[9px] font-black text-gray-500 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all flex items-center gap-1.5 uppercase tracking-widest"
+                >
                   <Hash size={12} className="opacity-50" /> {tag.substring(1)}
                 </button>
               ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cloud, CloudRain, Droplets, Wind, Gauge,
   Sun, CloudLightning, Activity,
@@ -12,33 +12,104 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
+import apiClient from '@/lib/api-client';
 
-const rainfallData = [
-  { time: '12 AM', value: 2 },
-  { time: '2 AM', value: 5 },
-  { time: '4 AM', value: 8 },
-  { time: '6 AM', value: 15 },
-  { time: '8 AM', value: 25 },
-  { time: '10 AM', value: 45 },
-  { time: '12 PM', value: 65 },
-  { time: '2 PM', value: 85 },
-  { time: '4 PM', value: 70 },
-  { time: '6 PM', value: 55 },
-  { time: '8 PM', value: 30 },
-  { time: '10 PM', value: 15 },
-];
-
-const sevenDayForecast = [
-  { day: 'Tue, 25 Aug', high: 28, low: 22, condition: 'Rainy', icon: <CloudRain size={20} /> },
-  { day: 'Wed, 26 Aug', high: 30, low: 24, condition: 'Cloudy', icon: <Cloud size={20} /> },
-  { day: 'Thu, 27 Aug', high: 32, low: 25, condition: 'Sunny', icon: <Sun size={20} /> },
-  { day: 'Fri, 28 Aug', high: 31, low: 23, condition: 'Cloudy', icon: <Cloud size={20} /> },
-  { day: 'Sat, 29 Aug', high: 29, low: 22, condition: 'Storm', icon: <CloudLightning size={20} /> },
-  { day: 'Sun, 30 Aug', high: 28, low: 21, condition: 'Rainy', icon: <CloudRain size={20} /> },
-  { day: 'Mon, 31 Aug', high: 30, low: 23, condition: 'Cloudy', icon: <Cloud size={20} /> },
-];
+// Jaipur coordinates
+const JAIPUR_LAT = 26.9124;
+const JAIPUR_LON = 75.7873;
 
 export default function WeatherForecastPage() {
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchWeatherData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await apiClient.get(`/public/weather/${JAIPUR_LAT}/${JAIPUR_LON}`);
+      setWeatherData(response.data.data);
+    } catch (err) {
+      setError('Failed to load weather data. Please try again.');
+      console.error('Weather API Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWeatherData();
+  }, []);
+
+  const getWeatherIcon = (code: number) => {
+    if (code === 0) return <Sun size={28} />;
+    if (code >= 1 && code <= 3) return <Cloud size={28} />;
+    if (code >= 45 && code <= 48) return <Cloud size={28} />;
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return <CloudRain size={28} />;
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return <Cloud size={28} />;
+    if (code >= 95 && code <= 99) return <CloudLightning size={28} />;
+    return <Cloud size={28} />;
+  };
+
+  const getWeatherCondition = (code: number) => {
+    if (code === 0) return 'Clear';
+    if (code >= 1 && code <= 3) return 'Partly Cloudy';
+    if (code >= 45 && code <= 48) return 'Foggy';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'Rainy';
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'Snow';
+    if (code >= 95 && code <= 99) return 'Thunderstorm';
+    return 'Cloudy';
+  };
+
+  const processHourlyData = (forecast: any) => {
+    if (!forecast || !forecast.time || !forecast.temperature_2m || !forecast.precipitation) {
+      return [];
+    }
+
+    const times = forecast.time as string[];
+    const temps = forecast.temperature_2m as number[];
+    const precip = forecast.precipitation as number[];
+    const codes = forecast.weather_code as number[];
+
+    // Get next 12 hours
+    const next12Hours = times.slice(0, 12).map((time, index) => ({
+      time: new Date(time).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+      value: precip[index] || 0,
+      temperature: temps[index] || 0,
+      code: codes[index] || 0
+    }));
+
+    return next12Hours;
+  };
+
+  const process7DayForecast = (forecast: any) => {
+    if (!forecast || !forecast.time || !forecast.temperature_2m) {
+      return [];
+    }
+
+    const times = forecast.time as string[];
+    const temps = forecast.temperature_2m as number[];
+    const codes = forecast.weather_code as number[];
+
+    // Get next 7 days (assuming hourly data, take every 24th hour)
+    const dailyData = [];
+    for (let i = 0; i < 7 && i * 24 < times.length; i++) {
+      const index = i * 24;
+      dailyData.push({
+        day: new Date(times[index]).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }),
+        high: Math.max(...temps.slice(index, index + 24)),
+        low: Math.min(...temps.slice(index, index + 24)),
+        condition: getWeatherCondition(codes[index] || 0),
+        icon: getWeatherIcon(codes[index] || 0)
+      });
+    }
+
+    return dailyData;
+  };
+
+  const rainfallData = weatherData?.forecast ? processHourlyData(weatherData.forecast) : [];
+  const sevenDayForecast = weatherData?.forecast ? process7DayForecast(weatherData.forecast) : [];
+
   return (
     <OperationsShell eyebrow="Real-time meteorological intelligence and forecasting" title="Weather & Forecast">
       {/* Top Section: Current Weather & 7-Day Forecast */}
@@ -55,24 +126,40 @@ export default function WeatherForecastPage() {
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Jaipur, Rajasthan</p>
                    </div>
                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400 border border-white/5">
-                      <CloudRain size={28} />
+                      {loading ? <RefreshCw size={28} className="animate-spin" /> : getWeatherIcon(weatherData?.weatherCode || 0)}
                    </div>
                 </div>
 
-                <div className="flex items-end gap-4 mb-8">
-                   <h2 className="text-7xl font-black tracking-tighter">28°C</h2>
-                   <div className="mb-3">
-                      <p className="text-xl font-black">Light Rain</p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Feels like 31°C</p>
-                   </div>
-                </div>
+                {loading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw size={32} className="animate-spin text-blue-400" />
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <AlertTriangle size={32} className="text-red-400 mx-auto mb-2" />
+                    <p className="text-sm text-red-400">{error}</p>
+                    <button onClick={fetchWeatherData} className="mt-4 text-xs font-black text-blue-400 uppercase tracking-widest hover:underline">
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-end gap-4 mb-8">
+                       <h2 className="text-7xl font-black tracking-tighter">{weatherData?.temperature?.toFixed(1) || '--'}°C</h2>
+                       <div className="mb-3">
+                          <p className="text-xl font-black">{getWeatherCondition(weatherData?.weatherCode || 0)}</p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Updated: {weatherData?.observedAt ? new Date(weatherData.observedAt).toLocaleTimeString() : '--'}</p>
+                       </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-6 pt-8 border-t border-white/5">
-                   <WeatherStat label="Humidity" value="72%" />
-                   <WeatherStat label="Wind Speed" value="18 km/h" />
-                   <WeatherStat label="Pressure" value="1013 hPa" />
-                   <WeatherStat label="Visibility" value="2.4 km" />
-                </div>
+                    <div className="grid grid-cols-2 gap-6 pt-8 border-t border-white/5">
+                       <WeatherStat label="Humidity" value={`${weatherData?.humidity?.toFixed(0) || '--'}%`} />
+                       <WeatherStat label="Wind Speed" value={`${weatherData?.windSpeed?.toFixed(1) || '--'} km/h`} />
+                       <WeatherStat label="Pressure" value={`${weatherData?.pressure?.toFixed(0) || '--'} hPa`} />
+                       <WeatherStat label="Visibility" value={`${weatherData?.visibility ? (weatherData.visibility / 1000).toFixed(1) : '--'} km`} />
+                    </div>
+                  </>
+                )}
               </div>
            </div>
         </div>
@@ -80,21 +167,36 @@ export default function WeatherForecastPage() {
         {/* 7-Day Forecast Horizontal */}
         <div className="col-span-12 lg:col-span-8">
            <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm h-full flex flex-col">
-              <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-8">7-Day Forecast</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 flex-1">
-                 {sevenDayForecast.map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-500 transition-all cursor-pointer group">
-                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight text-center leading-tight">{item.day}</p>
-                       <div className="text-blue-600 my-4 group-hover:scale-110 transition-transform">
-                          {item.icon}
-                       </div>
-                       <div className="text-center">
-                          <p className="text-sm font-black text-[#0f172a]">{item.high}°</p>
-                          <p className="text-[10px] font-bold text-gray-400">{item.low}°</p>
-                       </div>
-                    </div>
-                 ))}
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-wider">7-Day Forecast</h3>
+                <button onClick={fetchWeatherData} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                  <RefreshCw size={12} /> Refresh
+                </button>
               </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-48">
+                  <RefreshCw size={32} className="animate-spin text-blue-600" />
+                </div>
+              ) : sevenDayForecast.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 flex-1">
+                   {sevenDayForecast.map((item, idx) => (
+                      <div key={idx} className="flex flex-col items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-500 transition-all cursor-pointer group">
+                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight text-center leading-tight">{item.day}</p>
+                         <div className="text-blue-600 my-4 group-hover:scale-110 transition-transform">
+                            {item.icon}
+                         </div>
+                         <div className="text-center">
+                            <p className="text-sm font-black text-[#0f172a]">{item.high.toFixed(0)}°</p>
+                            <p className="text-[10px] font-bold text-gray-400">{item.low.toFixed(0)}°</p>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-48 text-gray-400">
+                  No forecast data available
+                </div>
+              )}
            </div>
         </div>
       </div>
@@ -111,24 +213,34 @@ export default function WeatherForecastPage() {
                  </div>
               </div>
 
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={rainfallData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} />
-                    <Tooltip
-                      cursor={{fill: '#f8fafc'}}
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                       {rainfallData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.value > 50 ? '#3b82f6' : '#93c5fd'} />
-                       ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <RefreshCw size={32} className="animate-spin text-blue-600" />
+                </div>
+              ) : rainfallData.length > 0 ? (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={rainfallData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} />
+                      <Tooltip
+                        cursor={{fill: '#f8fafc'}}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                         {rainfallData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.value > 50 ? '#3b82f6' : '#93c5fd'} />
+                         ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-gray-400">
+                  No rainfall data available
+                </div>
+              )}
            </div>
         </div>
 
@@ -136,31 +248,25 @@ export default function WeatherForecastPage() {
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
            <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm flex-1">
               <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-6">Weather Alerts</h3>
-              <div className="space-y-4">
-                 <WeatherAlert
-                   icon={<AlertTriangle size={18} className="text-red-500" />}
-                   title="Heavy Rainfall Warning"
-                   time="25 Aug, 02:00 PM"
-                   severity="Red Alert"
-                   color="bg-red-50 text-red-600"
-                 />
-                 <WeatherAlert
-                   icon={<CloudLightning size={18} className="text-orange-500" />}
-                   title="Flash Flood Watch"
-                   time="25 Aug, 01:30 PM"
-                   severity="Orange Alert"
-                   color="bg-orange-50 text-orange-600"
-                 />
-                 <WeatherAlert
-                   icon={<Wind size={18} className="text-blue-500" />}
-                   title="Thunderstorm Alert"
-                   time="25 Aug, 12:00 PM"
-                   severity="Yellow Alert"
-                   color="bg-yellow-50 text-yellow-600"
-                 />
-              </div>
-              <button className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors">
-                 View Detailed Weather Report
+              {weatherData && (weatherData.weatherCode || 0) >= 95 ? (
+                <div className="space-y-4">
+                  <WeatherAlert
+                    icon={<AlertTriangle size={18} className="text-red-500" />}
+                    title="Severe Weather Alert"
+                    time={weatherData.observedAt ? new Date(weatherData.observedAt).toLocaleString() : 'Now'}
+                    severity="Red Alert"
+                    color="bg-red-50 text-red-600"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Info size={32} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No active weather alerts</p>
+                  <p className="text-xs mt-1">Current conditions are normal</p>
+                </div>
+              )}
+              <button onClick={fetchWeatherData} className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                <RefreshCw size={12} /> Refresh Data
               </button>
            </div>
 
@@ -173,7 +279,7 @@ export default function WeatherForecastPage() {
                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Meteorological Insight</h4>
               </div>
               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6">
-                 Continuous precipitation in Jaipur South is likely to saturate soil by 06:00 PM. High risk of localized flooding in low-lying residential areas.
+                 {weatherData ? `Current temperature in Jaipur is ${weatherData.temperature?.toFixed(1)}°C with ${weatherData.humidity?.toFixed(0)}% humidity. ${getWeatherCondition(weatherData.weatherCode || 0)} conditions reported. Data source: ${weatherData.source || 'Open-Meteo'}` : 'Loading weather intelligence data...'}
               </p>
               <button className="flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest hover:underline">
                  Read Full Analysis Report <ChevronRight size={14} />

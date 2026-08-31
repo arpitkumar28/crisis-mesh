@@ -7,9 +7,10 @@ import {
   MapPin, Bell, Cloud, Activity,
   Search, ChevronRight, ArrowRight, ChevronDown,
   Siren, Users, Globe, Menu, X,
-  AlertTriangle, CloudRain, Droplets, Sun, Moon
+  AlertTriangle, CloudRain, Droplets, Sun, Moon, RefreshCw
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import apiClient from '@/lib/api-client';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -18,10 +19,18 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 
 type ThemePreference = 'system' | 'light' | 'dark';
 
+// Jaipur coordinates
+const JAIPUR_LAT = 26.9124;
+const JAIPUR_LON = 75.7873;
+
 export default function PublicHome() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>('system');
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [newsData, setNewsData] = useState<any[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('crisismesh-theme') as ThemePreference | null;
@@ -36,6 +45,36 @@ export default function PublicHome() {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fetch weather data for Jaipur
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      setWeatherLoading(true);
+      try {
+        const response = await apiClient.get(`/public/weather/${JAIPUR_LAT}/${JAIPUR_LON}`);
+        setWeatherData(response.data.data);
+      } catch (err) {
+        console.error('Weather API Error:', err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+
+    const fetchNewsData = async () => {
+      setNewsLoading(true);
+      try {
+        const response = await apiClient.get('/news?query=weather');
+        setNewsData(response.data.data || []);
+      } catch (err) {
+        console.error('News API Error:', err);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+
+    fetchWeatherData();
+    fetchNewsData();
   }, []);
 
   useEffect(() => {
@@ -384,24 +423,43 @@ export default function PublicHome() {
                <div className="space-y-6">
                   <div className="flex items-center gap-6">
                      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
-                        <CloudRain size={32} />
+                        {weatherLoading ? <RefreshCw size={32} className="animate-spin" /> : <CloudRain size={32} />}
                      </div>
                      <div>
-                        <h4 className="text-4xl font-black text-[#061a37]">28.6°C</h4>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Light Rain • Jaipur</p>
+                        <h4 className="text-4xl font-black text-[#061a37]">
+                           {weatherLoading ? '--' : (weatherData?.temperature?.toFixed(1) || '--')}°C
+                        </h4>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                           {weatherLoading ? 'Loading...' : `${weatherData?.precipitation ? 'Rain' : 'Clear'} • Jaipur`}
+                        </p>
                      </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                     <WeatherMetric label="Rainfall" value="12.4 mm" icon={<Droplets size={14} />} />
-                     <WeatherMetric label="Alerts" value="7 Active" icon={<Bell size={14} />} />
+                     <WeatherMetric label="Rainfall" value={weatherLoading ? '--' : `${weatherData?.precipitation?.toFixed(1) || '0'} mm`} icon={<Droplets size={14} />} />
+                     <WeatherMetric label="Humidity" value={weatherLoading ? '--' : `${weatherData?.humidity?.toFixed(0) || '--'}%`} icon={<Bell size={14} />} />
                   </div>
 
                   <div className="pt-6 border-t border-gray-100">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Latest Local News</p>
                      <div className="space-y-4">
-                        <NewsMini title="Heavy rainfall warning for Jaipur" time="12m ago" />
-                        <NewsMini title="Waterlogging reported in Malviya Nagar" time="45m ago" />
+                        {newsLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <RefreshCw size={16} className="animate-spin text-gray-400" />
+                          </div>
+                        ) : newsData.length > 0 ? (
+                          newsData.slice(0, 2).map((article, index) => (
+                            <NewsMini 
+                              key={index} 
+                              title={article.title || 'Weather Update'} 
+                              time={article.publishedAt ? `${Math.floor((Date.now() - new Date(article.publishedAt).getTime()) / 60000)}m ago` : 'Recently'} 
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-4 text-gray-400 text-sm">
+                            No recent weather news available
+                          </div>
+                        )}
                      </div>
                      <Link href="/news" className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors">
                         View All News <ArrowRight size={14} />
