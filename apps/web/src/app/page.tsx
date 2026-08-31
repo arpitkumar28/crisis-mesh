@@ -22,33 +22,43 @@ export default function PublicHome() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
+    const storedTheme = window.localStorage.getItem('crisismesh-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldUseDark = storedTheme ? storedTheme === 'dark' : prefersDark;
+
+    setIsDarkMode(shouldUseDark);
+    document.documentElement.classList.toggle('dark', shouldUseDark);
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    window.localStorage.setItem('crisismesh-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    // Toggle dark mode on document
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setIsDarkMode((current) => !current);
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] font-sans">
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
       {/* Dynamic Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-md shadow-lg py-2' : 'bg-white/95 backdrop-blur-sm py-4'
+        scrolled
+          ? 'bg-white/90 backdrop-blur-md shadow-lg py-2 dark:bg-slate-900/90 dark:shadow-slate-950/40'
+          : 'bg-white/95 backdrop-blur-sm py-4 dark:bg-slate-900/95'
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform overflow-hidden">
                <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={36} height={36} className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-black tracking-tight text-[#061a37]">
+            <span className="text-xl font-black tracking-tight text-[#061a37] dark:text-white">
               CRISIS<span className="text-blue-600">MESH</span>
             </span>
           </Link>
@@ -58,7 +68,7 @@ export default function PublicHome() {
               <Link
                 key={item}
                 href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-xs font-black uppercase tracking-wider text-gray-600 hover:text-blue-600 transition-colors whitespace-nowrap"
+                className="text-xs font-black uppercase tracking-wider text-gray-600 hover:text-blue-600 transition-colors whitespace-nowrap dark:text-slate-300 dark:hover:text-blue-400"
               >
                 {item}
               </Link>
@@ -68,18 +78,18 @@ export default function PublicHome() {
           <div className="hidden lg:flex items-center gap-3 shrink-0">
              <button
                onClick={toggleTheme}
-               className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1"
+               className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1 dark:text-slate-300 dark:hover:text-white"
                title="Toggle theme"
              >
                 {isDarkMode ? <Moon size={14} /> : <Sun size={14} />}
                 <span className="hidden xl:inline">{isDarkMode ? 'Dark' : 'Light'}</span>
              </button>
-             <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1">
+             <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1 dark:text-slate-300 dark:hover:text-white">
                 <Globe size={14} /> 
                 <span className="hidden xl:inline">English</span>
                 <ChevronDown size={12} />
              </button>
-             <Link href="/login" className="ml-2 px-5 py-2.5 bg-[#061a37] text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-900/20 hover:bg-blue-600 transition-all">
+             <Link href="/login" className="ml-2 px-5 py-2.5 bg-[#061a37] text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-900/20 hover:bg-blue-600 transition-all dark:bg-blue-600 dark:hover:bg-blue-500">
                 Authority Login
              </Link>
           </div>
@@ -91,13 +101,13 @@ export default function PublicHome() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg">
+          <div className="lg:hidden border-t border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
             <div className="max-w-7xl mx-auto px-6 py-4 space-y-1">
               {['Home', 'Live Map', 'States', 'Districts', 'Alerts', 'News', 'Safety', 'Resources'].map((item) => (
                 <Link
                   key={item}
                   href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`}
-                  className="block px-4 py-3 text-sm font-black uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                  className="block px-4 py-3 text-sm font-black uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item}
@@ -109,14 +119,14 @@ export default function PublicHome() {
                     toggleTheme();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                 >
                   {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
                   {isDarkMode ? 'Dark Mode' : 'Light Mode'}
                 </button>
                 <Link
                   href="/login"
-                  className="w-full flex items-center justify-center px-4 py-3 bg-[#061a37] text-white font-black uppercase tracking-wider text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                  className="w-full flex items-center justify-center px-4 py-3 bg-[#061a37] text-white font-black uppercase tracking-wider text-sm rounded-lg hover:bg-blue-600 transition-colors dark:bg-blue-600 dark:hover:bg-blue-500"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Authority Login
@@ -129,22 +139,22 @@ export default function PublicHome() {
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-12 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="absolute top-0 right-0 w-full lg:w-1/2 h-full bg-blue-50/50 -skew-x-12 translate-x-12 lg:translate-x-20 pointer-events-none opacity-50 lg:opacity-100"></div>
+        <div className="absolute top-0 right-0 w-full lg:w-1/2 h-full bg-blue-50/50 -skew-x-12 translate-x-12 lg:translate-x-20 pointer-events-none opacity-50 lg:opacity-100 dark:bg-slate-800/60"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
             <div className="lg:col-span-6 space-y-6 lg:space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-full border border-red-100">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-full border border-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/60">
                 <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
                 <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest italic">Live Safety Monitoring Active</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-7xl font-black text-[#061a37] leading-[1.2] lg:leading-[1.1] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-7xl font-black text-[#061a37] leading-[1.2] lg:leading-[1.1] tracking-tight dark:text-white">
                 India&apos;s Integrated <br />
                 <span className="text-blue-600">Disaster Intel</span> Platform.
               </h1>
 
-              <p className="text-base sm:text-lg lg:text-xl text-gray-600 font-medium leading-relaxed max-w-lg">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 font-medium leading-relaxed max-w-lg dark:text-slate-300">
                 Real-time alerts, AI-driven risk prediction, and coordinated
                 emergency response to keep communities safe and resilient.
               </p>
@@ -155,7 +165,7 @@ export default function PublicHome() {
                    <input
                      type="text"
                      placeholder="Search district or hazard..."
-                     className="w-full pl-12 pr-4 py-3 sm:py-4 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-sm font-bold shadow-lg sm:shadow-2xl shadow-blue-900/5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                     className="w-full pl-12 pr-4 py-3 sm:py-4 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-sm font-bold shadow-lg sm:shadow-2xl shadow-blue-900/5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-400"
                    />
                 </div>
                 <button className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-lg sm:shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shrink-0">
@@ -165,22 +175,22 @@ export default function PublicHome() {
 
               <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-4 sm:pt-8">
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">766</h4>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">766</h4>
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Districts Tracked</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">24/7</h4>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">24/7</h4>
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Live Monitoring</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37]">AI</h4>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">AI</h4>
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Risk Prediction</p>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-6 relative h-80 sm:h-96 lg:h-[500px]">
-               <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group">
+               <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group dark:border-slate-800 dark:bg-slate-900">
                   <LiveMap entities={[]} />
                   <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
                     <div className="flex items-center gap-2 mb-2 sm:mb-3 text-red-600">

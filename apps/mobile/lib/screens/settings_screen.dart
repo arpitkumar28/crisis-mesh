@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../main.dart';
 import '../providers/auth_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -16,12 +17,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ThemeModeController.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           _buildSectionHeader('General'),
           _buildLanguageTile(context),
+          SwitchListTile(
+            title: const Text('Dark Mode'),
+            subtitle: const Text('Use the darker interface'),
+            value: themeMode.value == ThemeMode.dark,
+            onChanged: (value) {
+              themeMode.value = value ? ThemeMode.dark : ThemeMode.light;
+            },
+            secondary: const Icon(Icons.dark_mode_outlined),
+          ),
           ListTile(
             title: const Text('Units'),
             subtitle: Text(_units),
