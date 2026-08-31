@@ -168,27 +168,31 @@ export default function PublicHome() {
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-7xl font-black text-[#061a37] leading-[1.2] lg:leading-[1.1] tracking-tight dark:text-white">
-                India&apos;s Integrated <br />
-                <span className="text-blue-600">Disaster Intel</span> Platform.
+                Faster disaster response <br />
+                for every district in <span className="text-blue-600">India</span>.
               </h1>
 
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 font-medium leading-relaxed max-w-lg dark:text-slate-300">
-                Real-time alerts, AI-driven risk prediction, and coordinated
-                emergency response to keep communities safe and resilient.
+                CrisisMesh connects citizens, responders, and agencies with real-time alerts,
+                live hazard intelligence, and coordinated action when every minute matters.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <div className="relative flex-1 max-w-md">
-                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                   <input
-                     type="text"
-                     placeholder="Search district or hazard..."
-                     className="w-full pl-12 pr-4 py-3 sm:py-4 bg-white border border-gray-200 rounded-xl sm:rounded-2xl text-sm font-bold shadow-lg sm:shadow-2xl shadow-blue-900/5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-400"
-                   />
-                </div>
-                <button className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-lg sm:shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shrink-0">
-                  Live Map <ChevronRight size={18} />
-                </button>
+                <Link href="/map" className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-lg sm:shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shrink-0">
+                  View Live Map <ChevronRight size={18} />
+                </Link>
+                <Link href="/report-incident" className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-[#061a37] border border-gray-200 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-lg sm:shadow-xl shadow-blue-900/5 hover:border-blue-300 hover:text-blue-600 transition-all flex items-center justify-center gap-2 shrink-0 dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  Report Incident
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400">
+                <span className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-blue-700 dark:bg-slate-800 dark:text-blue-300">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" /> Trusted in 28 states
+                </span>
+                <span className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-red-700 dark:bg-slate-800 dark:text-red-300">
+                  <div className="h-2 w-2 rounded-full bg-red-500" /> 24/7 monitoring
+                </span>
               </div>
 
               <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-4 sm:pt-8">
@@ -239,19 +243,101 @@ export default function PublicHome() {
         </div>
       </section>
 
+      <section className="py-6 bg-white dark:bg-slate-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-[28px] border border-gray-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+            {[
+              { label: 'Districts monitored', value: '766+' },
+              { label: 'Live sensors', value: '12k+' },
+              { label: 'Residents informed', value: '2.4M' },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-2xl bg-white p-5 text-center shadow-sm border border-gray-100 dark:bg-slate-900 dark:border-slate-800">
+                <p className="text-3xl font-black text-[#061a37] dark:text-white">{stat.value}</p>
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-10 bg-white dark:bg-slate-900">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            <div className="lg:col-span-7">
+              <div className="rounded-[30px] border border-gray-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="mb-4 flex items-center justify-between gap-4 px-2">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Live Risk Overview</p>
+                    <h3 className="mt-2 text-2xl font-black text-[#061a37] dark:text-white">National incident map</h3>
+                  </div>
+                  <button className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300">
+                    View full map
+                  </button>
+                </div>
+                <div className="relative h-[360px] overflow-hidden rounded-[24px] border border-gray-200 bg-slate-900 dark:border-slate-700">
+                  <LiveMap entities={[]} />
+                  <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-200 backdrop-blur-sm">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" /> 98% network health
+                  </div>
+                  <div className="absolute bottom-4 right-4 w-[220px] rounded-2xl bg-white/95 p-4 shadow-xl dark:bg-slate-900/90">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.24em] text-red-600">Critical</p>
+                      <span className="rounded-full bg-red-50 px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-red-700 dark:bg-red-950/40 dark:text-red-300">Flood</span>
+                    </div>
+                    <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">Jaipur South</p>
+                    <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">Waterlogging &ot; 2 roads blocked</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.22em] text-gray-500 dark:text-slate-400">
+                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Safe</span>
+                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-yellow-400" /> Watch</span>
+                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> Warning</span>
+                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> Critical</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5">
+              <div className="rounded-[30px] border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Why CrisisMesh works</p>
+                <h3 className="mt-3 text-3xl font-black text-[#061a37] dark:text-white">Data-driven action, not just alerts.</h3>
+
+                <div className="mt-6 space-y-4">
+                  {[
+                    { title: 'Real-time coordination', text: 'Unify alerts, risk levels, and district status in one operational view.', accent: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
+                    { title: 'Community visibility', text: 'Help citizens understand safe routes, shelter access, and active warnings instantly.', accent: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' },
+                    { title: 'Faster response', text: 'Reduce delays with condition-aware dispatch and verified emergency zones.', accent: 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300' },
+                  ].map((item) => (
+                    <div key={item.title} className="flex gap-4 rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl font-black ${item.accent}`}>
+                        {item.title.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="text-base font-black text-[#061a37] dark:text-white">{item.title}</h4>
+                        <p className="mt-1 text-sm font-medium text-gray-600 dark:text-slate-300">{item.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Services */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-sm font-black text-blue-600 uppercase tracking-[0.3em] mb-4">Public Services</h2>
-            <h3 className="text-4xl font-black text-[#061a37]">Complete Disaster Resilience</h3>
+            <h3 className="text-4xl font-black text-[#061a37] dark:text-white">Complete Disaster Resilience</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <ServiceCard
               icon={<MapPin size={32} />}
               title="Live Map"
-              desc="Real-time visualization of hazards, resources and safe zones."
+              desc="Monitor active hazards, safe zones, and district response in one view."
               href="/map"
               color="text-blue-600"
               bg="bg-blue-50"
@@ -259,7 +345,7 @@ export default function PublicHome() {
             <ServiceCard
               icon={<Bell size={32} />}
               title="Alert Center"
-              desc="Multi-source official warnings and early system alerts."
+              desc="Get official advisories, early warnings, and rapid incident updates."
               href="/alerts"
               color="text-red-600"
               bg="bg-red-50"
@@ -267,7 +353,7 @@ export default function PublicHome() {
             <ServiceCard
               icon={<Cloud size={32} />}
               title="Weather Desk"
-              desc="Detailed regional forecasts and extreme weather tracking."
+              desc="Track rainfall, heat, wind, and region-specific climate intensity."
               href="/weather"
               color="text-cyan-600"
               bg="bg-cyan-50"
@@ -275,7 +361,7 @@ export default function PublicHome() {
             <ServiceCard
               icon={<Siren size={32} />}
               title="Safety Guide"
-              desc="Step-by-step guidance for preparedness and emergency."
+              desc="Follow clear preparedness steps before, during, and after emergencies."
               href="/safety"
               color="text-orange-600"
               bg="bg-orange-50"
@@ -370,7 +456,7 @@ export default function PublicHome() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 pt-20 pb-10">
+      <footer className="bg-white border-t border-gray-100 pt-20 pb-10 dark:bg-slate-900 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 mb-20">
             <div className="lg:col-span-4 space-y-6">
@@ -378,58 +464,56 @@ export default function PublicHome() {
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20 overflow-hidden">
                    <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
                 </div>
-                <span className="text-xl font-black tracking-tighter text-[#061a37]">
+                <span className="text-xl font-black tracking-tighter text-[#061a37] dark:text-white">
                   CRISIS<span className="text-[#3b82f6]">MESH</span>
                 </span>
               </Link>
-              <p className="text-sm font-medium text-gray-500 leading-relaxed">
-                Empowering authorities and citizens with India&apos;s most advanced
-                disaster intelligence and emergency coordination platform.
+              <p className="text-sm font-medium text-gray-500 leading-relaxed dark:text-slate-300">
+                Empowering authorities and citizens with India&apos;s most advanced disaster intelligence and emergency coordination platform.
               </p>
               <div className="flex gap-4">
-                 <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100"></div>
-                 <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100"></div>
-                 <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100"></div>
-                 <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100"></div>
+                 {[0,1,2,3].map((item) => (
+                   <div key={item} className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 dark:bg-slate-800 dark:border-slate-700" />
+                 ))}
               </div>
             </div>
 
             <div className="lg:col-span-2">
-               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Platform</h4>
+               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 dark:text-slate-400">Platform</h4>
                <ul className="space-y-4">
-                  <li><Link href="/map" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Live Map</Link></li>
-                  <li><Link href="/alerts" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Alert Center</Link></li>
-                  <li><Link href="/weather" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Weather</Link></li>
-                  <li><Link href="/reports" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Reports</Link></li>
+                  <li><Link href="/map" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Live Map</Link></li>
+                  <li><Link href="/alerts" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Alert Center</Link></li>
+                  <li><Link href="/weather" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Weather</Link></li>
+                  <li><Link href="/reports" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Reports</Link></li>
                </ul>
             </div>
 
             <div className="lg:col-span-2">
-               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Information</h4>
+               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 dark:text-slate-400">Information</h4>
                <ul className="space-y-4">
-                  <li><Link href="/news" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">News Updates</Link></li>
-                  <li><Link href="/safety" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Safety Guides</Link></li>
-                  <li><Link href="/resources" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">Resources</Link></li>
-                  <li><Link href="/about" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors">About Us</Link></li>
+                  <li><Link href="/news" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">News Updates</Link></li>
+                  <li><Link href="/safety" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Safety Guides</Link></li>
+                  <li><Link href="/resources" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">Resources</Link></li>
+                  <li><Link href="/about" className="text-sm font-bold text-[#061a37] hover:text-blue-600 transition-colors dark:text-slate-200 dark:hover:text-blue-400">About Us</Link></li>
                </ul>
             </div>
 
-            <div className="lg:col-span-4 bg-gray-50 rounded-3xl p-8 border border-gray-100">
-               <h4 className="text-sm font-black text-[#061a37] mb-2 uppercase tracking-tight">Stay Connected</h4>
-               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6">Subscribe to our newsletter for major safety updates.</p>
+            <div className="lg:col-span-4 bg-gray-50 rounded-3xl p-8 border border-gray-100 dark:bg-slate-800 dark:border-slate-700">
+               <h4 className="text-sm font-black text-[#061a37] mb-2 uppercase tracking-tight dark:text-white">Stay Connected</h4>
+               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6 dark:text-slate-300">Subscribe to our newsletter for major safety updates.</p>
                <div className="flex gap-2">
-                  <input type="email" placeholder="Email address" className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none" />
+                  <input type="email" placeholder="Email address" className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none dark:bg-slate-900 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-400" />
                   <button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">Join</button>
                </div>
             </div>
           </div>
 
-          <div className="pt-10 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          <div className="pt-10 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-black text-gray-400 uppercase tracking-widest dark:border-slate-700 dark:text-slate-400">
             <p>© 2026 CrisisMesh. Built for Digital India Resilience.</p>
             <div className="flex gap-8">
-               <a href="#" className="hover:text-blue-600">Privacy Policy</a>
-               <a href="#" className="hover:text-blue-600">Terms of Use</a>
-               <a href="#" className="hover:text-blue-600">Compliance</a>
+               <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Privacy Policy</a>
+               <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Terms of Use</a>
+               <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400">Compliance</a>
             </div>
           </div>
         </div>
@@ -440,14 +524,14 @@ export default function PublicHome() {
 
 function ServiceCard({ icon, title, desc, href, color, bg }: { icon: React.ReactNode; title: string; desc: string; href: string; color: string; bg: string }) {
   return (
-    <Link href={href} className="group p-8 bg-white border border-gray-100 rounded-[32px] shadow-sm hover:shadow-xl hover:border-blue-500/20 transition-all duration-300">
-       <div className={`w-16 h-16 ${bg} ${color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
+    <Link href={href} className="group rounded-[30px] border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/20 hover:shadow-xl dark:border-slate-800 dark:bg-slate-950/60">
+       <div className={`mb-8 flex h-16 w-16 items-center justify-center rounded-2xl ${bg} ${color} transition-transform group-hover:scale-110`}>
           {icon}
        </div>
-       <h4 className="text-lg font-black text-[#061a37] mb-3 uppercase tracking-tight group-hover:text-blue-600 transition-colors">{title}</h4>
-       <p className="text-xs font-bold text-gray-400 leading-relaxed">{desc}</p>
-       <div className="mt-8 flex items-center gap-2 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-[10px] font-black uppercase tracking-widest italic">Explore Now</span>
+       <h4 className="mb-3 text-lg font-black uppercase tracking-tight text-[#061a37] transition-colors group-hover:text-blue-600 dark:text-white">{title}</h4>
+       <p className="text-sm font-medium leading-relaxed text-gray-500 dark:text-slate-300">{desc}</p>
+       <div className="mt-8 flex items-center gap-2 text-blue-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-blue-400">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Explore</span>
           <ArrowRight size={14} />
        </div>
     </Link>
