@@ -41,49 +41,51 @@ export default function PublicHome() {
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] font-sans">
       {/* Dynamic Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-md shadow-lg py-3' : 'bg-transparent py-5'
+        scrolled ? 'bg-white/90 backdrop-blur-md shadow-lg py-2' : 'bg-white/95 backdrop-blur-sm py-4'
       }`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform overflow-hidden">
-               <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={40} height={40} className="w-full h-full object-cover" />
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform overflow-hidden">
+               <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={36} height={36} className="w-full h-full object-cover" />
             </div>
-            <span className={`text-2xl font-black tracking-tighter ${scrolled ? 'text-[#061a37]' : 'text-[#061a37]'}`}>
-              CRISIS<span className="text-[#3b82f6]">MESH</span>
+            <span className="text-xl font-black tracking-tight text-[#061a37]">
+              CRISIS<span className="text-blue-600">MESH</span>
             </span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-7 flex-1 justify-center">
             {['Home', 'Live Map', 'States', 'Districts', 'Alerts', 'News', 'Safety', 'Resources'].map((item) => (
               <Link
                 key={item}
                 href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' ', '-')}`}
-                className="text-sm font-black uppercase tracking-widest text-gray-500 hover:text-blue-600 transition-colors"
+                className="text-xs font-black uppercase tracking-wider text-gray-600 hover:text-blue-600 transition-colors whitespace-nowrap"
               >
                 {item}
               </Link>
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
              <button
                onClick={toggleTheme}
-               className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-[#061a37] transition-colors"
+               className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1"
                title="Toggle theme"
              >
-                {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
-                {isDarkMode ? 'Dark' : 'Light'}
+                {isDarkMode ? <Moon size={14} /> : <Sun size={14} />}
+                <span className="hidden xl:inline">{isDarkMode ? 'Dark' : 'Light'}</span>
              </button>
-             <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-[#061a37] transition-colors">
-                <Globe size={16} /> English <ChevronDown size={14} />
+             <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1">
+                <Globe size={14} /> 
+                <span className="hidden xl:inline">English</span>
+                <ChevronDown size={12} />
              </button>
-             <Link href="/login" className="px-6 py-3 bg-[#061a37] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-blue-600 transition-all">
+             <Link href="/login" className="ml-2 px-5 py-2.5 bg-[#061a37] text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-900/20 hover:bg-blue-600 transition-all">
                 Authority Login
              </Link>
           </div>
 
-          <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          <button className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </nav>
