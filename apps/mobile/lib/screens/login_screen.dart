@@ -28,9 +28,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with citizen test credentials for debugging
-    _emailController.text = 'test@example.com';
-    _passwordController.text = 'password123';
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref.read(authProvider.notifier).restoreSession();

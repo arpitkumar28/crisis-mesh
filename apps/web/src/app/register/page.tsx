@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,23 +32,16 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
-      const response = await fetch(`${apiUrl}/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      await apiClient.post('/auth/register', {
+        name: name.trim(),
+        email: email.trim(),
+        password,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Registration failed.' }));
-        const message = Array.isArray(errorData.message) ? errorData.message.join(' ') : errorData.message;
-        setError(message || `Registration failed with status ${response.status}`);
-        return;
-      }
-
       router.push('/login?registered=1');
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Registration failed. Please try again.');
+    } catch (requestError: any) {
+      const message = requestError?.response?.data?.message || requestError?.message || 'Registration failed. Please try again.';
+      setError(Array.isArray(message) ? message.join(' ') : message);
     } finally {
       setLoading(false);
     }

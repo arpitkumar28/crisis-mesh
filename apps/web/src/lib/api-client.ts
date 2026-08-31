@@ -10,8 +10,10 @@ function getApiClient() {
       throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
     }
 
+    const normalizedBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+
     apiClientInstance = axios.create({
-      baseURL: `${API_BASE_URL.replace(/\/+$/, '')}/api/v1`,
+      baseURL: `${normalizedBaseUrl}/api/v1`,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -20,9 +22,11 @@ function getApiClient() {
     // Request interceptor to add auth token and logging
     apiClientInstance.interceptors.request.use((config) => {
       console.log(`🚀 [API REQUEST] ${config.method?.toUpperCase()} ${config.url}`, config.data || '');
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
       return config;
     });
