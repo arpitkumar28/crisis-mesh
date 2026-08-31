@@ -26,7 +26,7 @@ import 'screens/biometric_login_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/incidents_screen.dart';
 
-final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
+final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
 
 class ThemeModeController extends InheritedNotifier<ValueNotifier<ThemeMode>> {
   const ThemeModeController({

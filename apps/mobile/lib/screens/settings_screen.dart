@@ -15,6 +15,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _locationSharing = true;
   String _units = 'Metric (°C, km)';
 
+  String _themeLabel(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return 'System Default';
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.light:
+        return 'Light';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeMode = ThemeModeController.of(context);
@@ -25,9 +36,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           _buildSectionHeader('General'),
           _buildLanguageTile(context),
+          ListTile(
+            title: const Text('Theme'),
+            subtitle: Text(_themeLabel(themeMode.value)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showThemeDialog(themeMode),
+          ),
           SwitchListTile(
             title: const Text('Dark Mode'),
-            subtitle: const Text('Use the darker interface'),
+            subtitle: const Text('Quick dark override'),
             value: themeMode.value == ThemeMode.dark,
             onChanged: (value) {
               themeMode.value = value ? ThemeMode.dark : ThemeMode.light;
@@ -115,6 +132,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       subtitle: const Text('English'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.pushNamed(context, '/language'),
+    );
+  }
+
+  void _showThemeDialog(ValueNotifier<ThemeMode> themeMode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Choose Theme'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<ThemeMode>(
+              title: const Text('System Default'),
+              value: ThemeMode.system,
+              groupValue: themeMode.value,
+              onChanged: (val) {
+                themeMode.value = val ?? ThemeMode.system;
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Light Mode'),
+              value: ThemeMode.light,
+              groupValue: themeMode.value,
+              onChanged: (val) {
+                themeMode.value = val ?? ThemeMode.light;
+                Navigator.pop(context);
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Dark Mode'),
+              value: ThemeMode.dark,
+              groupValue: themeMode.value,
+              onChanged: (val) {
+                themeMode.value = val ?? ThemeMode.dark;
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

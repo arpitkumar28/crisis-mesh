@@ -16,18 +16,20 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
   loading: () => <div className="w-full h-full bg-[#061a37] flex items-center justify-center text-blue-900/20 font-black">Loading Interactive Map...</div>
 });
 
+type ThemePreference = 'system' | 'light' | 'dark';
+
 export default function PublicHome() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [themePreference, setThemePreference] = useState<ThemePreference>('system');
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem('crisismesh-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = storedTheme ? storedTheme === 'dark' : prefersDark;
+    const storedTheme = window.localStorage.getItem('crisismesh-theme') as ThemePreference | null;
+    const normalizedTheme = storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+      ? storedTheme
+      : 'system';
 
-    setIsDarkMode(shouldUseDark);
-    document.documentElement.classList.toggle('dark', shouldUseDark);
+    setThemePreference(normalizedTheme);
   }, []);
 
   useEffect(() => {
@@ -37,13 +39,29 @@ export default function PublicHome() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-    window.localStorage.setItem('crisismesh-theme', isDarkMode ? 'dark' : 'light');
-  }, [isDarkMode]);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateTheme = () => {
+      const darkMode = themePreference === 'dark' || (themePreference === 'system' && mediaQuery.matches);
+      document.documentElement.classList.toggle('dark', darkMode);
+      window.localStorage.setItem('crisismesh-theme', themePreference);
+    };
+
+    updateTheme();
+    mediaQuery.addEventListener('change', updateTheme);
+    return () => mediaQuery.removeEventListener('change', updateTheme);
+  }, [themePreference]);
+
+  const nextTheme = (): ThemePreference => {
+    const order: ThemePreference[] = ['system', 'light', 'dark'];
+    const currentIndex = order.indexOf(themePreference);
+    return order[(currentIndex + 1) % order.length];
+  };
 
   const toggleTheme = () => {
-    setIsDarkMode((current) => !current);
+    setThemePreference(nextTheme());
   };
+
+  const themeLabel = themePreference === 'system' ? 'System' : themePreference === 'light' ? 'Light' : 'Dark';
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
@@ -81,8 +99,8 @@ export default function PublicHome() {
                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1 dark:text-slate-300 dark:hover:text-white"
                title="Toggle theme"
              >
-                {isDarkMode ? <Moon size={14} /> : <Sun size={14} />}
-                <span className="hidden xl:inline">{isDarkMode ? 'Dark' : 'Light'}</span>
+                {themePreference === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+                <span className="hidden xl:inline">{themeLabel}</span>
              </button>
              <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors px-2 py-1 dark:text-slate-300 dark:hover:text-white">
                 <Globe size={14} /> 
@@ -121,8 +139,8 @@ export default function PublicHome() {
                   }}
                   className="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wider text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                 >
-                  {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
-                  {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                  {themePreference === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                  {themePreference === 'system' ? 'System Theme' : themePreference === 'dark' ? 'Dark Mode' : 'Light Mode'}
                 </button>
                 <Link
                   href="/login"
