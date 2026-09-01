@@ -19,13 +19,21 @@ export class ConfigService {
       requiredVars.push('DATABASE_URL');
     }
 
+    if (this.isProduction && !process.env.CORS_ORIGIN) {
+      requiredVars.push('CORS_ORIGIN');
+    }
+
+    if (this.isProduction && !process.env.MQTT_BROKER_URL) {
+      requiredVars.push('MQTT_BROKER_URL');
+    }
+
     if (requiredVars.length > 0) {
       this.logger.error(
         `Missing required environment variables: ${requiredVars.join(', ')}. ` +
-        'Please set these variables in your .env file or environment.'
+          'Please set these variables in your .env file or environment.',
       );
       throw new Error(
-        `Configuration error: Missing required environment variables: ${requiredVars.join(', ')}`
+        `Configuration error: Missing required environment variables: ${requiredVars.join(', ')}`,
       );
     }
   }
@@ -43,7 +51,25 @@ export class ConfigService {
   }
 
   get corsOrigin(): string[] {
-    return (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',');
+    const configuredOrigins = process.env.CORS_ORIGIN
+      ?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+
+    if (configuredOrigins && configuredOrigins.length > 0) {
+      return configuredOrigins;
+    }
+
+    if (this.isProduction) {
+      return ['https://crisis-mesh-eosin.vercel.app'];
+    }
+
+    return [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+    ];
   }
 
   get databaseUrl(): string {
@@ -59,7 +85,13 @@ export class ConfigService {
   }
 
   get mqttBrokerUrl(): string {
-    return process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+    const value = process.env.MQTT_BROKER_URL;
+
+    if (this.isProduction && !value) {
+      throw new Error('MQTT_BROKER_URL environment variable is required in production');
+    }
+
+    return value || 'mqtt://localhost:1883';
   }
 
   get supabaseUrl(): string {
