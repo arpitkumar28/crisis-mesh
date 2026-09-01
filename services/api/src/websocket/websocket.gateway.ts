@@ -10,18 +10,23 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '../config/config.service';
 import { WebSocketService } from './websocket.service';
 import { WebSocketEventType } from './dto/websocket-event.dto';
 
+const configService = new ConfigService();
+
 @WebSocketGatewayDecorator({
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    origin: configService.corsOrigin,
     credentials: true,
   },
   namespace: '/ws',
   path: '/ws',
 })
-export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class CrisisMeshWebSocketGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -64,9 +69,13 @@ export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewa
         timestamp: new Date().toISOString(),
       });
 
-      this.logger.log(`WebSocket client connected: ${client.id} (user: ${userId})`);
+      this.logger.log(
+        `WebSocket client connected: ${client.id} (user: ${userId})`,
+      );
     } catch (error) {
-      this.logger.error(`Error handling WebSocket connection: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error handling WebSocket connection: ${error instanceof Error ? error.message : String(error)}`,
+      );
       client.disconnect();
     }
   }
@@ -86,8 +95,13 @@ export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewa
   }
 
   @SubscribeMessage('subscribe_events')
-  handleSubscribeEvents(@ConnectedSocket() client: Socket, @MessageBody() data: { events: string[] }) {
-    this.logger.debug(`Client ${client.id} subscribing to events: ${data.events.join(', ')}`);
+  handleSubscribeEvents(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { events: string[] },
+  ) {
+    this.logger.debug(
+      `Client ${client.id} subscribing to events: ${data.events.join(', ')}`,
+    );
     // Event subscription logic can be enhanced here for selective event filtering
     client.emit('subscription_confirmed', {
       events: data.events,
@@ -97,13 +111,14 @@ export class CrisisMeshWebSocketGateway implements OnGatewayConnection, OnGatewa
 
   private extractTokenFromSocket(client: Socket): string | null {
     // Try to get token from auth query parameter
-    const token = client.handshake.auth.token || client.handshake.headers.authorization;
-    
+    const token =
+      client.handshake.auth.token || client.handshake.headers.authorization;
+
     if (token) {
       // Remove 'Bearer ' prefix if present
       return token.replace('Bearer ', '');
     }
-    
+
     return null;
   }
 }
