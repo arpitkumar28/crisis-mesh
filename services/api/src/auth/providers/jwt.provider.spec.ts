@@ -151,12 +151,15 @@ describe('JwtAuthProvider', () => {
       const result = await provider.generateToken(userProfile);
 
       expect(result).toBe('jwt_token');
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
-        sub: userProfile.id,
-        email: userProfile.email,
-        name: userProfile.name,
-        roles: userProfile.roles,
-      });
+      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: userProfile.id,
+          email: userProfile.email,
+          name: userProfile.name,
+          roles: userProfile.roles,
+          type: 'access',
+        }),
+      );
     });
   });
 
@@ -189,21 +192,97 @@ describe('JwtAuthProvider', () => {
   });
 
   describe('refreshToken', () => {
-    it('should refresh token successfully', async () => {
+    it('should issue a new refresh token for a valid refresh token', async () => {
       const oldToken = 'old_token';
       const mockPayload = {
         sub: 'user-id',
         email: 'test@example.com',
         name: 'Test User',
         roles: [UserRoleEnum.CITIZEN],
+        type: 'refresh',
+        jti: 'legacy-jti-1',
       };
 
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
-      mockJwtService.signAsync.mockResolvedValue('new_token');
+      mockJwtService.signAsync.mockResolvedValue('new_refresh_token');
 
       const result = await provider.refreshToken(oldToken);
 
-      expect(result).toBe('new_token');
+      expect(result).toBe('new_refresh_token');
+    });
+
+    it('should revoke the old refresh token after rotation', async () => {
+      const oldToken = 'old_refresh_token';
+      const mockPayload = {
+        sub: 'user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        roles: [UserRoleEnum.CITIZEN],
+        type: 'refresh',
+        jti: 'revoked-jti-1',
+      };
+
+      mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
+      mockJwtService.signAsync.mockResolvedValue('new_refresh_token');
+
+      const rotated = await provider.refreshToken(oldToken);
+
+      expect(rotated).toBe('new_refresh_token');
+      await expect(provider.refreshToken(oldToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should reject access tokens when used as refresh tokens', async () => {
+      const accessToken = 'access_token';
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 'user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        roles: [UserRoleEnum.CITIZEN],
+        type: 'access',
+        jti: 'access-jti',
+      });
+
+      await expect(provider.refreshToken(accessToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should reject malformed refresh tokens', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('Malformed token'));
+
+      await expect(provider.refreshToken('malformed.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should reject expired refresh tokens', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
+
+      await expect(provider.refreshToken('expired_token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should reject revoked refresh tokens', async () => {
+      const oldToken = 'old_refresh_token';
+      const mockPayload = {
+        sub: 'user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        roles: [UserRoleEnum.CITIZEN],
+        type: 'refresh',
+        jti: 'revoked-jti-2',
+      };
+
+      mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
+      mockJwtService.signAsync.mockResolvedValue('new_refresh_token');
+
+      await provider.refreshToken(oldToken);
+      await expect(provider.refreshToken(oldToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException for invalid refresh token', async () => {
