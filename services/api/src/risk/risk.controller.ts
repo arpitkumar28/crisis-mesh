@@ -11,7 +11,13 @@ export class RiskController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findAll() {
     const risks = await this.riskService.findAll();
     return {
@@ -24,7 +30,13 @@ export class RiskController {
 
   @Get('location/:locationId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByLocation(@Param('locationId') locationId: string) {
     const risks = await this.riskService.findByLocation(locationId);
     return {
@@ -37,7 +49,13 @@ export class RiskController {
 
   @Get('district/:districtId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByDistrict(@Param('districtId') districtId: string) {
     const risks = await this.riskService.findByDistrict(districtId);
     return {
@@ -50,7 +68,13 @@ export class RiskController {
 
   @Get('type/:type')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByType(@Param('type') type: string) {
     const risks = await this.riskService.findByType(type);
     return {
@@ -63,7 +87,13 @@ export class RiskController {
 
   @Get('severity/:severity')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findBySeverity(@Param('severity') severity: string) {
     const risks = await this.riskService.findBySeverity(severity);
     return {
@@ -76,7 +106,13 @@ export class RiskController {
 
   @Get('high-risk')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getHighRiskAreas() {
     const risks = await this.riskService.getHighRiskAreas();
     return {
@@ -89,7 +125,13 @@ export class RiskController {
 
   @Get('summary')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getRiskSummary() {
     const summary = await this.riskService.getRiskSummary();
     return {

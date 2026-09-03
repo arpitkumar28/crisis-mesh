@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * HTTP Exception Filter for Standardized Error Responses
- * 
+ *
  * Catches all HTTP exceptions and transforms them into the standard format:
  * {
  *   success: false,
@@ -22,9 +22,9 @@ import { v4 as uuidv4 } from 'uuid';
  *   },
  *   request_id: "..."
  * }
- * 
+ *
  * Never exposes stack traces, secrets, or internal implementation details.
- * 
+ *
  * Phase 1 Foundation - Architectural placeholder
  */
 @Catch()
@@ -52,7 +52,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as any;
         message = responseObj.message || message;
-        
+
         // Handle validation errors
         if (Array.isArray(responseObj.message)) {
           message = 'Validation failed';

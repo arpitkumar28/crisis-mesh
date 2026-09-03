@@ -30,9 +30,7 @@ export class PublicAlertsController {
   }
 
   @Get('active')
-  async findActive(
-    @Query('limit') limit?: string,
-  ) {
+  async findActive(@Query('limit') limit?: string) {
     const alerts = await this.alertsService.findActive();
     const limitedAlerts = limit ? alerts.slice(0, parseInt(limit)) : alerts;
 
@@ -45,9 +43,7 @@ export class PublicAlertsController {
   }
 
   @Get('critical')
-  async getCriticalAlerts(
-    @Query('limit') limit?: string,
-  ) {
+  async getCriticalAlerts(@Query('limit') limit?: string) {
     const alerts = await this.alertsService.getCriticalAlerts();
     const limitedAlerts = limit ? alerts.slice(0, parseInt(limit)) : alerts;
 
@@ -71,7 +67,9 @@ export class PublicAlertsController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    const severities = severity ? severity.split(',').map(s => s.trim().toUpperCase() as AlertSeverity) : undefined;
+    const severities = severity
+      ? severity.split(',').map((s) => s.trim().toUpperCase() as AlertSeverity)
+      : undefined;
     const { alerts, total } = await this.alertsService.findByFilters({
       location_id: locationId,
       district_id: districtId,
@@ -123,8 +121,8 @@ export class PublicAlertsController {
   async getStats() {
     const [total, active, critical, bySeverity] = await Promise.all([
       this.alertsService.getAlertCount(),
-      this.alertsService.findActive().then(alerts => alerts.length),
-      this.alertsService.getCriticalAlerts().then(alerts => alerts.length),
+      this.alertsService.findActive().then((alerts) => alerts.length),
+      this.alertsService.getCriticalAlerts().then((alerts) => alerts.length),
       this.alertsService.getAlertCountByStatus(),
     ]);
 

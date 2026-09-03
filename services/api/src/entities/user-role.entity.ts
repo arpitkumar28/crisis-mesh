@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
 import { Profile } from './profile.entity';
 import { Role } from './role.entity';
 
@@ -21,7 +29,9 @@ export class UserRole {
   assigned_at: Date;
 
   // Relations
-  @ManyToOne(() => Profile, (profile) => profile.user_roles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Profile, (profile) => profile.user_roles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 

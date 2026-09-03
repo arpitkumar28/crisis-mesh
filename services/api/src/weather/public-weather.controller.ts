@@ -6,8 +6,19 @@ export class PublicWeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
   @Get()
-  async findAll(@Query('latitude') latitude?: string, @Query('longitude') longitude?: string) {
-    const weather = latitude !== undefined && longitude !== undefined ? [await this.weatherService.getLiveAt(Number(latitude), Number(longitude))] : await this.weatherService.getLive();
+  async findAll(
+    @Query('latitude') latitude?: string,
+    @Query('longitude') longitude?: string,
+  ) {
+    const weather =
+      latitude !== undefined && longitude !== undefined
+        ? [
+            await this.weatherService.getLiveAt(
+              Number(latitude),
+              Number(longitude),
+            ),
+          ]
+        : await this.weatherService.getLive();
     return {
       success: true,
       message: 'Weather observations retrieved successfully',
@@ -17,8 +28,15 @@ export class PublicWeatherController {
   }
 
   @Get(':latitude/:longitude')
-  async findAt(@Param('latitude', ParseFloatPipe) latitude: number, @Param('longitude', ParseFloatPipe) longitude: number) {
-    return { success: true, data: await this.weatherService.getLiveAt(latitude, longitude), request_id: crypto.randomUUID() };
+  async findAt(
+    @Param('latitude', ParseFloatPipe) latitude: number,
+    @Param('longitude', ParseFloatPipe) longitude: number,
+  ) {
+    return {
+      success: true,
+      data: await this.weatherService.getLiveAt(latitude, longitude),
+      request_id: crypto.randomUUID(),
+    };
   }
 
   @Get('latest')

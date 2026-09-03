@@ -1,4 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Get,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -16,8 +24,15 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto, @ClientInfo() clientInfo: { ip: string; userAgent: string }) {
-    const result = await this.authService.register(registerDto, clientInfo.ip, clientInfo.userAgent);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @ClientInfo() clientInfo: { ip: string; userAgent: string },
+  ) {
+    const result = await this.authService.register(
+      registerDto,
+      clientInfo.ip,
+      clientInfo.userAgent,
+    );
     return {
       success: true,
       message: 'Registration successful',
@@ -27,8 +42,15 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto, @ClientInfo() clientInfo: { ip: string; userAgent: string }) {
-    const result = await this.authService.login(loginDto, clientInfo.ip, clientInfo.userAgent);
+  async login(
+    @Body() loginDto: LoginDto,
+    @ClientInfo() clientInfo: { ip: string; userAgent: string },
+  ) {
+    const result = await this.authService.login(
+      loginDto,
+      clientInfo.ip,
+      clientInfo.userAgent,
+    );
     return {
       success: true,
       message: 'Login successful',
@@ -39,7 +61,9 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    const result = await this.authService.refreshToken(refreshTokenDto.refresh_token);
+    const result = await this.authService.refreshToken(
+      refreshTokenDto.refresh_token,
+    );
     return {
       success: true,
       message: 'Token refreshed successfully',
@@ -65,7 +89,10 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentUser() user: any, @ClientInfo() clientInfo: { ip: string; userAgent: string }) {
+  async logout(
+    @CurrentUser() user: any,
+    @ClientInfo() clientInfo: { ip: string; userAgent: string },
+  ) {
     // In a JWT stateless setup, logout is primarily client-side
     // However, we can add the token to a blacklist if needed
     return {

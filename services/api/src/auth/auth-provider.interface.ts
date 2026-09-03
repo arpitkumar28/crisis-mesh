@@ -13,7 +13,7 @@ export interface IAuthProvider {
   /**
    * Generate authentication token for a user
    */
-  generateToken(user: any): Promise<string>;
+  generateToken(user: any, tokenType?: 'access' | 'refresh'): Promise<string>;
 
   /**
    * Validate authentication token and return user data

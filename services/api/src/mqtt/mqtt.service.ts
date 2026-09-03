@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import * as mqtt from 'mqtt';
 import { ConfigService } from '../config/config.service';
 
@@ -13,7 +18,8 @@ interface MqttMessage {
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
   private client: mqtt.MqttClient | null = null;
-  private messageHandlers: Map<string, (message: MqttMessage) => void> = new Map();
+  private messageHandlers: Map<string, (message: MqttMessage) => void> =
+    new Map();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -28,7 +34,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private async connect(): Promise<void> {
     return new Promise((resolve) => {
       const brokerUrl = this.configService.mqttBrokerUrl;
-      
+
       this.client = mqtt.connect(brokerUrl, {
         clientId: 'crisis-mesh-backend',
         clean: true,
@@ -41,7 +47,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         for (const pattern of this.messageHandlers.keys()) {
           this.client!.subscribe(pattern, { qos: 1 as any }, (error) => {
             if (error) {
-              this.logger.error(`Failed to subscribe to ${pattern}: ${error.message}`);
+              this.logger.error(
+                `Failed to subscribe to ${pattern}: ${error.message}`,
+              );
             } else {
               this.logger.log(`📡 Subscribed to MQTT pattern: ${pattern}`);
             }
@@ -51,12 +59,16 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('error', (error) => {
-        this.logger.warn(`⚠️  MQTT connection error: ${error.message} - attempt to reconnect in 5s`);
+        this.logger.warn(
+          `⚠️  MQTT connection error: ${error.message} - attempt to reconnect in 5s`,
+        );
         resolve();
       });
 
       this.client.on('offline', () => {
-        this.logger.warn('⚠️  MQTT client offline - waiting for reconnection...');
+        this.logger.warn(
+          '⚠️  MQTT client offline - waiting for reconnection...',
+        );
       });
 
       this.client.on('message', (topic, payload) => {
@@ -66,13 +78,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           qos: 0,
           retain: false,
         };
-        
+
         for (const [pattern, handler] of this.messageHandlers) {
           if (this.topicMatches(pattern, topic)) {
             try {
               handler(message);
             } catch (error) {
-              this.logger.error(`Error in MQTT handler for ${pattern}: ${error.message}`);
+              this.logger.error(
+                `Error in MQTT handler for ${pattern}: ${error.message}`,
+              );
             }
             break;
           }
@@ -101,48 +115,67 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private topicMatches(pattern: string, topic: string): boolean {
-    const regexPattern = pattern
-      .replace('+', '[^/]+')
-      .replace('#', '.*');
+    const regexPattern = pattern.replace('+', '[^/]+').replace('#', '.*');
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(topic);
   }
 
-  async subscribe(pattern: string, handler: (message: MqttMessage) => void): Promise<void> {
+  async subscribe(
+    pattern: string,
+    handler: (message: MqttMessage) => void,
+  ): Promise<void> {
     this.messageHandlers.set(pattern, handler);
 
     if (!this.client || !this.client.connected) {
-      this.logger.warn(`MQTT client not connected, deferring subscription to ${pattern}`);
+      this.logger.warn(
+        `MQTT client not connected, deferring subscription to ${pattern}`,
+      );
       return;
     }
-    
+
     this.client.subscribe(pattern, { qos: 1 as any }, (error) => {
       if (error) {
-        this.logger.error(`Failed to subscribe to ${pattern}: ${error.message}`);
+        this.logger.error(
+          `Failed to subscribe to ${pattern}: ${error.message}`,
+        );
         throw error;
       }
       this.logger.log(`📡 Subscribed to MQTT pattern: ${pattern}`);
     });
   }
 
-  async publish(topic: string, payload: any, options: { qos?: 0 | 1 | 2; retain?: boolean } = {}): Promise<void> {
+  async publish(
+    topic: string,
+    payload: any,
+    options: { qos?: 0 | 1 | 2; retain?: boolean } = {},
+  ): Promise<void> {
     if (!this.client || !this.client.connected) {
-      this.logger.warn(`MQTT client not connected, skipping publish to ${topic}`);
+      this.logger.warn(
+        `MQTT client not connected, skipping publish to ${topic}`,
+      );
       return;
     }
 
-    const message = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    
+    const message =
+      typeof payload === 'string' ? payload : JSON.stringify(payload);
+
     return new Promise((resolve, reject) => {
-      this.client!.publish(topic, message, { qos: (options.qos || 1) as any, retain: options.retain || false }, (error) => {
-        if (error) {
-          this.logger.error(`Failed to publish to ${topic}: ${error.message}`);
-          reject(error);
-        } else {
-          this.logger.debug(`📤 Published to ${topic}: ${message}`);
-          resolve();
-        }
-      });
+      this.client!.publish(
+        topic,
+        message,
+        { qos: (options.qos || 1) as any, retain: options.retain || false },
+        (error) => {
+          if (error) {
+            this.logger.error(
+              `Failed to publish to ${topic}: ${error.message}`,
+            );
+            reject(error);
+          } else {
+            this.logger.debug(`📤 Published to ${topic}: ${message}`);
+            resolve();
+          }
+        },
+      );
     });
   }
 

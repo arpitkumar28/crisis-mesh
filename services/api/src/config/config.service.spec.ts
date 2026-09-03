@@ -84,6 +84,13 @@ describe('ConfigService', () => {
     expect(origins).not.toContain('http://localhost:3000');
   });
 
+  it('should require an explicit MQTT broker URL in production', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.MQTT_BROKER_URL;
+
+    expect(() => service.mqttBrokerUrl).toThrow('MQTT_BROKER_URL');
+  });
+
   it('should return default MQTT broker URL when not set', () => {
     delete process.env.MQTT_BROKER_URL;
     expect(service.mqttBrokerUrl).toBe('mqtt://localhost:1883');

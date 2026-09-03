@@ -43,7 +43,7 @@ class ThemeModeController extends InheritedNotifier<ValueNotifier<ThemeMode>> {
 }
 
 ThemeData _buildLightTheme() {
-  final seed = const Color(0xFF0757E8);
+  const seed = Color(0xFF0757E8);
 
   return ThemeData(
     colorScheme: ColorScheme.fromSeed(seedColor: seed),
@@ -90,7 +90,7 @@ ThemeData _buildLightTheme() {
 }
 
 ThemeData _buildDarkTheme() {
-  final seed = const Color(0xFF0757E8);
+  const seed = Color(0xFF0757E8);
 
   return ThemeData(
     brightness: Brightness.dark,

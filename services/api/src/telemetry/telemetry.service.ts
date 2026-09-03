@@ -49,9 +49,12 @@ export class TelemetryService {
   private async setupMqttSubscriptions() {
     try {
       // Subscribe to sensor telemetry topics
-      await this.mqttService.subscribe('sensor/+/telemetry', async (message) => {
-        await this.handleTelemetryMessage(message);
-      });
+      await this.mqttService.subscribe(
+        'sensor/+/telemetry',
+        async (message) => {
+          await this.handleTelemetryMessage(message);
+        },
+      );
 
       // Subscribe to device status topics
       await this.mqttService.subscribe('device/+/status', async (message) => {
@@ -60,7 +63,9 @@ export class TelemetryService {
 
       this.logger.log('MQTT subscriptions configured successfully');
     } catch (error: unknown) {
-      this.logger.warn(`Failed to setup MQTT subscriptions: ${error instanceof Error ? error.message : String(error)} - continuing without MQTT`);
+      this.logger.warn(
+        `Failed to setup MQTT subscriptions: ${error instanceof Error ? error.message : String(error)} - continuing without MQTT`,
+      );
       // Don't throw - allow app to start without MQTT
     }
   }
@@ -84,14 +89,18 @@ export class TelemetryService {
 
       this.logger.log(`Warmed up sensor cache with ${sensors.length} sensors`);
     } catch (error: unknown) {
-      this.logger.error(`Failed to warmup sensor cache: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to warmup sensor cache: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   private async handleTelemetryMessage(message: any) {
     try {
       const payload: TelemetryPayload = JSON.parse(message.payload.toString());
-      this.logger.debug(`Received telemetry from device ${payload.device_id}: ${payload.metric}=${payload.value}${payload.unit}`);
+      this.logger.debug(
+        `Received telemetry from device ${payload.device_id}: ${payload.metric}=${payload.value}${payload.unit}`,
+      );
 
       // Validate payload
       const validationError = this.validateTelemetryPayload(payload);
@@ -101,9 +110,15 @@ export class TelemetryService {
       }
 
       // Find or create sensor (this also handles device lookup by serial_number)
-      const sensor = await this.findOrCreateSensor(payload.device_id, payload.metric, payload.unit);
+      const sensor = await this.findOrCreateSensor(
+        payload.device_id,
+        payload.metric,
+        payload.unit,
+      );
       if (!sensor) {
-        this.logger.error(`Failed to find or create sensor for device ${payload.device_id}, metric ${payload.metric}`);
+        this.logger.error(
+          `Failed to find or create sensor for device ${payload.device_id}, metric ${payload.metric}`,
+        );
         return;
       }
 
@@ -117,7 +132,9 @@ export class TelemetryService {
       });
 
       if (existingReading) {
-        this.logger.debug(`Duplicate reading detected for sensor ${sensor.id} at ${timestamp}, skipping`);
+        this.logger.debug(
+          `Duplicate reading detected for sensor ${sensor.id} at ${timestamp}, skipping`,
+        );
         return;
       }
 
@@ -137,7 +154,9 @@ export class TelemetryService {
         last_seen: new Date(),
       });
 
-      this.logger.debug(`Saved sensor reading: sensor_id=${sensor.id}, value=${payload.value}`);
+      this.logger.debug(
+        `Saved sensor reading: sensor_id=${sensor.id}, value=${payload.value}`,
+      );
 
       // Broadcast WebSocket event for real-time updates
       this.webSocketService.broadcastTelemetryUpdated({
@@ -151,16 +170,21 @@ export class TelemetryService {
 
       // Publish to alert topic if value exceeds thresholds
       await this.checkThresholdsAndAlert(sensor, payload.value);
-
     } catch (error: unknown) {
-      this.logger.error(`Error processing telemetry message: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error processing telemetry message: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   private async handleDeviceStatusMessage(message: any) {
     try {
-      const payload: DeviceStatusPayload = JSON.parse(message.payload.toString());
-      this.logger.debug(`Received device status from ${payload.device_id}: ${payload.status}`);
+      const payload: DeviceStatusPayload = JSON.parse(
+        message.payload.toString(),
+      );
+      this.logger.debug(
+        `Received device status from ${payload.device_id}: ${payload.status}`,
+      );
 
       // Validate payload
       const validationError = this.validateDeviceStatusPayload(payload);
@@ -186,7 +210,9 @@ export class TelemetryService {
       }
 
       if (!device) {
-        this.logger.warn(`Device not found for status update: ${payload.device_id}`);
+        this.logger.warn(
+          `Device not found for status update: ${payload.device_id}`,
+        );
         return;
       }
 
@@ -206,10 +232,13 @@ export class TelemetryService {
         timestamp: payload.timestamp,
       });
 
-      this.logger.debug(`Updated device status: ${device.serial_number || device.id} -> ${payload.status}`);
-
+      this.logger.debug(
+        `Updated device status: ${device.serial_number || device.id} -> ${payload.status}`,
+      );
     } catch (error: unknown) {
-      this.logger.error(`Error processing device status message: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error processing device status message: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -229,7 +258,10 @@ export class TelemetryService {
     if (!payload.timestamp || typeof payload.timestamp !== 'string') {
       return 'Invalid or missing timestamp';
     }
-    if (payload.quality_flag === undefined || typeof payload.quality_flag !== 'number') {
+    if (
+      payload.quality_flag === undefined ||
+      typeof payload.quality_flag !== 'number'
+    ) {
       return 'Invalid or missing quality_flag';
     }
     return null;
@@ -248,7 +280,11 @@ export class TelemetryService {
     return null;
   }
 
-  private async findOrCreateSensor(deviceId: string, metric: string, unit: string): Promise<Sensor | null> {
+  private async findOrCreateSensor(
+    deviceId: string,
+    metric: string,
+    unit: string,
+  ): Promise<Sensor | null> {
     try {
       // First, try to find device by serial_number (simulator sends serial numbers)
       let device = await this.deviceRepository.findOne({
@@ -282,7 +318,9 @@ export class TelemetryService {
 
       // Check cache first using actual device UUID
       if (this.deviceSensorCache.has(actualDeviceId)) {
-        const cachedSensor = this.deviceSensorCache.get(actualDeviceId)!.get(metric);
+        const cachedSensor = this.deviceSensorCache
+          .get(actualDeviceId)!
+          .get(metric);
         if (cachedSensor) {
           return cachedSensor;
         }
@@ -312,12 +350,16 @@ export class TelemetryService {
         }
         this.deviceSensorCache.get(actualDeviceId)!.set(metric, sensor);
 
-        this.logger.log(`Created new sensor: device_id=${actualDeviceId}, metric=${metric}`);
+        this.logger.log(
+          `Created new sensor: device_id=${actualDeviceId}, metric=${metric}`,
+        );
       }
 
       return sensor;
     } catch (error: unknown) {
-      this.logger.error(`Error finding or creating sensor: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error finding or creating sensor: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -337,7 +379,11 @@ export class TelemetryService {
           timestamp: new Date().toISOString(),
         };
 
-        await this.mqttService.publish('alert/threshold/exceeded', alertPayload, { qos: 1 });
+        await this.mqttService.publish(
+          'alert/threshold/exceeded',
+          alertPayload,
+          { qos: 1 },
+        );
         this.logger.warn(`Threshold exceeded: ${alertPayload.message}`);
       }
 
@@ -354,15 +400,24 @@ export class TelemetryService {
           timestamp: new Date().toISOString(),
         };
 
-        await this.mqttService.publish('alert/threshold/exceeded', alertPayload, { qos: 1 });
+        await this.mqttService.publish(
+          'alert/threshold/exceeded',
+          alertPayload,
+          { qos: 1 },
+        );
         this.logger.warn(`Threshold exceeded: ${alertPayload.message}`);
       }
     } catch (error: unknown) {
-      this.logger.error(`Error checking thresholds: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error checking thresholds: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
-  async getTelemetryByDevice(deviceId: string, limit: number = 100): Promise<SensorReading[]> {
+  async getTelemetryByDevice(
+    deviceId: string,
+    limit: number = 100,
+  ): Promise<SensorReading[]> {
     try {
       const readings = await this.sensorReadingRepository
         .createQueryBuilder('reading')
@@ -374,12 +429,17 @@ export class TelemetryService {
 
       return readings;
     } catch (error: unknown) {
-      this.logger.error(`Error fetching telemetry for device ${deviceId}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching telemetry for device ${deviceId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  async getTelemetryBySensor(sensorId: string, limit: number = 100): Promise<SensorReading[]> {
+  async getTelemetryBySensor(
+    sensorId: string,
+    limit: number = 100,
+  ): Promise<SensorReading[]> {
     try {
       const readings = await this.sensorReadingRepository.find({
         where: { sensor_id: sensorId },
@@ -389,12 +449,19 @@ export class TelemetryService {
 
       return readings;
     } catch (error: unknown) {
-      this.logger.error(`Error fetching telemetry for sensor ${sensorId}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching telemetry for sensor ${sensorId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  async getAggregatedTelemetry(deviceId: string, metric: string, startTime: Date, endTime: Date) {
+  async getAggregatedTelemetry(
+    deviceId: string,
+    metric: string,
+    startTime: Date,
+    endTime: Date,
+  ) {
     try {
       const result = await this.sensorReadingRepository
         .createQueryBuilder('reading')
@@ -413,7 +480,9 @@ export class TelemetryService {
 
       return result;
     } catch (error: unknown) {
-      this.logger.error(`Error fetching aggregated telemetry: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching aggregated telemetry: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }

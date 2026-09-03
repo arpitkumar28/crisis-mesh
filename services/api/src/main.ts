@@ -14,7 +14,15 @@ async function bootstrap() {
   const configService = new ConfigService();
 
   app.enableCors({
-    origin: configService.corsOrigin,
+    origin: (origin, callback) => {
+      const allowedOrigins = configService.corsOrigin;
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin || true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

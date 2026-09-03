@@ -7,8 +7,10 @@ import { District } from '../entities/district.entity';
 @Injectable()
 export class RiskService {
   constructor(
-    @InjectRepository(RiskAssessment) private readonly riskAssessments: Repository<RiskAssessment>,
-    @InjectRepository(District) private readonly districts: Repository<District>,
+    @InjectRepository(RiskAssessment)
+    private readonly riskAssessments: Repository<RiskAssessment>,
+    @InjectRepository(District)
+    private readonly districts: Repository<District>,
   ) {}
 
   async findAll() {
@@ -48,9 +50,9 @@ export class RiskService {
 
   async getHighRiskAreas() {
     return this.riskAssessments.find({
-      where: { 
+      where: {
         severity: In(['HIGH', 'CRITICAL']),
-        is_active: true 
+        is_active: true,
       },
       order: { risk_level: 'DESC' },
       take: 50,
@@ -60,8 +62,12 @@ export class RiskService {
   async getRiskSummary() {
     const [total, highRisk, criticalRisk, byType] = await Promise.all([
       this.riskAssessments.count({ where: { is_active: true } }),
-      this.riskAssessments.count({ where: { severity: 'HIGH', is_active: true } }),
-      this.riskAssessments.count({ where: { severity: 'CRITICAL', is_active: true } }),
+      this.riskAssessments.count({
+        where: { severity: 'HIGH', is_active: true },
+      }),
+      this.riskAssessments.count({
+        where: { severity: 'CRITICAL', is_active: true },
+      }),
       this.riskAssessments
         .createQueryBuilder('assessment')
         .select('assessment.risk_type', 'type')
@@ -75,7 +81,7 @@ export class RiskService {
       total,
       high_risk: highRisk,
       critical_risk: criticalRisk,
-      by_type: byType.map(item => ({
+      by_type: byType.map((item) => ({
         type: item.type,
         count: parseInt(item.count),
       })),

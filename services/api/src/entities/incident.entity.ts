@@ -88,10 +88,18 @@ export class Incident {
   @JoinColumn({ name: 'assigned_to' })
   assignee: Profile;
 
-  @Column({ name: 'reported_at', type: 'timestamp with time zone', default: () => 'NOW()' })
+  @Column({
+    name: 'reported_at',
+    type: 'timestamp with time zone',
+    default: () => 'NOW()',
+  })
   reported_at: Date;
 
-  @Column({ name: 'resolved_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'resolved_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   resolved_at: Date;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })

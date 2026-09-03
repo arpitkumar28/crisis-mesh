@@ -123,11 +123,11 @@ class LiveSituationScreen extends StatelessWidget {
             right: 20,
             child: Column(
               children: [
-                const _MapButton(icon: Icons.add),
+                _MapButton(icon: Icons.add),
                 SizedBox(height: 8),
-                const _MapButton(icon: Icons.remove),
+                _MapButton(icon: Icons.remove),
                 SizedBox(height: 16),
-                const _MapButton(icon: Icons.my_location, color: const Color(0xFF0757E8)),
+                _MapButton(icon: Icons.my_location, color: Color(0xFF0757E8)),
               ],
             ),
           ),

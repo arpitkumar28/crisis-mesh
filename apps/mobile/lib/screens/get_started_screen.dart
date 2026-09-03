@@ -18,21 +18,21 @@ class GetStartedScreen extends StatelessWidget {
                 children: [
                   Image.asset('assets/brand/crisismesh-icon.png',
                       width: 48, height: 48),
-                  SizedBox(width: 12),
-                  Text(
+                  const SizedBox(width: 12),
+                  const Text(
                     'CRISIS',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF102043),
+                      color: const Color(0xFF102043),
                     ),
                   ),
-                  Text(
+                  const Text(
                     'MESH',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0757E8),
+                      color: const Color(0xFF0757E8),
                     ),
                   ),
                 ],

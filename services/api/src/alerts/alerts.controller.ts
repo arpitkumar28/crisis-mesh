@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
@@ -16,7 +26,10 @@ export class AlertsController {
 
   @Post()
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
-  async create(@Body() createAlertDto: CreateAlertDto, @CurrentUser() user: any) {
+  async create(
+    @Body() createAlertDto: CreateAlertDto,
+    @CurrentUser() user: any,
+  ) {
     const alert = await this.alertsService.create(createAlertDto, user.id);
     return {
       success: true,
@@ -27,7 +40,13 @@ export class AlertsController {
   }
 
   @Get()
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findAll() {
     const alerts = await this.alertsService.findAll();
     return {
@@ -39,7 +58,13 @@ export class AlertsController {
   }
 
   @Get('status/:status')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByStatus(@Param('status') status: AlertStatus) {
     const alerts = await this.alertsService.findByStatus(status);
     return {
@@ -51,7 +76,13 @@ export class AlertsController {
   }
 
   @Get('severity/:severity')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findBySeverity(@Param('severity') severity: AlertSeverity) {
     const alerts = await this.alertsService.findBySeverity(severity);
     return {
@@ -63,7 +94,13 @@ export class AlertsController {
   }
 
   @Get('active')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findActive() {
     const alerts = await this.alertsService.findActive();
     return {
@@ -75,7 +112,13 @@ export class AlertsController {
   }
 
   @Get('critical')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getCriticalAlerts() {
     const alerts = await this.alertsService.getCriticalAlerts();
     return {
@@ -87,7 +130,13 @@ export class AlertsController {
   }
 
   @Get('count')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getCount() {
     const count = await this.alertsService.getAlertCount();
     return {
@@ -99,7 +148,13 @@ export class AlertsController {
   }
 
   @Get('count/by-status')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getCountByStatus() {
     const counts = await this.alertsService.getAlertCountByStatus();
     return {
@@ -111,9 +166,15 @@ export class AlertsController {
   }
 
   @Get(':id')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
-  async findOne(@Param('id') id: string) {
-    const alert = await this.alertsService.findOne(id);
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const alert = await this.alertsService.findOne(id, user);
     return {
       success: true,
       message: 'Alert retrieved successfully',
@@ -124,8 +185,17 @@ export class AlertsController {
 
   @Put(':id')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
-  async update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertDto, @CurrentUser() user: any) {
-    const alert = await this.alertsService.update(id, updateAlertDto, user.id);
+  async update(
+    @Param('id') id: string,
+    @Body() updateAlertDto: UpdateAlertDto,
+    @CurrentUser() user: any,
+  ) {
+    const alert = await this.alertsService.update(
+      id,
+      updateAlertDto,
+      user.id,
+      user,
+    );
     return {
       success: true,
       message: 'Alert updated successfully',
@@ -147,7 +217,13 @@ export class AlertsController {
   }
 
   @Get('filter')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByFilters(
     @Query('location_id') locationId?: string,
     @Query('district_id') districtId?: string,
@@ -159,7 +235,9 @@ export class AlertsController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    const severities = severity ? severity.split(',').map(s => s.trim().toUpperCase() as AlertSeverity) : undefined;
+    const severities = severity
+      ? severity.split(',').map((s) => s.trim().toUpperCase() as AlertSeverity)
+      : undefined;
     const { alerts, total } = await this.alertsService.findByFilters({
       location_id: locationId,
       district_id: districtId,
@@ -186,7 +264,13 @@ export class AlertsController {
   }
 
   @Get('sources')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getSources() {
     const sources = await this.alertsService.getAlertSources();
     return {
@@ -198,7 +282,13 @@ export class AlertsController {
   }
 
   @Get('types')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getTypes() {
     const types = await this.alertsService.getAlertTypes();
     return {

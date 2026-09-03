@@ -45,14 +45,14 @@ class IncidentDetailsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 32),
-            Center(
+            const Center(
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Response Progress',
                     style: TextStyle(color: Color(0xFF65728A), fontSize: 14),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Stack(
                     alignment: Alignment.center,
                     children: [
@@ -62,11 +62,11 @@ class IncidentDetailsScreen extends ConsumerWidget {
                         child: CircularProgressIndicator(
                           value: 0.65,
                           strokeWidth: 10,
-                          backgroundColor: const Color(0xFFF0F3F8),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0757E8)),
+                          backgroundColor: Color(0xFFF0F3F8),
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0757E8)),
                         ),
                       ),
-                      const Column(
+                      Column(
                         children: [
                           Text(
                             '65%',
@@ -147,7 +147,7 @@ class IncidentDetailsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(

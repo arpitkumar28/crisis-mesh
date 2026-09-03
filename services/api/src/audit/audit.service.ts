@@ -31,14 +31,22 @@ export class AuditService {
       });
 
       await this.auditLogRepository.save(auditLog);
-      this.logger.debug(`Audit log created: ${data.action} by user ${data.user_id || 'anonymous'}`);
+      this.logger.debug(
+        `Audit log created: ${data.action} by user ${data.user_id || 'anonymous'}`,
+      );
     } catch (error) {
       this.logger.error(`Failed to create audit log: ${error.message}`);
       // Don't throw error to avoid breaking main flow
     }
   }
 
-  async logAuthentication(userId: string, email: string, action: 'LOGIN' | 'LOGOUT' | 'REGISTER', ipAddress?: string, userAgent?: string): Promise<void> {
+  async logAuthentication(
+    userId: string,
+    email: string,
+    action: 'LOGIN' | 'LOGOUT' | 'REGISTER',
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
     await this.log({
       user_id: userId,
       action: `AUTH_${action}`,
@@ -50,7 +58,12 @@ export class AuditService {
     });
   }
 
-  async logAuthorization(userId: string, action: string, resource: string, ipAddress?: string): Promise<void> {
+  async logAuthorization(
+    userId: string,
+    action: string,
+    resource: string,
+    ipAddress?: string,
+  ): Promise<void> {
     await this.log({
       user_id: userId,
       action: `AUTHZ_${action}`,
@@ -60,7 +73,14 @@ export class AuditService {
     });
   }
 
-  async logDataChange(userId: string, entityType: string, entityId: string, oldValues: any, newValues: any, ipAddress?: string): Promise<void> {
+  async logDataChange(
+    userId: string,
+    entityType: string,
+    entityId: string,
+    oldValues: any,
+    newValues: any,
+    ipAddress?: string,
+  ): Promise<void> {
     await this.log({
       user_id: userId,
       action: 'DATA_UPDATE',
@@ -72,7 +92,10 @@ export class AuditService {
     });
   }
 
-  async getUserAuditLogs(userId: string, limit: number = 100): Promise<AuditLog[]> {
+  async getUserAuditLogs(
+    userId: string,
+    limit: number = 100,
+  ): Promise<AuditLog[]> {
     return this.auditLogRepository.find({
       where: { user_id: userId },
       order: { timestamp: 'DESC' },
@@ -80,7 +103,11 @@ export class AuditService {
     });
   }
 
-  async getEntityAuditLogs(entityType: string, entityId: string, limit: number = 100): Promise<AuditLog[]> {
+  async getEntityAuditLogs(
+    entityType: string,
+    entityId: string,
+    limit: number = 100,
+  ): Promise<AuditLog[]> {
     return this.auditLogRepository.find({
       where: { entity_type: entityType, entity_id: entityId },
       order: { timestamp: 'DESC' },

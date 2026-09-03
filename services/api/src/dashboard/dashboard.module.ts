@@ -11,7 +11,11 @@ import { DashboardService } from './dashboard.service';
 import { IntelligenceModule } from '../intelligence/intelligence.module';
 
 @Module({
-  imports: [AuthModule, IntelligenceModule, TypeOrmModule.forFeature([Alert, Device, Incident, SensorReading])],
+  imports: [
+    AuthModule,
+    IntelligenceModule,
+    TypeOrmModule.forFeature([Alert, Device, Incident, SensorReading]),
+  ],
   controllers: [DashboardController, PublicMapController],
   providers: [DashboardService],
 })

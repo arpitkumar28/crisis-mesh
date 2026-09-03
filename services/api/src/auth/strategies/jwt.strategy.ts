@@ -25,6 +25,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
+    if (payload.type && payload.type !== 'access') {
+      this.logger.warn(
+        `Rejected non-access token for user ${payload.email}: type=${payload.type}`,
+      );
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    if (!payload.type) {
+      this.logger.warn(
+        `Rejected legacy token without explicit type for ${payload.email}`,
+      );
+      throw new UnauthorizedException('Invalid token type');
+    }
+
     this.logger.debug(`Token validated for user: ${payload.email}`);
 
     return {

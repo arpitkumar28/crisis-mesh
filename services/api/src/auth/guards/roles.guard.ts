@@ -2,7 +2,13 @@
  * Roles Guard
  * Protects routes based on user roles
  */
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../roles.decorator';
 
@@ -23,7 +29,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest();
-    
+
     if (!user) {
       this.logger.warn('Roles guard: No user found in request');
       throw new ForbiddenException('User not authenticated');
@@ -37,11 +43,15 @@ export class RolesGuard implements CanActivate {
     const hasRole = requiredRoles.some((role) => user.roles.includes(role));
 
     if (!hasRole) {
-      this.logger.warn(`Roles guard: User ${user.email} with roles ${user.roles} does not have required roles ${requiredRoles}`);
+      this.logger.warn(
+        `Roles guard: User ${user.email} with roles ${user.roles} does not have required roles ${requiredRoles}`,
+      );
       throw new ForbiddenException('Insufficient permissions');
     }
 
-    this.logger.debug(`Roles guard: User ${user.email} with roles ${user.roles} passed check for ${requiredRoles}`);
+    this.logger.debug(
+      `Roles guard: User ${user.email} with roles ${user.roles} passed check for ${requiredRoles}`,
+    );
     return true;
   }
 }

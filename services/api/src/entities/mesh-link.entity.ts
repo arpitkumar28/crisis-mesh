@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Device } from './device.entity';
 
 @Entity('mesh_links')
@@ -28,11 +36,15 @@ export class MeshLink {
   updated_at: Date;
 
   // Relations
-  @ManyToOne(() => Device, (device) => device.source_links, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Device, (device) => device.source_links, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'source_device_id' })
   source_device: Device;
 
-  @ManyToOne(() => Device, (device) => device.target_links, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Device, (device) => device.target_links, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'target_device_id' })
   target_device: Device;
 }

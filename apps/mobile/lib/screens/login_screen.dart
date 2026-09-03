@@ -126,19 +126,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         Image.asset('assets/brand/crisismesh-icon.png',
                             width: 38, height: 38),
-                        SizedBox(width: 8),
-                        Text(
+                        const SizedBox(width: 8),
+                        const Text(
                           'CRISIS',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 25,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF102043)),
+                              color: const Color(0xFF102043)),
                         ),
-                        Text('MESH',
-                            style: TextStyle(
+                        const Text('MESH',
+                            style: const TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF0757E8)))
+                                color: const Color(0xFF0757E8)))
                       ]),
                   const SizedBox(height: 8),
                   const Text(

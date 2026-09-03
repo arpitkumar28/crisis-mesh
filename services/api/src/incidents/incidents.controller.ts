@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
@@ -15,9 +24,20 @@ export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
   @Post()
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER, UserRoleEnum.CITIZEN)
-  async create(@Body() createIncidentDto: CreateIncidentDto, @CurrentUser() user: any) {
-    const incident = await this.incidentsService.create(createIncidentDto, user.id);
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.CITIZEN,
+  )
+  async create(
+    @Body() createIncidentDto: CreateIncidentDto,
+    @CurrentUser() user: any,
+  ) {
+    const incident = await this.incidentsService.create(
+      createIncidentDto,
+      user.id,
+    );
     return {
       success: true,
       message: 'Incident created successfully',
@@ -27,7 +47,13 @@ export class IncidentsController {
   }
 
   @Get()
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findAll() {
     const incidents = await this.incidentsService.findAll();
     return {
@@ -39,7 +65,13 @@ export class IncidentsController {
   }
 
   @Get('status/:status')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByStatus(@Param('status') status: IncidentStatus) {
     const incidents = await this.incidentsService.findByStatus(status);
     return {
@@ -51,7 +83,13 @@ export class IncidentsController {
   }
 
   @Get('type/:type')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findByType(@Param('type') type: IncidentType) {
     const incidents = await this.incidentsService.findByType(type);
     return {
@@ -63,7 +101,13 @@ export class IncidentsController {
   }
 
   @Get('active')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async findActive() {
     const incidents = await this.incidentsService.findActive();
     return {
@@ -75,7 +119,13 @@ export class IncidentsController {
   }
 
   @Get('count')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getCount() {
     const count = await this.incidentsService.getIncidentCount();
     return {
@@ -87,7 +137,13 @@ export class IncidentsController {
   }
 
   @Get('count/by-status')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   async getCountByStatus() {
     const counts = await this.incidentsService.getIncidentCountByStatus();
     return {
@@ -99,9 +155,15 @@ export class IncidentsController {
   }
 
   @Get(':id')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
-  async findOne(@Param('id') id: string) {
-    const incident = await this.incidentsService.findOne(id);
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const incident = await this.incidentsService.findOne(id, user);
     return {
       success: true,
       message: 'Incident retrieved successfully',
@@ -112,8 +174,16 @@ export class IncidentsController {
 
   @Put(':id')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
-  async update(@Param('id') id: string, @Body() updateIncidentDto: UpdateIncidentDto, @CurrentUser() user: any) {
-    const incident = await this.incidentsService.update(id, updateIncidentDto, user.id);
+  async update(
+    @Param('id') id: string,
+    @Body() updateIncidentDto: UpdateIncidentDto,
+    @CurrentUser() user: any,
+  ) {
+    const incident = await this.incidentsService.update(
+      id,
+      updateIncidentDto,
+      user,
+    );
     return {
       success: true,
       message: 'Incident updated successfully',

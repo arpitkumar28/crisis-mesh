@@ -191,7 +191,7 @@ describe('AuthService', () => {
   });
 
   describe('refreshToken', () => {
-    it('should successfully refresh token', async () => {
+    it('should issue a new access token and a rotated refresh token for a valid refresh token', async () => {
       const mockPayload = {
         sub: 'user-id',
         email: 'test@example.com',
@@ -199,14 +199,30 @@ describe('AuthService', () => {
         roles: [UserRoleEnum.CITIZEN],
       };
 
-      mockAuthProvider.refreshToken.mockResolvedValue('new_access_token');
       mockAuthProvider.validateToken.mockResolvedValue(mockPayload);
-      mockAuthProvider.generateToken.mockResolvedValue('new_refresh_token');
+      mockAuthProvider.generateToken.mockResolvedValueOnce('new_access_token');
+      mockAuthProvider.refreshToken.mockResolvedValue('rotated_refresh_token');
 
       const result = await service.refreshToken('old_refresh_token');
 
       expect(result).toHaveProperty('access_token', 'new_access_token');
-      expect(result).toHaveProperty('refresh_token', 'new_refresh_token');
+      expect(result).toHaveProperty('refresh_token', 'rotated_refresh_token');
+      expect(mockAuthProvider.validateToken).toHaveBeenCalledWith(
+        'old_refresh_token',
+        'refresh',
+      );
+      expect(mockAuthProvider.generateToken).toHaveBeenCalledWith(
+        {
+          id: mockPayload.sub,
+          email: mockPayload.email,
+          name: mockPayload.name,
+          roles: mockPayload.roles,
+        },
+        'access',
+      );
+      expect(mockAuthProvider.refreshToken).toHaveBeenCalledWith(
+        'old_refresh_token',
+      );
       expect(result.user).toEqual({
         id: mockPayload.sub,
         email: mockPayload.email,
@@ -215,14 +231,25 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw error on invalid refresh token', async () => {
-      mockAuthProvider.refreshToken.mockRejectedValue(
+    it('should reject invalid refresh tokens', async () => {
+      mockAuthProvider.validateToken.mockRejectedValue(
         new UnauthorizedException('Invalid token'),
       );
 
       await expect(service.refreshToken('invalid_token')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('should reject a malformed token before any rotation occurs', async () => {
+      mockAuthProvider.validateToken.mockRejectedValue(
+        new UnauthorizedException('Malformed token'),
+      );
+
+      await expect(service.refreshToken('malformed.token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockAuthProvider.refreshToken).not.toHaveBeenCalled();
     });
   });
 
