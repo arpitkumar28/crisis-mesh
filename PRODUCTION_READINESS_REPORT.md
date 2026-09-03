@@ -58,3 +58,18 @@ Scope: Phase 1 production recovery only. Phase 2 was not started.
 **FINAL STATUS: BLOCKED**
 
 See `PRODUCTION_DEPLOYMENT_BLOCKERS.md` for required provider actions and evidence.
+
+## 2026-09-03 CORS-only retest
+
+This retest preserves the earlier evidence and adds the current live result. Target: `https://crisis-mesh-api.onrender.com/api/v1/health`.
+
+| Test | Origin | Actual result | Status |
+| --- | --- | --- | --- |
+| CORS GET approved | `https://crisis-mesh-eosin.vercel.app` | HTTP 200; `Access-Control-Allow-Credentials: true`; missing `Access-Control-Allow-Origin` | FAIL |
+| CORS GET unauthorized | `https://attacker.invalid` | HTTP 200; no permissive allow-origin header | PARTIAL |
+| CORS OPTIONS approved | `https://crisis-mesh-eosin.vercel.app` | HTTP 204; allowed methods `GET,POST,PUT,DELETE,PATCH,OPTIONS`; allowed headers `Content-Type,Authorization`; missing `Access-Control-Allow-Origin` | FAIL |
+| CORS OPTIONS unauthorized | `https://attacker.invalid` | HTTP 204; method/header/credentials response headers present, no allow-origin header | PARTIAL |
+| Browser API call from deployed web | `https://crisis-mesh-eosin.vercel.app` | BLOCKED: the browser requires the matching `Access-Control-Allow-Origin` response header | BLOCKED |
+| WebSocket origin | deployed Socket.IO `/ws` | Source configuration uses the same exact allowlist, but no authenticated production handshake or Render configuration is available | UNVERIFIED |
+
+Local verification after this inspection: API tests **122/122 PASS**, API build **PASS**, web build **PASS**. These local results do not change the live CORS status. Render access is required to inspect/correct the production `CORS_ORIGIN` value or deploy the applicable API release. No production deployment was performed; **FINAL STATUS remains BLOCKED**.

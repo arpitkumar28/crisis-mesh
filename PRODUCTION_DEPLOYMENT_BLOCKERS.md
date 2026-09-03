@@ -14,3 +14,18 @@ Evidence collected on 2026-09-03. Secret values, credentials, tokens, and provid
 | Full disaster E2E has no evidence | Run controlled FLOOD and FIRE tests against production and record redacted request IDs, expected/actual behavior, persistence, alert, and authenticated WebSocket delivery. | All providers | Incident-response test owner | No authorized production test identities or broker/database/provider access are available in this workspace. | UNVERIFIED |
 
 No destructive database operation, credential rotation, deployment, history rewrite, or Phase 2 work was performed.
+
+## 2026-09-03 CORS-only retest
+
+The requested live CORS retest was performed against `https://crisis-mesh-api.onrender.com/api/v1/health` using the exact Vercel origin `https://crisis-mesh-eosin.vercel.app` and `https://attacker.invalid`.
+
+| Check | Result | Status |
+| --- | --- | --- |
+| Approved GET | HTTP 200 and `Access-Control-Allow-Credentials: true`, but **no** `Access-Control-Allow-Origin` | FAIL |
+| Unauthorized GET | HTTP 200 with no permissive allow-origin header | PARTIAL |
+| Approved OPTIONS | HTTP 204 with methods/headers and credentials, but **no** `Access-Control-Allow-Origin` | FAIL |
+| Unauthorized OPTIONS | HTTP 204 with methods/headers and credentials, but no allow-origin header | PARTIAL |
+| Deployed web → API browser call | Cannot succeed as a credentialed cross-origin browser request without the required allow-origin response header | BLOCKED |
+| Socket.IO origin | Repository configuration uses the same origin allowlist; the deployed Socket.IO configuration cannot be verified without a valid test token and provider access | UNVERIFIED |
+
+The repository's current API source is already designed to require `CORS_ORIGIN` in production and to use the exact configured origin list for HTTP and Socket.IO. It contains no Render service manifest or provider configuration. Therefore the correction must be made or verified in the Render production service and deployed there; this workspace cannot safely perform that provider-side change without access. No commit was made for this retest because no production CORS fix was deployed and externally verified.
