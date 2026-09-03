@@ -38,6 +38,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       this.client = mqtt.connect(brokerUrl, {
         clientId: 'crisis-mesh-backend',
         clean: true,
+        username: this.configService.mqttUsername || undefined,
+        password: this.configService.mqttPassword || undefined,
+        // mqtts:// selects TLS. Do not accept an invalid broker certificate.
+        rejectUnauthorized: true,
+        ca: this.configService.mqttCaCertPath,
         connectTimeout: 4000,
         reconnectPeriod: 5000, // Enabled reconnection (P1 Fix)
       });

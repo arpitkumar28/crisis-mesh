@@ -32,6 +32,9 @@ describe('ConfigService', () => {
     delete process.env.API_HOST;
     delete process.env.CORS_ORIGIN;
     delete process.env.MQTT_BROKER_URL;
+    delete process.env.MQTT_USERNAME;
+    delete process.env.MQTT_PASSWORD;
+    delete process.env.MQTT_CA_CERT_PATH;
     process.env.NODE_ENV = 'test'; // Reset to test environment
   });
 
@@ -89,6 +92,28 @@ describe('ConfigService', () => {
     delete process.env.MQTT_BROKER_URL;
 
     expect(() => service.mqttBrokerUrl).toThrow('MQTT_BROKER_URL');
+  });
+
+  it('should require MQTT credentials in production', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.CORS_ORIGIN = 'https://crisis-mesh-eosin.vercel.app';
+    process.env.MQTT_BROKER_URL = 'mqtts://broker.example:8883';
+    delete process.env.MQTT_USERNAME;
+    delete process.env.MQTT_PASSWORD;
+
+    expect(() => new ConfigService()).toThrow(
+      'MQTT_USERNAME, MQTT_PASSWORD',
+    );
+  });
+
+  it('should expose MQTT credentials and optional CA path without logging them', () => {
+    process.env.MQTT_USERNAME = 'test-user';
+    process.env.MQTT_PASSWORD = 'test-password';
+    process.env.MQTT_CA_CERT_PATH = '/tmp/test-ca.pem';
+
+    expect(service.mqttUsername).toBe('test-user');
+    expect(service.mqttPassword).toBe('test-password');
+    expect(service.mqttCaCertPath).toBe('/tmp/test-ca.pem');
   });
 
   it('should return default MQTT broker URL when not set', () => {

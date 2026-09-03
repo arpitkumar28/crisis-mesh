@@ -11,10 +11,13 @@ future hardware will use.
 import asyncio
 import json
 import logging
+import os
 import random
+import ssl
 from datetime import datetime
 from typing import Optional
 from enum import Enum
+from urllib.parse import urlparse
 
 import paho.mqtt.client as mqtt
 
@@ -95,10 +98,18 @@ class CrisisMeshSimulator:
                     self.config.mqtt_password
                 )
             
-            # Extract host from broker URL
-            broker_host = self.config.mqtt_broker.replace("mqtt://", "").split(":")[0]
-            
-            self.client.connect(broker_host, self.config.mqtt_port, keepalive=60)
+            parsed_broker = urlparse(self.config.mqtt_broker)
+            if parsed_broker.scheme not in ("mqtt", "mqtts") or not parsed_broker.hostname:
+                raise ValueError("MQTT broker URL must use mqtt:// or mqtts:// and include a hostname")
+
+            is_tls = parsed_broker.scheme == "mqtts"
+            if is_tls:
+                # Use the system CA store and require a valid server certificate.
+                self.client.tls_set(cert_reqs=ssl.CERT_REQUIRED)
+                self.client.tls_insecure_set(False)
+
+            broker_port = parsed_broker.port or (8883 if is_tls else self.config.mqtt_port)
+            self.client.connect(parsed_broker.hostname, broker_port, keepalive=60)
             self.client.loop_start()
             self.running = True
             
@@ -244,7 +255,6 @@ class CrisisMeshSimulator:
 
 async def main():
     """Main entry point"""
-    import os
     
     # Get scenario from environment variable
     scenario_str = os.getenv("SIMULATION_SCENARIO", "normal").upper()
@@ -258,7 +268,12 @@ async def main():
     num_devices = int(os.getenv("NUM_DEVICES", "5"))
     
     config = SimulatorConfig(
-        mqtt_broker=os.getenv("MQTT_BROKER", "mqtt://localhost:1883"),
+        mqtt_broker=os.getenv(
+            "MQTT_BROKER_URL",
+            os.getenv("MQTT_BROKER", "mqtt://localhost:1883"),
+        ),
+        mqtt_username=os.getenv("MQTT_USERNAME"),
+        mqtt_password=os.getenv("MQTT_PASSWORD"),
         scenario=scenario,
         num_devices=num_devices,
     )

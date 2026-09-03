@@ -27,6 +27,14 @@ export class ConfigService {
       requiredVars.push('MQTT_BROKER_URL');
     }
 
+    if (this.isProduction && !process.env.MQTT_USERNAME) {
+      requiredVars.push('MQTT_USERNAME');
+    }
+
+    if (this.isProduction && !process.env.MQTT_PASSWORD) {
+      requiredVars.push('MQTT_PASSWORD');
+    }
+
     if (requiredVars.length > 0) {
       this.logger.error(
         `Missing required environment variables: ${requiredVars.join(', ')}. ` +
@@ -93,6 +101,18 @@ export class ConfigService {
     }
 
     return value || 'mqtt://localhost:1883';
+  }
+
+  get mqttUsername(): string {
+    return process.env.MQTT_USERNAME || '';
+  }
+
+  get mqttPassword(): string {
+    return process.env.MQTT_PASSWORD || '';
+  }
+
+  get mqttCaCertPath(): string | undefined {
+    return process.env.MQTT_CA_CERT_PATH || undefined;
   }
 
   get supabaseUrl(): string {
