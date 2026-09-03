@@ -12,7 +12,10 @@ import * as path from 'path';
 @Injectable()
 export class MigrationService {
   private readonly logger = new Logger(MigrationService.name);
-  private readonly migrationsPath = path.resolve(__dirname, '../../../../supabase/migrations');
+  private readonly migrationsPath = path.resolve(
+    __dirname,
+    '../../../../supabase/migrations',
+  );
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -30,7 +33,7 @@ export class MigrationService {
 
       // Get all migration files sorted by name
       const migrationFiles = this.getMigrationFiles();
-      
+
       if (migrationFiles.length === 0) {
         this.logger.warn('No migration files found');
         return;
@@ -57,13 +60,16 @@ export class MigrationService {
 
   private getMigrationFiles(): string[] {
     if (!fs.existsSync(this.migrationsPath)) {
-      this.logger.warn(`Migrations directory not found: ${this.migrationsPath}`);
+      this.logger.warn(
+        `Migrations directory not found: ${this.migrationsPath}`,
+      );
       return [];
     }
 
-    const files = fs.readdirSync(this.migrationsPath)
-      .filter(file => file.endsWith('.sql'))
-      .filter(file => file !== 'README.md')
+    const files = fs
+      .readdirSync(this.migrationsPath)
+      .filter((file) => file.endsWith('.sql'))
+      .filter((file) => file !== 'README.md')
       .sort();
 
     return files;
@@ -85,7 +91,7 @@ export class MigrationService {
     // Check if migration already executed
     const checkResult = await pool.query(
       'SELECT id FROM schema_migrations WHERE filename = $1',
-      [filename]
+      [filename],
     );
 
     if (checkResult.rows.length > 0) {
@@ -102,13 +108,13 @@ export class MigrationService {
     try {
       await client.query('BEGIN');
       await client.query(migrationSql);
-      
+
       // Record migration as executed
       await client.query(
         'INSERT INTO schema_migrations (filename) VALUES ($1)',
-        [filename]
+        [filename],
       );
-      
+
       await client.query('COMMIT');
       this.logger.log(`Migration ${filename} completed successfully`);
     } catch (error) {
@@ -127,7 +133,7 @@ export class MigrationService {
 
     try {
       const result = await pool.query(
-        'SELECT filename, executed_at FROM schema_migrations ORDER BY executed_at'
+        'SELECT filename, executed_at FROM schema_migrations ORDER BY executed_at',
       );
       return result.rows;
     } finally {

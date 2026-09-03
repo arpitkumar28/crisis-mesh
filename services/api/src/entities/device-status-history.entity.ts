@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { Device, DeviceStatus } from './device.entity';
 
 @Entity('device_status_history')
@@ -27,7 +35,9 @@ export class DeviceStatusHistory {
   created_at: Date;
 
   // Relations
-  @ManyToOne(() => Device, (device) => device.status_history, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Device, (device) => device.status_history, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'device_id' })
   device: Device;
 }

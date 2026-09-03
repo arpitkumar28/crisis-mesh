@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, ManyToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  ManyToMany,
+} from 'typeorm';
 import { Device } from './device.entity';
 
 @Entity('gateways')
@@ -29,7 +39,9 @@ export class Gateway {
   @JoinColumn({ name: 'device_id' })
   device: Device;
 
-  @ManyToOne(() => Gateway, (gateway) => gateway.child_gateways, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Gateway, (gateway) => gateway.child_gateways, {
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'parent_gateway_id' })
   parent_gateway: Gateway;
 

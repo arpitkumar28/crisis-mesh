@@ -11,7 +11,13 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('overview')
-  @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST)
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
   getOverview() {
     return this.dashboardService.getOverview();
   }

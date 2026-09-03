@@ -72,7 +72,7 @@ class _MapScreenState extends State<MapScreen> {
             height: 40,
             child: Container(
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
                 border: Border.all(color: color, width: 2),
               ),
@@ -120,7 +120,7 @@ class _MapScreenState extends State<MapScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: Row(
@@ -172,7 +172,7 @@ class _MapScreenState extends State<MapScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -4)),
                 ],
               ),
               child: Column(
@@ -232,7 +232,7 @@ class _MapScreenState extends State<MapScreen> {
         color: active ? const Color(0xFF0757E8) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: active ? const Color(0xFF0757E8) : const Color(0xFFE4EAF4)),
-        boxShadow: active ? null : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+        boxShadow: active ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)],
       ),
       child: Text(
         label,
@@ -264,7 +264,7 @@ class _MapScreenState extends State<MapScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
         ),
         child: Icon(icon, color: color ?? const Color(0xFF102043), size: 20),
       ),

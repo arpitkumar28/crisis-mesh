@@ -1,6 +1,6 @@
--- Correct the development admin password for databases that received the
--- earlier password backfill.
+-- Development credentials must be provisioned outside source control.
+-- This migration intentionally avoids any committed hash.
 
 UPDATE profiles
-SET password_hash = '$2b$10$aXA.xr7Gt9icDZ37XRlvQOiFOJZxOfd7GXZJCif1AKOF47LuxqvZ2'
+SET password_hash = NULL
 WHERE email = 'admin@crisismesh.dev';

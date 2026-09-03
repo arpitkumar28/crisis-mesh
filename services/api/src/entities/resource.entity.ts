@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { GeographicLocation } from './geographic-location.entity';
 
 @Entity('resources')
@@ -9,7 +17,9 @@ export class Resource {
   @Column({ type: 'int', default: 1 }) quantity: number;
   @Column({ length: 50, nullable: true }) unit: string;
   @Column({ type: 'uuid', nullable: true }) location_id: string;
-  @ManyToOne(() => GeographicLocation, { nullable: true }) @JoinColumn({ name: 'location_id' }) location: GeographicLocation;
+  @ManyToOne(() => GeographicLocation, { nullable: true })
+  @JoinColumn({ name: 'location_id' })
+  location: GeographicLocation;
   @Column({ length: 50, default: 'AVAILABLE' }) status: string;
   @Column({ type: 'uuid', nullable: true }) assigned_to: string;
   @CreateDateColumn({ type: 'timestamp with time zone' }) created_at: Date;

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
 import { Alert, AlertStatus, AlertSeverity } from '../entities/alert.entity';
@@ -7,6 +12,7 @@ import { UpdateAlertDto } from './dto/update-alert.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
 import { AlertUpdatedEvent } from '../websocket/dto/websocket-event.dto';
+import { UserRoleEnum } from '../entities/profile.entity';
 
 @Injectable()
 export class AlertsService {
@@ -98,7 +104,7 @@ export class AlertsService {
     });
   }
 
-  async findOne(id: string): Promise<Alert> {
+  async findOne(id: string, currentUser?: any): Promise<Alert> {
     const alert = await this.alertRepository.findOne({
       where: { id },
       relations: {
@@ -112,12 +118,42 @@ export class AlertsService {
       throw new NotFoundException(`Alert with ID ${id} not found`);
     }
 
+    const roles = currentUser?.roles || [];
+    const isPrivileged =
+      roles.includes(UserRoleEnum.ADMIN) ||
+      roles.includes(UserRoleEnum.AUTHORITY) ||
+      roles.includes(UserRoleEnum.RESPONDER) ||
+      roles.includes(UserRoleEnum.ANALYST);
+
+    if (currentUser && !isPrivileged && alert.issued_by !== currentUser.id) {
+      throw new ForbiddenException(
+        'You are not authorized to access this alert',
+      );
+    }
+
     return alert;
   }
 
-  async update(id: string, updateAlertDto: UpdateAlertDto, userId: string): Promise<Alert> {
-    const alert = await this.findOne(id);
+  async update(
+    id: string,
+    updateAlertDto: UpdateAlertDto,
+    userId: string,
+    currentUser?: any,
+  ): Promise<Alert> {
+    const alert = await this.findOne(id, currentUser);
     const oldValues = { ...alert };
+
+    const roles = currentUser?.roles || [];
+    const isPrivileged =
+      roles.includes(UserRoleEnum.ADMIN) ||
+      roles.includes(UserRoleEnum.AUTHORITY) ||
+      roles.includes(UserRoleEnum.RESPONDER);
+
+    if (!isPrivileged && alert.issued_by !== currentUser?.id) {
+      throw new ForbiddenException(
+        'You are not authorized to update this alert',
+      );
+    }
 
     Object.assign(alert, updateAlertDto);
     const updatedAlert = await this.alertRepository.save(alert);
@@ -177,10 +213,13 @@ export class AlertsService {
       .groupBy('alert.status')
       .getRawMany();
 
-    return result.reduce((acc, item) => {
-      acc[item.status] = parseInt(item.count);
-      return acc;
-    }, {} as Record<string, number>);
+    return result.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 
   async getCriticalAlerts(): Promise<Alert[]> {
@@ -206,29 +245,40 @@ export class AlertsService {
     limit?: number;
     offset?: number;
   }): Promise<{ alerts: Alert[]; total: number }> {
-    const queryBuilder = this.alertRepository.createQueryBuilder('alert')
+    const queryBuilder = this.alertRepository
+      .createQueryBuilder('alert')
       .leftJoinAndSelect('alert.location', 'location')
       .leftJoinAndSelect('alert.issuer', 'issuer')
       .leftJoinAndSelect('alert.incident', 'incident');
 
     if (filters.location_id) {
-      queryBuilder.andWhere('alert.location_id = :locationId', { locationId: filters.location_id });
+      queryBuilder.andWhere('alert.location_id = :locationId', {
+        locationId: filters.location_id,
+      });
     }
 
     if (filters.district_id) {
-      queryBuilder.andWhere('location.district_id = :districtId', { districtId: filters.district_id });
+      queryBuilder.andWhere('location.district_id = :districtId', {
+        districtId: filters.district_id,
+      });
     }
 
     if (filters.hazard_type) {
-      queryBuilder.andWhere('alert.type = :type', { type: filters.hazard_type });
+      queryBuilder.andWhere('alert.type = :type', {
+        type: filters.hazard_type,
+      });
     }
 
     if (filters.severity && filters.severity.length > 0) {
-      queryBuilder.andWhere('alert.severity IN (:...severities)', { severities: filters.severity });
+      queryBuilder.andWhere('alert.severity IN (:...severities)', {
+        severities: filters.severity,
+      });
     }
 
     if (filters.source) {
-      queryBuilder.andWhere('alert.source = :source', { source: filters.source });
+      queryBuilder.andWhere('alert.source = :source', {
+        source: filters.source,
+      });
     }
 
     if (filters.start_date && filters.end_date) {
@@ -262,7 +312,7 @@ export class AlertsService {
       .where('alert.source IS NOT NULL')
       .getRawMany();
 
-    return result.map(r => r.source);
+    return result.map((r) => r.source);
   }
 
   async getAlertTypes(): Promise<string[]> {
@@ -272,6 +322,6 @@ export class AlertsService {
       .where('alert.type IS NOT NULL')
       .getRawMany();
 
-    return result.map(r => r.type);
+    return result.map((r) => r.type);
   }
 }

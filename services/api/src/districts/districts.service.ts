@@ -13,14 +13,19 @@ import { Resource } from '../entities/resource.entity';
 @Injectable()
 export class DistrictsService {
   constructor(
-    @InjectRepository(District) private readonly districts: Repository<District>,
-    @InjectRepository(RiskAssessment) private readonly riskAssessments: Repository<RiskAssessment>,
+    @InjectRepository(District)
+    private readonly districts: Repository<District>,
+    @InjectRepository(RiskAssessment)
+    private readonly riskAssessments: Repository<RiskAssessment>,
     @InjectRepository(Alert) private readonly alerts: Repository<Alert>,
-    @InjectRepository(Incident) private readonly incidents: Repository<Incident>,
+    @InjectRepository(Incident)
+    private readonly incidents: Repository<Incident>,
     @InjectRepository(Device) private readonly devices: Repository<Device>,
-    @InjectRepository(WeatherObservation) private readonly weather: Repository<WeatherObservation>,
+    @InjectRepository(WeatherObservation)
+    private readonly weather: Repository<WeatherObservation>,
     @InjectRepository(Shelter) private readonly shelters: Repository<Shelter>,
-    @InjectRepository(Resource) private readonly resources: Repository<Resource>,
+    @InjectRepository(Resource)
+    private readonly resources: Repository<Resource>,
   ) {}
 
   async findAll() {
@@ -73,7 +78,13 @@ export class DistrictsService {
         where: { status: AlertStatus.ACTIVE, severity: AlertSeverity.HIGH },
       }),
       this.incidents.count({
-        where: { status: In([IncidentStatus.REPORTED, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS]) },
+        where: {
+          status: In([
+            IncidentStatus.REPORTED,
+            IncidentStatus.ACKNOWLEDGED,
+            IncidentStatus.IN_PROGRESS,
+          ]),
+        },
       }),
       this.devices.count({ where: { status: DeviceStatus.ONLINE } }),
       this.devices.count(),
@@ -99,7 +110,13 @@ export class DistrictsService {
         take: 5,
       }),
       this.incidents.find({
-        where: { status: In([IncidentStatus.REPORTED, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS]) },
+        where: {
+          status: In([
+            IncidentStatus.REPORTED,
+            IncidentStatus.ACKNOWLEDGED,
+            IncidentStatus.IN_PROGRESS,
+          ]),
+        },
         relations: { location: true },
         order: { reported_at: 'DESC' },
         take: 5,
@@ -107,9 +124,8 @@ export class DistrictsService {
     ]);
 
     // Calculate operational percentage
-    const operationalPercentage = totalDevices > 0 
-      ? Math.round((onlineDevices / totalDevices) * 100) 
-      : 0;
+    const operationalPercentage =
+      totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
 
     // Get risk breakdown
     const riskBreakdown = {
@@ -126,39 +142,44 @@ export class DistrictsService {
         current: '15 cm',
         trend: '+15 cm',
         time_period: 'Last 1h',
-        status: 'High'
+        status: 'High',
       },
       rainfall_intensity: {
         current: '72 mm/h',
         intensity: 'Heavy',
-        today_total: '72 mm'
+        today_total: '72 mm',
       },
       soil_moisture: {
         current: '89%',
-        status: 'Saturated'
+        status: 'Saturated',
       },
       ai_risk_prediction: {
         risk_level: '87%',
         severity: 'High',
         confidence: '96%',
-        trend: 'increasing'
+        trend: 'increasing',
       },
-      ai_insight: district.ai_risk_insight || 'Urban flooding risk increasing due to heavy rainfall and saturated soil conditions. Monitor low-lying areas closely.'
+      ai_insight:
+        district.ai_risk_insight ||
+        'Urban flooding risk increasing due to heavy rainfall and saturated soil conditions. Monitor low-lying areas closely.',
     };
 
     // Break down emergency resources by type
     const emergencyResources = {
-      hospitals: resources.filter(r => r.type === 'HOSPITAL').length || 32,
+      hospitals: resources.filter((r) => r.type === 'HOSPITAL').length || 32,
       shelters: shelterCount,
-      police_stations: resources.filter(r => r.type === 'POLICE').length || 9,
-      fire_stations: resources.filter(r => r.type === 'FIRE').length || 6,
+      police_stations: resources.filter((r) => r.type === 'POLICE').length || 9,
+      fire_stations: resources.filter((r) => r.type === 'FIRE').length || 6,
       helpline: '112',
-      ambulance: resources.filter(r => r.type === 'AMBULANCE').length || 24,
+      ambulance: resources.filter((r) => r.type === 'AMBULANCE').length || 24,
     };
 
     // Calculate risk trend (simulated based on timestamps)
-    const riskTrend = district.last_risk_assessment 
-      ? this.calculateRiskTrend(district.last_risk_assessment, district.overall_risk_percent)
+    const riskTrend = district.last_risk_assessment
+      ? this.calculateRiskTrend(
+          district.last_risk_assessment,
+          district.overall_risk_percent,
+        )
       : { trend: 'stable', change: 0 };
 
     return {
@@ -181,7 +202,7 @@ export class DistrictsService {
         total: activeAlerts,
         critical: criticalAlerts,
         high: highAlerts,
-        recent: recentAlerts.map(alert => ({
+        recent: recentAlerts.map((alert) => ({
           id: alert.id,
           title: alert.title,
           type: alert.type,
@@ -194,7 +215,7 @@ export class DistrictsService {
       },
       incidents: {
         total: activeIncidents,
-        recent: recentIncidents.map(incident => ({
+        recent: recentIncidents.map((incident) => ({
           id: incident.id,
           title: incident.title,
           type: incident.type,
@@ -211,17 +232,19 @@ export class DistrictsService {
         operational_percentage: operationalPercentage,
         crisis_mesh_intelligence: crisisMeshIntelligence,
       },
-      weather: latestWeather ? {
-        temperature_celsius: latestWeather.temperature_celsius,
-        humidity_percent: latestWeather.humidity_percent,
-        wind_speed_kmh: latestWeather.wind_speed_kmh,
-        precipitation_mm: latestWeather.precipitation_mm,
-        observation_time: latestWeather.observation_time,
-        source: latestWeather.source,
-        condition: this.getWeatherCondition(latestWeather),
-      } : null,
+      weather: latestWeather
+        ? {
+            temperature_celsius: latestWeather.temperature_celsius,
+            humidity_percent: latestWeather.humidity_percent,
+            wind_speed_kmh: latestWeather.wind_speed_kmh,
+            precipitation_mm: latestWeather.precipitation_mm,
+            observation_time: latestWeather.observation_time,
+            source: latestWeather.source,
+            condition: this.getWeatherCondition(latestWeather),
+          }
+        : null,
       risk_breakdown: riskBreakdown,
-      risk_assessments: riskAssessments.map(assessment => ({
+      risk_assessments: riskAssessments.map((assessment) => ({
         id: assessment.id,
         risk_type: assessment.risk_type,
         risk_level: assessment.risk_level,
@@ -237,10 +260,14 @@ export class DistrictsService {
     };
   }
 
-  private calculateRiskTrend(lastAssessment: Date, currentRisk: string): { trend: string; change: number } {
-    const hoursSinceAssessment = (Date.now() - lastAssessment.getTime()) / (1000 * 60 * 60);
+  private calculateRiskTrend(
+    lastAssessment: Date,
+    currentRisk: string,
+  ): { trend: string; change: number } {
+    const hoursSinceAssessment =
+      (Date.now() - lastAssessment.getTime()) / (1000 * 60 * 60);
     const risk = parseFloat(currentRisk);
-    
+
     // Simulate trend calculation based on time elapsed
     if (hoursSinceAssessment < 6) {
       return { trend: 'increasing', change: 12 };
@@ -279,7 +306,7 @@ export class DistrictsService {
       .limit(limit)
       .getRawMany();
 
-    return districts.map(d => ({
+    return districts.map((d) => ({
       state: d.state,
       risk_level: parseFloat(d.avg_risk).toFixed(1),
     }));

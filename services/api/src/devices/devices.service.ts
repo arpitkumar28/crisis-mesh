@@ -51,21 +51,33 @@ export class DevicesService {
       const savedDevice = await this.deviceRepository.save(device);
 
       // Log initial status
-      await this.recordStatusHistory(savedDevice.id, DeviceStatus.OFFLINE, 'Device created');
+      await this.recordStatusHistory(
+        savedDevice.id,
+        DeviceStatus.OFFLINE,
+        'Device created',
+      );
 
-      this.logger.log(`Created device: ${savedDevice.id} (${savedDevice.name})`);
+      this.logger.log(
+        `Created device: ${savedDevice.id} (${savedDevice.name})`,
+      );
 
       // Publish device creation event
-      await this.mqttService.publish('device/created', {
-        device_id: savedDevice.id,
-        name: savedDevice.name,
-        type: savedDevice.type,
-        timestamp: new Date().toISOString(),
-      }, { qos: 1 });
+      await this.mqttService.publish(
+        'device/created',
+        {
+          device_id: savedDevice.id,
+          name: savedDevice.name,
+          type: savedDevice.type,
+          timestamp: new Date().toISOString(),
+        },
+        { qos: 1 },
+      );
 
       return savedDevice;
     } catch (error: unknown) {
-      this.logger.error(`Error creating device: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error creating device: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -82,7 +94,9 @@ export class DevicesService {
         },
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching devices: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching devices: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -106,7 +120,9 @@ export class DevicesService {
 
       return device;
     } catch (error: unknown) {
-      this.logger.error(`Error fetching device ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching device ${id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -117,7 +133,9 @@ export class DevicesService {
         where: { serial_number: serialNumber },
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching device by serial number: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching device by serial number: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -128,7 +146,11 @@ export class DevicesService {
 
       // If status is changing, record history
       if (updateDto.status && updateDto.status !== device.status) {
-        await this.recordStatusHistory(id, updateDto.status, 'Status updated via API');
+        await this.recordStatusHistory(
+          id,
+          updateDto.status,
+          'Status updated via API',
+        );
       }
 
       Object.assign(device, updateDto);
@@ -137,15 +159,21 @@ export class DevicesService {
       this.logger.log(`Updated device: ${id}`);
 
       // Publish device update event
-      await this.mqttService.publish(`device/${id}/updated`, {
-        device_id: id,
-        updates: updateDto,
-        timestamp: new Date().toISOString(),
-      }, { qos: 1 });
+      await this.mqttService.publish(
+        `device/${id}/updated`,
+        {
+          device_id: id,
+          updates: updateDto,
+          timestamp: new Date().toISOString(),
+        },
+        { qos: 1 },
+      );
 
       return updatedDevice;
     } catch (error: unknown) {
-      this.logger.error(`Error updating device ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error updating device ${id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -158,17 +186,27 @@ export class DevicesService {
       this.logger.log(`Deleted device: ${id}`);
 
       // Publish device deletion event
-      await this.mqttService.publish('device/deleted', {
-        device_id: id,
-        timestamp: new Date().toISOString(),
-      }, { qos: 1 });
+      await this.mqttService.publish(
+        'device/deleted',
+        {
+          device_id: id,
+          timestamp: new Date().toISOString(),
+        },
+        { qos: 1 },
+      );
     } catch (error: unknown) {
-      this.logger.error(`Error deleting device ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error deleting device ${id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  async updateDeviceStatus(id: string, status: DeviceStatus, metadata?: { battery_level?: number; signal_strength?: number }): Promise<Device> {
+  async updateDeviceStatus(
+    id: string,
+    status: DeviceStatus,
+    metadata?: { battery_level?: number; signal_strength?: number },
+  ): Promise<Device> {
     try {
       const device = await this.getDeviceById(id);
 
@@ -186,19 +224,30 @@ export class DevicesService {
       await this.deviceRepository.save(device);
 
       // Record status change
-      await this.recordStatusHistory(id, status, `Status changed from ${previousStatus} to ${status}`, `Device status updated`);
+      await this.recordStatusHistory(
+        id,
+        status,
+        `Status changed from ${previousStatus} to ${status}`,
+        `Device status updated`,
+      );
 
-      this.logger.log(`Device ${id} status changed: ${previousStatus} -> ${status}`);
+      this.logger.log(
+        `Device ${id} status changed: ${previousStatus} -> ${status}`,
+      );
 
       // Publish status change event
-      await this.mqttService.publish(`device/${id}/status`, {
-        device_id: id,
-        status: status,
-        previous_status: previousStatus,
-        battery_level: device.battery_level,
-        signal_strength: device.signal_strength,
-        timestamp: new Date().toISOString(),
-      }, { qos: 1 });
+      await this.mqttService.publish(
+        `device/${id}/status`,
+        {
+          device_id: id,
+          status: status,
+          previous_status: previousStatus,
+          battery_level: device.battery_level,
+          signal_strength: device.signal_strength,
+          timestamp: new Date().toISOString(),
+        },
+        { qos: 1 },
+      );
 
       // Broadcast WebSocket event for real-time updates
       this.webSocketService.broadcastDeviceStatusChanged({
@@ -211,7 +260,9 @@ export class DevicesService {
 
       return device;
     } catch (error: unknown) {
-      this.logger.error(`Error updating device status ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error updating device status ${id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -228,7 +279,9 @@ export class DevicesService {
         },
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching devices by status: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching devices by status: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -245,12 +298,17 @@ export class DevicesService {
         },
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching devices by type: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching devices by type: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  async getDeviceStatusHistory(deviceId: string, limit: number = 50): Promise<DeviceStatusHistory[]> {
+  async getDeviceStatusHistory(
+    deviceId: string,
+    limit: number = 50,
+  ): Promise<DeviceStatusHistory[]> {
     try {
       return await this.statusHistoryRepository.find({
         where: { device_id: deviceId },
@@ -260,7 +318,9 @@ export class DevicesService {
         take: limit,
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching device status history: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching device status history: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -277,7 +337,9 @@ export class DevicesService {
     try {
       return await this.deviceRepository.count();
     } catch (error: unknown) {
-      this.logger.error(`Error counting devices: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error counting devices: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -304,12 +366,19 @@ export class DevicesService {
 
       return result;
     } catch (error: unknown) {
-      this.logger.error(`Error counting devices by status: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error counting devices by status: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async recordStatusHistory(deviceId: string, status: DeviceStatus, reason: string, message?: string): Promise<void> {
+  private async recordStatusHistory(
+    deviceId: string,
+    status: DeviceStatus,
+    reason: string,
+    message?: string,
+  ): Promise<void> {
     try {
       const history = this.statusHistoryRepository.create({
         device_id: deviceId,
@@ -319,11 +388,22 @@ export class DevicesService {
 
       await this.statusHistoryRepository.save(history);
     } catch (error: unknown) {
-      this.logger.error(`Error recording status history: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error recording status history: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
-  async addSensorToDevice(deviceId: string, sensorData: { name: string; metric: string; unit: string; min_value?: number; max_value?: number }): Promise<Sensor> {
+  async addSensorToDevice(
+    deviceId: string,
+    sensorData: {
+      name: string;
+      metric: string;
+      unit: string;
+      min_value?: number;
+      max_value?: number;
+    },
+  ): Promise<Sensor> {
     try {
       const device = await this.getDeviceById(deviceId);
 
@@ -342,7 +422,9 @@ export class DevicesService {
 
       return savedSensor;
     } catch (error: unknown) {
-      this.logger.error(`Error adding sensor to device: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error adding sensor to device: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -356,7 +438,9 @@ export class DevicesService {
         },
       });
     } catch (error: unknown) {
-      this.logger.error(`Error fetching device sensors: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Error fetching device sensors: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }

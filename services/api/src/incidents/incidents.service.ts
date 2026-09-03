@@ -1,12 +1,22 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Incident, IncidentStatus, IncidentType } from '../entities/incident.entity';
+import {
+  Incident,
+  IncidentStatus,
+  IncidentType,
+} from '../entities/incident.entity';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
 import { IncidentUpdatedEvent } from '../websocket/dto/websocket-event.dto';
+import { UserRoleEnum } from '../entities/profile.entity';
 
 @Injectable()
 export class IncidentsService {
@@ -19,7 +29,10 @@ export class IncidentsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async create(createIncidentDto: CreateIncidentDto, userId: string): Promise<Incident> {
+  async create(
+    createIncidentDto: CreateIncidentDto,
+    userId: string,
+  ): Promise<Incident> {
     const incident = this.incidentRepository.create({
       ...createIncidentDto,
       reported_by: userId,
@@ -88,8 +101,12 @@ export class IncidentsService {
 
   async findActive(): Promise<Incident[]> {
     return this.incidentRepository.find({
-      where: { 
-        status: In([IncidentStatus.REPORTED, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS]),
+      where: {
+        status: In([
+          IncidentStatus.REPORTED,
+          IncidentStatus.ACKNOWLEDGED,
+          IncidentStatus.IN_PROGRESS,
+        ]),
       },
       relations: {
         location: true,
@@ -100,7 +117,7 @@ export class IncidentsService {
     });
   }
 
-  async findOne(id: string): Promise<Incident> {
+  async findOne(id: string, currentUser?: any): Promise<Incident> {
     const incident = await this.incidentRepository.findOne({
       where: { id },
       relations: {
@@ -114,17 +131,53 @@ export class IncidentsService {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
 
+    const roles = currentUser?.roles || [];
+    const isPrivileged =
+      roles.includes(UserRoleEnum.ADMIN) ||
+      roles.includes(UserRoleEnum.AUTHORITY) ||
+      roles.includes(UserRoleEnum.RESPONDER) ||
+      roles.includes(UserRoleEnum.ANALYST);
+
+    if (
+      currentUser &&
+      !isPrivileged &&
+      incident.reported_by !== currentUser.id
+    ) {
+      throw new ForbiddenException(
+        'You are not authorized to access this incident',
+      );
+    }
+
     return incident;
   }
 
-  async update(id: string, updateIncidentDto: UpdateIncidentDto, userId: string): Promise<Incident> {
-    const incident = await this.findOne(id);
+  async update(
+    id: string,
+    updateIncidentDto: UpdateIncidentDto,
+    currentUser: any,
+  ): Promise<Incident> {
+    const incident = await this.findOne(id, currentUser);
     const oldValues = { ...incident };
 
+    const roles = currentUser?.roles || [];
+    const isPrivileged =
+      roles.includes(UserRoleEnum.ADMIN) ||
+      roles.includes(UserRoleEnum.AUTHORITY) ||
+      roles.includes(UserRoleEnum.RESPONDER);
+
+    if (!isPrivileged && incident.reported_by !== currentUser.id) {
+      throw new ForbiddenException(
+        'You are not authorized to update this incident',
+      );
+    }
+
     Object.assign(incident, updateIncidentDto);
-    
+
     // Set resolved_at if status is being changed to RESOLVED
-    if (updateIncidentDto.status === IncidentStatus.RESOLVED && !incident.resolved_at) {
+    if (
+      updateIncidentDto.status === IncidentStatus.RESOLVED &&
+      !incident.resolved_at
+    ) {
       incident.resolved_at = new Date();
     }
 
@@ -141,7 +194,10 @@ export class IncidentsService {
     });
 
     // Broadcast WebSocket event for status changes
-    if (updateIncidentDto.status && updateIncidentDto.status !== oldValues.status) {
+    if (
+      updateIncidentDto.status &&
+      updateIncidentDto.status !== oldValues.status
+    ) {
       this.webSocketService.broadcast({
         type: 'incident.status_changed' as any,
         data: {
@@ -155,7 +211,7 @@ export class IncidentsService {
 
     // Log audit event
     await this.auditService.log({
-      user_id: userId,
+      user_id: currentUser.id,
       action: 'UPDATE',
       entity_type: 'INCIDENT',
       entity_id: id,
@@ -163,12 +219,15 @@ export class IncidentsService {
       new_values: updatedIncident,
     });
 
-    this.logger.log(`Incident updated: ${id} by user: ${userId}`);
+    this.logger.log(`Incident updated: ${id} by user: ${currentUser.id}`);
     return updatedIncident;
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const incident = await this.findOne(id);
+    const incident = await this.findOne(id, {
+      id: userId,
+      roles: [UserRoleEnum.ADMIN],
+    });
     await this.incidentRepository.remove(incident);
 
     // Log audit event
@@ -195,16 +254,23 @@ export class IncidentsService {
       .groupBy('incident.status')
       .getRawMany();
 
-    return result.reduce((acc, item) => {
-      acc[item.status] = parseInt(item.count);
-      return acc;
-    }, {} as Record<string, number>);
+    return result.reduce(
+      (acc, item) => {
+        acc[item.status] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 
   async getActiveIncidents(): Promise<Incident[]> {
     return this.incidentRepository.find({
-      where: { 
-        status: In([IncidentStatus.REPORTED, IncidentStatus.ACKNOWLEDGED, IncidentStatus.IN_PROGRESS]),
+      where: {
+        status: In([
+          IncidentStatus.REPORTED,
+          IncidentStatus.ACKNOWLEDGED,
+          IncidentStatus.IN_PROGRESS,
+        ]),
       },
       relations: {
         location: true,

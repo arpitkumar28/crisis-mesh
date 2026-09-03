@@ -66,7 +66,8 @@ export class PublicDistrictsController {
 
   @Get(':id/intelligence')
   async getDistrictIntelligence(@Param('id') id: string) {
-    const intelligence = await this.districtsService.getDistrictIntelligence(id);
+    const intelligence =
+      await this.districtsService.getDistrictIntelligence(id);
     return {
       success: true,
       message: 'District intelligence retrieved successfully',

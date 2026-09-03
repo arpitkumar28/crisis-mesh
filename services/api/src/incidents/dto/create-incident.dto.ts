@@ -1,4 +1,10 @@
-import { IsEnum, IsString, IsOptional, IsDateString, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsDateString,
+  MaxLength,
+} from 'class-validator';
 import { IncidentType, IncidentSeverity } from '../../entities/incident.entity';
 
 export class CreateIncidentDto {

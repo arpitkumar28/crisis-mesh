@@ -9,8 +9,48 @@ import { ResponseService } from './response.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ResponseController {
   constructor(private readonly response: ResponseService) {}
-  @Get('resources') @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST) resources() { return this.response.listResources(); }
-  @Get('resources/:id') @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST) resource(@Param('id') id: string) { return this.response.getResource(id); }
-  @Get('shelters') @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST) shelters() { return this.response.listShelters(); }
-  @Get('shelters/:id') @Roles(UserRoleEnum.CITIZEN, UserRoleEnum.RESPONDER, UserRoleEnum.AUTHORITY, UserRoleEnum.ADMIN, UserRoleEnum.ANALYST) shelter(@Param('id') id: string) { return this.response.getShelter(id); }
+  @Get('resources')
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  resources() {
+    return this.response.listResources();
+  }
+  @Get('resources/:id')
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  resource(@Param('id') id: string) {
+    return this.response.getResource(id);
+  }
+  @Get('shelters')
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  shelters() {
+    return this.response.listShelters();
+  }
+  @Get('shelters/:id')
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  shelter(@Param('id') id: string) {
+    return this.response.getShelter(id);
+  }
 }

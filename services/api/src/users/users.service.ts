@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile, UserRoleEnum } from '../entities/profile.entity';
@@ -31,7 +36,10 @@ export class UsersService {
     private readonly userRoleRepository: Repository<UserRole>,
   ) {}
 
-  async createProfile(createDto: CreateProfileDto, defaultRole: UserRoleEnum = UserRoleEnum.CITIZEN): Promise<Profile> {
+  async createProfile(
+    createDto: CreateProfileDto,
+    defaultRole: UserRoleEnum = UserRoleEnum.CITIZEN,
+  ): Promise<Profile> {
     // Check if email already exists
     const existingProfile = await this.profileRepository.findOne({
       where: { email: createDto.email },
@@ -70,7 +78,10 @@ export class UsersService {
     });
   }
 
-  async updateProfile(id: string, updateDto: UpdateProfileDto): Promise<Profile> {
+  async updateProfile(
+    id: string,
+    updateDto: UpdateProfileDto,
+  ): Promise<Profile> {
     const profile = await this.findById(id);
     if (!profile) {
       throw new NotFoundException('Profile not found');
@@ -90,7 +101,11 @@ export class UsersService {
     await this.profileRepository.save(profile);
   }
 
-  async assignRole(profileId: string, roleName: UserRoleEnum, assignedBy?: string): Promise<UserRole> {
+  async assignRole(
+    profileId: string,
+    roleName: UserRoleEnum,
+    assignedBy?: string,
+  ): Promise<UserRole> {
     // Find or create role
     let role = await this.roleRepository.findOne({
       where: { name: roleName },
@@ -147,7 +162,7 @@ export class UsersService {
       },
     });
 
-    return userRoles.map(ur => ur.role.name);
+    return userRoles.map((ur) => ur.role.name);
   }
 
   async hasRole(profileId: string, roleName: UserRoleEnum): Promise<boolean> {

@@ -7,5 +7,12 @@ import { InformationController } from './information.controller';
 import { InformationService } from './information.service';
 import { NewsService } from './news.service';
 
-@Module({ imports: [TypeOrmModule.forFeature([WeatherObservation, NewsArticle, Notification])], controllers: [InformationController], providers: [InformationService, NewsService], exports: [NewsService] })
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([WeatherObservation, NewsArticle, Notification]),
+  ],
+  controllers: [InformationController],
+  providers: [InformationService, NewsService],
+  exports: [NewsService],
+})
 export class InformationModule {}

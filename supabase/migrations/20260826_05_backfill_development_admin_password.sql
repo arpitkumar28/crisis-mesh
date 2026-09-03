@@ -1,7 +1,7 @@
--- Backfill the development admin password for databases where the seed ran
--- before password-based authentication was added.
+-- Development credentials must be provisioned outside source control.
+-- This migration intentionally clears any committed hash instead of storing one.
 
 UPDATE profiles
-SET password_hash = '$2b$10$aXA.xr7Gt9icDZ37XRlvQOiFOJZxOfd7GXZJCif1AKOF47LuxqvZ2'
+SET password_hash = NULL
 WHERE email = 'admin@crisismesh.dev'
-  AND password_hash IS NULL;
+  AND password_hash IS NOT NULL;

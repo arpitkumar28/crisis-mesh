@@ -22,10 +22,10 @@ INSERT INTO countries (name, iso_code) VALUES ('India', 'IN');
 -- SEED DEFAULT ADMIN USER (PROVISIONING ONLY)
 -- ============================================================================
 
--- NOTE: Password hash should be generated uniquely for the deployment.
--- This user is for initial system setup only.
+-- NOTE: do not store deployment credentials in source control.
+-- Create the initial admin user without a committed password hash.
 INSERT INTO profiles (email, name, phone, password_hash) VALUES
-('admin@crisismesh.gov.in', 'System Administrator', '+910000000000', '$2b$10$aXA.xr7Gt9icDZ37XRlvQOiFOJZxOfd7GXZJCif1AKOF47LuxqvZ2');
+('admin@crisismesh.gov.in', 'System Administrator', '+910000000000', NULL);
 
 INSERT INTO user_roles (profile_id, role_id, assigned_by)
 SELECT 

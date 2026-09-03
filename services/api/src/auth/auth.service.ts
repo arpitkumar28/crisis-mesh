@@ -2,7 +2,12 @@
  * Authentication Service
  * Provides authentication operations using the configured auth provider
  */
-import { Injectable, Logger, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtAuthProvider } from './providers/jwt.provider';
 import { UsersService } from '../users/users.service';
 import { AuditService } from '../audit/audit.service';
@@ -31,19 +36,28 @@ export class AuthService {
     private readonly auditService: AuditService,
   ) {}
 
-  async register(registerDto: RegisterDto, ipAddress?: string, userAgent?: string): Promise<AuthResult> {
+  async register(
+    registerDto: RegisterDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResult> {
     try {
       // Hash password
-      const passwordHash = await this.authProvider.hashPassword(registerDto.password);
+      const passwordHash = await this.authProvider.hashPassword(
+        registerDto.password,
+      );
 
       // Create profile with hashed password
-      const profile = await this.usersService.createProfile({
-        email: registerDto.email,
-        password_hash: passwordHash,
-        name: registerDto.name,
-        phone: registerDto.phone,
-        location_id: registerDto.location_id,
-      }, UserRoleEnum.CITIZEN);
+      const profile = await this.usersService.createProfile(
+        {
+          email: registerDto.email,
+          password_hash: passwordHash,
+          name: registerDto.name,
+          phone: registerDto.phone,
+          location_id: registerDto.location_id,
+        },
+        UserRoleEnum.CITIZEN,
+      );
 
       // Get user roles
       const roles = await this.usersService.getUserRoles(profile.id);
@@ -56,11 +70,23 @@ export class AuthService {
         roles: roles,
       };
 
-      const access_token = await this.authProvider.generateToken(userProfile);
-      const refresh_token = await this.authProvider.generateToken(userProfile);
+      const access_token = await this.authProvider.generateToken(
+        userProfile,
+        'access',
+      );
+      const refresh_token = await this.authProvider.generateToken(
+        userProfile,
+        'refresh',
+      );
 
       // Audit log
-      await this.auditService.logAuthentication(profile.id, profile.email, 'REGISTER', ipAddress, userAgent);
+      await this.auditService.logAuthentication(
+        profile.id,
+        profile.email,
+        'REGISTER',
+        ipAddress,
+        userAgent,
+      );
 
       this.logger.log(`User registered successfully: ${profile.email}`);
 
@@ -83,18 +109,34 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string): Promise<AuthResult> {
+  async login(
+    loginDto: LoginDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResult> {
     try {
       const userProfile = await this.authProvider.validateCredentials(
         loginDto.email,
         loginDto.password,
       );
 
-      const access_token = await this.authProvider.generateToken(userProfile);
-      const refresh_token = await this.authProvider.generateToken(userProfile);
+      const access_token = await this.authProvider.generateToken(
+        userProfile,
+        'access',
+      );
+      const refresh_token = await this.authProvider.generateToken(
+        userProfile,
+        'refresh',
+      );
 
       // Audit log
-      await this.auditService.logAuthentication(userProfile.id, userProfile.email, 'LOGIN', ipAddress, userAgent);
+      await this.auditService.logAuthentication(
+        userProfile.id,
+        userProfile.email,
+        'LOGIN',
+        ipAddress,
+        userAgent,
+      );
 
       this.logger.log(`User logged in successfully: ${userProfile.email}`);
 
@@ -116,10 +158,10 @@ export class AuthService {
 
   async refreshToken(refreshToken: string): Promise<AuthResult> {
     try {
-      const newAccessToken = await this.authProvider.refreshToken(refreshToken);
-
-      // Validate the new token to get user info
-      const payload = await this.authProvider.validateToken(newAccessToken);
+      const payload = await this.authProvider.validateToken(
+        refreshToken,
+        'refresh',
+      );
 
       const userProfile = {
         id: payload.sub,
@@ -128,13 +170,19 @@ export class AuthService {
         roles: payload.roles || [],
       };
 
-      const newRefreshToken = await this.authProvider.generateToken(userProfile);
+      const access_token = await this.authProvider.generateToken(
+        userProfile,
+        'access',
+      );
+      const refresh_token = await this.authProvider.refreshToken(refreshToken);
 
-      this.logger.log(`Token refreshed successfully for user: ${userProfile.email}`);
+      this.logger.log(
+        `Token refreshed successfully for user: ${userProfile.email}`,
+      );
 
       return {
-        access_token: newAccessToken,
-        refresh_token: newRefreshToken,
+        access_token,
+        refresh_token,
         user: userProfile,
       };
     } catch (error) {
@@ -143,11 +191,22 @@ export class AuthService {
     }
   }
 
-  async assignRole(userId: string, role: UserRoleEnum, assignedBy: string): Promise<void> {
+  async assignRole(
+    userId: string,
+    role: UserRoleEnum,
+    assignedBy: string,
+  ): Promise<void> {
     try {
       await this.usersService.assignRole(userId, role, assignedBy);
-      await this.auditService.logAuthorization(assignedBy, 'ASSIGN_ROLE', `User:${userId}`, undefined);
-      this.logger.log(`Role ${role} assigned to user ${userId} by ${assignedBy}`);
+      await this.auditService.logAuthorization(
+        assignedBy,
+        'ASSIGN_ROLE',
+        `User:${userId}`,
+        undefined,
+      );
+      this.logger.log(
+        `Role ${role} assigned to user ${userId} by ${assignedBy}`,
+      );
     } catch (error) {
       this.logger.error(`Role assignment failed: ${error.message}`);
       throw error;
@@ -168,8 +227,8 @@ export class AuthService {
     return this.authProvider.validateCredentials(email, password);
   }
 
-  async generateToken(user: any) {
-    return this.authProvider.generateToken(user);
+  async generateToken(user: any, tokenType?: 'access' | 'refresh') {
+    return this.authProvider.generateToken(user, tokenType);
   }
 
   async validateToken(token: string) {

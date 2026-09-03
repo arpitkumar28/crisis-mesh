@@ -1,5 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { WebSocketEventType, WebSocketEvent, TelemetryUpdatedEvent, DeviceStatusChangedEvent, AlertCreatedEvent, AlertUpdatedEvent, IncidentCreatedEvent, IncidentUpdatedEvent } from './dto/websocket-event.dto';
+import {
+  WebSocketEventType,
+  WebSocketEvent,
+  TelemetryUpdatedEvent,
+  DeviceStatusChangedEvent,
+  AlertCreatedEvent,
+  AlertUpdatedEvent,
+  IncidentCreatedEvent,
+  IncidentUpdatedEvent,
+} from './dto/websocket-event.dto';
 
 @Injectable()
 export class WebSocketService {
@@ -11,15 +20,17 @@ export class WebSocketService {
 
   registerClient(clientId: string, socket: any, userId?: string) {
     this.connectedClients.set(clientId, socket);
-    
+
     if (userId) {
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, new Set());
       }
       this.userSockets.get(userId)!.add(clientId);
     }
-    
-    this.logger.debug(`Client registered: ${clientId}${userId ? ` for user: ${userId}` : ''}`);
+
+    this.logger.debug(
+      `Client registered: ${clientId}${userId ? ` for user: ${userId}` : ''}`,
+    );
   }
 
   unregisterClient(clientId: string) {
@@ -35,7 +46,7 @@ export class WebSocketService {
           break;
         }
       }
-      
+
       this.connectedClients.delete(clientId);
       this.logger.debug(`Client unregistered: ${clientId}`);
     }
@@ -43,13 +54,17 @@ export class WebSocketService {
 
   broadcast(event: WebSocketEvent) {
     const eventData = JSON.stringify(event);
-    this.logger.debug(`Broadcasting event: ${event.type} to ${this.connectedClients.size} clients`);
-    
+    this.logger.debug(
+      `Broadcasting event: ${event.type} to ${this.connectedClients.size} clients`,
+    );
+
     for (const [clientId, socket] of this.connectedClients.entries()) {
       try {
         socket.emit(event.type, event.data);
       } catch (error) {
-        this.logger.error(`Failed to send event to client ${clientId}: ${error.message}`);
+        this.logger.error(
+          `Failed to send event to client ${clientId}: ${error.message}`,
+        );
       }
     }
   }
@@ -62,7 +77,9 @@ export class WebSocketService {
     }
 
     const eventData = JSON.stringify(event);
-    this.logger.debug(`Broadcasting event: ${event.type} to user: ${userId} (${clientIds.size} clients)`);
+    this.logger.debug(
+      `Broadcasting event: ${event.type} to user: ${userId} (${clientIds.size} clients)`,
+    );
 
     for (const clientId of clientIds) {
       const socket = this.connectedClients.get(clientId);
@@ -70,7 +87,9 @@ export class WebSocketService {
         try {
           socket.emit(event.type, event.data);
         } catch (error) {
-          this.logger.error(`Failed to send event to client ${clientId}: ${error.message}`);
+          this.logger.error(
+            `Failed to send event to client ${clientId}: ${error.message}`,
+          );
         }
       }
     }
@@ -78,7 +97,9 @@ export class WebSocketService {
 
   broadcastToRole(role: string, event: WebSocketEvent) {
     // This would require user role lookup - implement when needed
-    this.logger.debug(`Broadcasting to role: ${role} - requires role integration`);
+    this.logger.debug(
+      `Broadcasting to role: ${role} - requires role integration`,
+    );
   }
 
   // Specific event broadcast methods

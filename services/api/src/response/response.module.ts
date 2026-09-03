@@ -6,5 +6,9 @@ import { Shelter } from '../entities/shelter.entity';
 import { ResponseController } from './response.controller';
 import { ResponseService } from './response.service';
 
-@Module({ imports: [AuthModule, TypeOrmModule.forFeature([Resource, Shelter])], controllers: [ResponseController], providers: [ResponseService] })
+@Module({
+  imports: [AuthModule, TypeOrmModule.forFeature([Resource, Shelter])],
+  controllers: [ResponseController],
+  providers: [ResponseService],
+})
 export class ResponseModule {}

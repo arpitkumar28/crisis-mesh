@@ -36,11 +36,6 @@ export const AUTH_PROVIDER = 'AUTH_PROVIDER';
     JwtAuthGuard,
     RolesGuard,
   ],
-  exports: [
-    AuthService,
-    JwtAuthProvider,
-    JwtAuthGuard,
-    RolesGuard,
-  ],
+  exports: [AuthService, JwtAuthProvider, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

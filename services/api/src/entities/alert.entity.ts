@@ -86,10 +86,18 @@ export class Alert {
   @Column({ length: 100, nullable: true })
   source: string;
 
-  @Column({ name: 'issued_at', type: 'timestamp with time zone', default: () => 'NOW()' })
+  @Column({
+    name: 'issued_at',
+    type: 'timestamp with time zone',
+    default: () => 'NOW()',
+  })
   issued_at: Date;
 
-  @Column({ name: 'expires_at', type: 'timestamp with time zone', nullable: true })
+  @Column({
+    name: 'expires_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
   expires_at: Date;
 
   @Column({

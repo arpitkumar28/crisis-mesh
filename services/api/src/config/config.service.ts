@@ -51,8 +51,7 @@ export class ConfigService {
   }
 
   get corsOrigin(): string[] {
-    const configuredOrigins = process.env.CORS_ORIGIN
-      ?.split(',')
+    const configuredOrigins = process.env.CORS_ORIGIN?.split(',')
       .map((origin) => origin.trim())
       .filter(Boolean);
 
@@ -88,7 +87,9 @@ export class ConfigService {
     const value = process.env.MQTT_BROKER_URL;
 
     if (this.isProduction && !value) {
-      throw new Error('MQTT_BROKER_URL environment variable is required in production');
+      throw new Error(
+        'MQTT_BROKER_URL environment variable is required in production',
+      );
     }
 
     return value || 'mqtt://localhost:1883';
