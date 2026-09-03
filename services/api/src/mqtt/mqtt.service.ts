@@ -34,6 +34,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private async connect(): Promise<void> {
     return new Promise((resolve) => {
       const brokerUrl = this.configService.mqttBrokerUrl;
+      const broker = new URL(brokerUrl);
+      const username = process.env.MQTT_USERNAME || '';
+      const password = process.env.MQTT_PASSWORD || '';
+
+      // Deliberately redact the broker URL and password. This establishes what
+      // the production process received without exposing credentials in logs.
+      this.logger.log(
+        `MQTT connection configuration: hostname=${broker.hostname}, port=${broker.port}, protocol=${broker.protocol.replace(':', '')}, username=${JSON.stringify(username)}, password_present=${password.length > 0}, password_length=${password.length}, tls_certificate_verification_enabled=true`,
+      );
 
       this.client = mqtt.connect(brokerUrl, {
         clientId: 'crisis-mesh-backend',
@@ -43,7 +52,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('connect', () => {
-        this.logger.log(`✅ Connected to MQTT broker: ${brokerUrl}`);
+        this.logger.log(
+          `✅ Connected to MQTT broker: ${broker.protocol}//${broker.host}`,
+        );
         for (const pattern of this.messageHandlers.keys()) {
           this.client!.subscribe(pattern, { qos: 1 as any }, (error) => {
             if (error) {
