@@ -29,24 +29,37 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
 
     return next.handle().pipe(
       map((data) => {
+        const sanitizedData = this.removeSensitiveFields(data);
         // If response already has the standard format, return as-is
         if (
-          data &&
-          typeof data === 'object' &&
-          'success' in data &&
-          'request_id' in data
+          sanitizedData &&
+          typeof sanitizedData === 'object' &&
+          'success' in sanitizedData &&
+          'request_id' in sanitizedData
         ) {
-          return data;
+          return sanitizedData;
         }
 
         // Transform to standard format
         return {
           success: true,
-          message: data?.message || 'Request successful',
-          data: data?.data !== undefined ? data.data : data,
+          message: sanitizedData?.message || 'Request successful',
+          data: sanitizedData?.data !== undefined ? sanitizedData.data : sanitizedData,
           request_id: requestId,
         };
       }),
     );
+  }
+
+  private removeSensitiveFields(value: any): any {
+    if (Array.isArray(value)) return value.map((item) => this.removeSensitiveFields(item));
+    if (!value || typeof value !== 'object') return value;
+
+    const sanitized: Record<string, any> = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (['password_hash', 'jwt_secret', 'mqtt_password', 'api_key', 'service_role_key', 'database_url'].includes(key.toLowerCase())) continue;
+      sanitized[key] = this.removeSensitiveFields(child);
+    }
+    return sanitized;
   }
 }

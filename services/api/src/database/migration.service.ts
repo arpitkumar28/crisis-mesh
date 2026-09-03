@@ -70,6 +70,7 @@ export class MigrationService {
       .readdirSync(this.migrationsPath)
       .filter((file) => file.endsWith('.sql'))
       .filter((file) => file !== 'README.md')
+      .filter((file) => file !== '00_setup_initial_schema.sql')
       .sort();
 
     return files;

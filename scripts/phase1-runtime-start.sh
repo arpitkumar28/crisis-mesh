@@ -17,6 +17,11 @@ wait_for_container_health() {
   local service="$1" container_id health
   for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
     container_id="$(docker compose ps -q "$service")"
+    [[ -n "$container_id" ]] || {
+      printf 'Waiting for %s container (%s/%s)\n' "$service" "$attempt" "$MAX_ATTEMPTS"
+      sleep 1
+      continue
+    }
     health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$container_id" 2>/dev/null || true)"
     [[ "$health" == "healthy" ]] && return 0
     if [[ "$health" == "unhealthy" || "$health" == "exited" ]]; then
@@ -48,15 +53,28 @@ wait_for_http() {
   return 1
 }
 
-wait_for_container_health postgres || { echo "RUNTIME = BLOCKED: PostgreSQL did not become healthy" >&2; exit 1; }
-wait_for_container_health mqtt || { echo "RUNTIME = BLOCKED: MQTT container did not become healthy" >&2; exit 1; }
-wait_for_mqtt || { echo "RUNTIME = BLOCKED: MQTT is not reachable on localhost:1883" >&2; exit 1; }
+wait_for_container_health postgres || {
+  docker compose logs --tail=80 postgres >&2 || true
+  echo "RUNTIME = BLOCKED: PostgreSQL did not become healthy" >&2
+  exit 1
+}
+wait_for_container_health mqtt || {
+  docker compose logs --tail=80 mqtt >&2 || true
+  echo "RUNTIME = BLOCKED: MQTT container did not become healthy" >&2
+  exit 1
+}
+wait_for_mqtt || {
+  docker compose logs --tail=80 mqtt >&2 || true
+  echo "RUNTIME = BLOCKED: MQTT is not reachable on localhost:1883" >&2
+  exit 1
+}
 
 if [[ -z "${JWT_SECRET:-}" ]]; then
   echo "RUNTIME = BLOCKED: JWT_SECRET must be provided outside source control" >&2
   exit 1
 fi
 export DATABASE_URL="${PHASE1_DATABASE_URL:-postgresql://crisis_mesh:crisis_mesh_password@localhost:5432/crisis_mesh}"
+export MQTT_BROKER_URL="${PHASE1_MQTT_BROKER_URL:-mqtt://localhost:1883}"
 echo "Applying tracked database migrations..."
 (cd services/api && npm run migration:run)
 

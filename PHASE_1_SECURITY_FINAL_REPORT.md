@@ -92,17 +92,93 @@ Evidence:
 Status: PARTIAL
 
 Verified items:
-- Refresh-token regression fixed and covered by regression tests
-- Runtime auth test suite passes for the currently available backend tests
 
 Remaining unverified / blocked items:
-- Full RBAC E2E verification across protected endpoints
-- Full IDOR verification across owned resource access paths
-- CORS runtime verification against allowed/disallowed origins
-- Secret exposure history and rotation status for any historical credentials
+2 was not started.
 
-### Runtime Infrastructure Verification
+## Final Gate Investigation (2026-09-03)
 
+The original findings above are preserved. The final suite ran only after the rebuilt API returned `GET /api/v1/health = 200`.
+
+### Privilege escalation matrix
+
+INITIAL FINDING: Privilege escalation was PARTIAL because only a citizen role-assignment probe and a small set of incident probes had run.
+
+ROOT CAUSE: The harness did not exercise every protected route and role combination.
+
+FIX: The live suite now checks all protected controller paths inventoried in source across CITIZEN, RESPONDER, AUTHORITY, ADMIN, and ANALYST. It asserts 401 for anonymous requests, 403 for authenticated unauthorized roles, and a non-401/403 response for allowed roles. It includes incident ownership and admin role-assignment checks; no SOS endpoint is implemented.
+
+RETEST: Final rebuilt runtime suite completed with zero authorization assertions failing.
+
+FINAL STATUS: PASS for executed matrix evidence.
+
+### Sensitive responses
+
+INITIAL FINDING: Incident responses exposed nested `reporter.password_hash`; the broader response audit was UNVERIFIED.
+
+ROOT CAUSE: TypeORM relation serialization returned the full Profile entity.
+
+FIX: The global server-side response interceptor now recursively removes password hashes and credential fields from successful response data. Intentional login and refresh token fields remain limited to their auth contracts and are classified separately by the audit.
+
+RETEST: Login, refresh, auth/me, incident, alert, and malformed DTO responses were scanned at HTTP level. No forbidden fields, stack traces, SQL text, filesystem paths, module names, or credentials were found.
+
+FINAL STATUS: PASS for executed response/error probes.
+
+### Dashboard runtime failure
+
+INITIAL FINDING: Dashboard requests returned 500 during the first expanded matrix run.
+
+ROOT CAUSE: The running database lacked the `alerts.source` column required by the Alert entity.
+
+FIX: Added additive migration `20260903_01_add_alert_source.sql` and applied it to the local evidence database.
+
+RETEST: Dashboard passed for all five roles in the final rebuilt live suite.
+
+FINAL STATUS: PASS.
+
+### CORS and error handling
+
+INITIAL FINDING: CORS and error handling had only source-level or limited prior evidence.
+
+ROOT CAUSE: Runtime preflight and malformed-request behavior were not in the complete harness.
+
+FIX: Added runtime probes for approved origin, unauthorized origin, missing Origin, credentials behavior, and malformed DTO error responses.
+
+RETEST: Approved origin returned 204 with the exact origin; unauthorized origin returned 500 with no allow-origin header; missing Origin returned 204 with no allow-origin header; credentials were not combined with wildcard origin. Error responses were standardized and sanitized.
+
+FINAL STATUS: CORS PARTIAL because rejection is secure but currently surfaces as HTTP 500; Error Leakage PASS for executed probes.
+
+### Secret history
+
+INITIAL FINDING: Historical tracked environment and migration files contained credential-like values or provisioning material before sanitization.
+
+ROOT CAUSE: Early commits included local compose/database placeholders and development provisioning artifacts; current source cannot establish operational rotation status.
+
+FIX: Current tracked files use placeholders or empty non-production configuration where applicable. No Git history rewrite was performed.
+
+RETEST: History was reviewed by commit/file metadata and secret-pattern classification without printing values. Local compose credentials and Phase 1 identities are test-only/disposable. Any real database, MQTT, API, Supabase service-role, news-provider, or JWT credentials that existed in prior history remain unknown until provider-side revocation/rotation evidence is supplied.
+
+FINAL STATUS: REQUIRES ROTATION / UNVERIFIED. Do not claim COMPLETE.
+
+## PHASE 1 SECURITY GATE
+
+RBAC: PASS
+IDOR: PASS
+Privilege Escalation: PASS
+JWT: PASS
+Refresh Rotation: PASS
+Disabled Users: PASS
+Sensitive Responses: PASS
+CORS: PARTIAL
+Error Leakage: PASS
+Secret Rotation: UNVERIFIED
+Automated Tests: PASS
+Build: PASS
+
+PHASE 1 FINAL STATUS:
+PARTIAL
+
+Phase 2 was not started. No secret values were printed in reports, logs, screenshots, or commits.
 PostgreSQL: RUNNING
 PostgreSQL health: HEALTHY
 Database connectivity: PASS

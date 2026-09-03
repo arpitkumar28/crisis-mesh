@@ -13,6 +13,7 @@ if (!password) { console.error('RUNTIME = BLOCKED: set PHASE1_TEST_PASSWORD in t
 const identities = [['CITIZEN_A', 'CITIZEN'], ['CITIZEN_B', 'CITIZEN'], ['RESPONDER', 'RESPONDER'], ['AUTHORITY', 'AUTHORITY'], ['ADMIN', 'ADMIN'], ['ANALYST', 'ANALYST']];
 const marker = 'phase1-test';
 const evidence = [];
+const auditEvidence = [];
 const tokenByIdentity = new Map();
 const userByIdentity = new Map();
 const citizenIdentity = 'CITIZEN_A';
@@ -28,6 +29,84 @@ function record(endpoint, identity, expected, actual) {
   const result = actual === expected ? 'PASS' : 'FAIL';
   evidence.push({ timestamp: new Date().toISOString(), endpoint, identity, expected, actual, result });
   if (result === 'FAIL') console.error(`${result} ${identity} ${endpoint}: expected ${expected}, got ${actual}`);
+}
+function recordAccess(method, endpoint, role, allowed, actual) {
+  const expected = allowed ? 'ALLOW (not 401/403)' : role === 'anonymous' ? 401 : 403;
+  const passed = allowed ? actual !== 401 && actual !== 403 : actual === expected;
+  const result = passed ? 'PASS' : 'FAIL';
+  evidence.push({ timestamp: new Date().toISOString(), endpoint: `${method} ${endpoint}`, identity: role, expected, actual, result });
+  if (!passed) console.error(`${result} ${role} ${method} ${endpoint}: expected ${expected}, got ${actual}`);
+}
+function auditResponse(label, response, allowedFields = []) {
+  const forbidden = new Set(['password', 'password_hash', 'reset_token', 'refresh_token', 'access_token', 'jwt_secret', 'mqtt_password', 'api_key', 'service_role_key', 'database_url']);
+  for (const field of allowedFields) forbidden.delete(field);
+  const found = [];
+  function visit(value, objectPath = '$') {
+    if (!value || typeof value !== 'object') return;
+    for (const [key, child] of Object.entries(value)) {
+      if (forbidden.has(key.toLowerCase())) found.push(`${objectPath}.${key}`);
+      visit(child, `${objectPath}.${key}`);
+    }
+  }
+  visit(response.json);
+  const passed = found.length === 0;
+  auditEvidence.push({ label, status: response.status, result: passed ? 'PASS' : 'FAIL', fields: found });
+  if (!passed) console.error(`FAIL sensitive response ${label}: ${found.join(', ')}`);
+}
+
+async function runAuthorizationMatrix() {
+  const allRoles = ['CITIZEN', 'RESPONDER', 'AUTHORITY', 'ADMIN', 'ANALYST'];
+  const identityForRole = { CITIZEN: 'CITIZEN_A', RESPONDER: 'RESPONDER', AUTHORITY: 'AUTHORITY', ADMIN: 'ADMIN', ANALYST: 'ANALYST' };
+  const matrix = [
+    ['GET', '/api/v1/incidents', allRoles],
+    ['GET', '/api/v1/incidents/status/ACTIVE', allRoles],
+    ['GET', '/api/v1/incidents/type/OTHER', allRoles],
+    ['GET', '/api/v1/incidents/active', allRoles],
+    ['GET', '/api/v1/incidents/count', allRoles],
+    ['GET', '/api/v1/incidents/count/by-status', allRoles],
+    ['GET', '/api/v1/incidents/00000000-0000-0000-0000-000000000000', allRoles],
+    ['GET', '/api/v1/alerts', allRoles],
+    ['GET', '/api/v1/alerts/status/ACTIVE', allRoles],
+    ['GET', '/api/v1/alerts/severity/HIGH', allRoles],
+    ['GET', '/api/v1/alerts/active', allRoles],
+    ['GET', '/api/v1/alerts/critical', allRoles],
+    ['GET', '/api/v1/alerts/count', allRoles],
+    ['GET', '/api/v1/alerts/count/by-status', allRoles],
+    ['GET', '/api/v1/alerts/filter', allRoles],
+    ['GET', '/api/v1/alerts/sources', allRoles],
+    ['GET', '/api/v1/alerts/types', allRoles],
+    ['GET', '/api/v1/alerts/00000000-0000-0000-0000-000000000000', allRoles],
+    ['GET', '/api/v1/devices', allRoles],
+    ['GET', '/api/v1/devices/count', allRoles],
+    ['GET', '/api/v1/devices/count/by-status', allRoles],
+    ['GET', '/api/v1/devices/online', allRoles],
+    ['GET', '/api/v1/devices/offline', allRoles],
+    ['GET', '/api/v1/devices/00000000-0000-0000-0000-000000000000', allRoles],
+    ['GET', '/api/v1/districts', allRoles],
+    ['GET', '/api/v1/risk', allRoles],
+    ['GET', '/api/v1/risk/high-risk', allRoles],
+    ['GET', '/api/v1/risk/summary', allRoles],
+    ['GET', '/api/v1/weather', allRoles],
+    ['GET', '/api/v1/weather/latest', allRoles],
+    ['GET', '/api/v1/resources', allRoles],
+    ['GET', '/api/v1/shelters', allRoles],
+    ['GET', '/api/v1/dashboard/overview', allRoles],
+    ['GET', '/api/v1/notifications', allRoles],
+    ['POST', '/api/v1/alerts', ['RESPONDER', 'AUTHORITY', 'ADMIN']],
+    ['PUT', '/api/v1/incidents/00000000-0000-0000-0000-000000000000', ['RESPONDER', 'AUTHORITY', 'ADMIN']],
+    ['DELETE', '/api/v1/incidents/00000000-0000-0000-0000-000000000000', ['ADMIN']],
+    ['PUT', '/api/v1/alerts/00000000-0000-0000-0000-000000000000', ['RESPONDER', 'AUTHORITY', 'ADMIN']],
+    ['DELETE', '/api/v1/alerts/00000000-0000-0000-0000-000000000000', ['ADMIN']],
+    ['POST', '/api/v1/auth/admin/assign-role', ['ADMIN']],
+    ['POST', '/api/v1/auth/admin/remove-role', ['ADMIN']],
+  ];
+  for (const [method, endpoint, allowedRoles] of matrix) {
+    for (const role of allRoles) {
+      const body = method === 'POST' && endpoint.includes('/alerts') ? { type: 'PUBLIC', severity: 'LOW', title: `${marker}:matrix-alert` } : method === 'POST' ? { userId: userByIdentity.get('CITIZEN_B').id, role: 'CITIZEN' } : method === 'PUT' ? { title: `${marker}:matrix-update` } : undefined;
+      recordAccess(method, endpoint, role, allowedRoles.includes(role), (await request(method, endpoint, role, body, auth(identityForRole[role]))).status);
+    }
+    recordAccess(method, endpoint, 'anonymous', false, (await request(method, endpoint, 'anonymous', undefined)).status);
+  }
 }
 function token(identity) { return tokenByIdentity.get(identity); }
 function auth(identity) { return { authorization: `Bearer ${token(identity)}` }; }
@@ -56,6 +135,7 @@ async function loginAll() {
     const result = await request('POST', '/api/v1/auth/login', identity, { email: userByIdentity.get(identity).email, password });
     record('/api/v1/auth/login', identity, 200, result.status);
     if (result.status !== 200) throw new Error(`Cannot authenticate ${identity}`);
+    auditResponse(`POST /api/v1/auth/login (${identity}; tokens intentional)`, result, ['access_token', 'refresh_token']);
     const data = result.json?.data || result.json;
     tokenByIdentity.set(identity, data.access_token);
     userByIdentity.get(identity).refresh = data.refresh_token;
@@ -70,6 +150,12 @@ async function run() {
   try {
     await ensureUsers(pool);
     await loginAll();
+    await runAuthorizationMatrix();
+    auditResponse('GET /api/v1/auth/me', await request('GET', '/api/v1/auth/me', 'CITIZEN_A', undefined, auth('CITIZEN_A')));
+    auditResponse('GET /api/v1/incidents', await request('GET', '/api/v1/incidents', 'CITIZEN_A', undefined, auth('CITIZEN_A')));
+    auditResponse('GET /api/v1/alerts', await request('GET', '/api/v1/alerts', 'CITIZEN_A', undefined, auth('CITIZEN_A')));
+    const malformed = await request('POST', '/api/v1/incidents', 'CITIZEN_A', { unexpected: `${marker}:unexpected` }, auth('CITIZEN_A'));
+    auditResponse('POST /api/v1/incidents malformed DTO', malformed);
     for (const [identity] of identities) record('/api/v1/incidents', identity, 401, (await request('GET', '/api/v1/incidents', identity)).status);
     record('/api/v1/incidents', citizenIdentity, 200, (await request('GET', '/api/v1/incidents', citizenIdentity, undefined, auth(citizenIdentity))).status);
     record('/api/v1/alerts', citizenIdentity, 403, (await request('POST', '/api/v1/alerts', citizenIdentity, { type: 'PUBLIC', severity: 'LOW', title: `${marker}:alert` }, auth(citizenIdentity))).status);
@@ -94,6 +180,7 @@ async function run() {
     record('/api/v1/auth/refresh', 'access as refresh', 401, (await request('POST', '/api/v1/auth/refresh', 'access as refresh', { refresh_token: access })).status);
     const rotatedRefresh = await request('POST', '/api/v1/auth/refresh', 'CITIZEN_A', { refresh_token: refresh });
     record('/api/v1/auth/refresh', 'CITIZEN_A', 200, rotatedRefresh.status);
+    auditResponse('POST /api/v1/auth/refresh (tokens intentional)', rotatedRefresh, ['access_token', 'refresh_token']);
     const activeRefresh = rotatedRefresh.json?.data?.refresh_token;
     record('/api/v1/auth/refresh', 'revoked refresh', 401, (await request('POST', '/api/v1/auth/refresh', 'revoked refresh', { refresh_token: refresh })).status);
     await pool.query('UPDATE profiles SET is_active = false WHERE id = $1', [userByIdentity.get('CITIZEN_A').id]);
@@ -105,7 +192,10 @@ async function run() {
     for (const origin of ['http://localhost:3000', 'http://evil.example']) {
       const cors = await request('OPTIONS', '/api/v1/health', 'anonymous', undefined, { origin, 'access-control-request-method': 'GET' });
       console.log(`CORS ${origin}: status=${cors.status}, allow-origin=${cors.headers.get('access-control-allow-origin') || '<absent>'}`);
+      auditEvidence.push({ label: `OPTIONS /api/v1/health Origin=${origin}`, status: cors.status, result: origin === 'http://localhost:3000' ? (cors.status === 204 && cors.headers.get('access-control-allow-origin') === origin ? 'PASS' : 'FAIL') : (!cors.headers.get('access-control-allow-origin') ? 'PASS' : 'FAIL'), fields: [] });
     }
+    const noOriginCors = await request('OPTIONS', '/api/v1/health', 'anonymous', undefined, { 'access-control-request-method': 'GET' });
+    auditEvidence.push({ label: 'OPTIONS /api/v1/health without Origin', status: noOriginCors.status, result: noOriginCors.status === 204 && !noOriginCors.headers.get('access-control-allow-origin') ? 'PASS' : 'FAIL', fields: [] });
   } finally {
     await pool.query('DELETE FROM incidents WHERE reported_by IN (SELECT id FROM profiles WHERE email LIKE $1)', [`${marker}.%@localhost.invalid`]);
     await pool.query('DELETE FROM user_roles WHERE profile_id IN (SELECT id FROM profiles WHERE email LIKE $1)', [`${marker}.%@localhost.invalid`]);
@@ -118,11 +208,13 @@ async function run() {
     : '';
   const rows = evidence.map((item) => `| ${item.timestamp} | ${item.endpoint} | ${item.identity} | ${item.expected} | ${item.actual} | ${item.result} |`).join('\n');
   const currentRun = `## Retest Run: ${new Date().toISOString()}\n\nNo tokens or passwords are recorded.\n\n| Timestamp | Endpoint | Identity | Expected | Actual | Result |\n|---|---|---|---:|---:|---:|\n${rows}\n`;
+  const audits = auditEvidence.map((item) => `| ${item.label} | ${item.status} | ${item.result} | ${item.fields.join(', ') || 'none'} |`).join('\n');
+  const auditRun = `\n### Response, CORS, and error audit\n\n| Probe | HTTP status | Result | Sensitive fields |\n|---|---:|---|---|\n${audits}\n`;
   fs.writeFileSync(
     reportPath,
     previousEvidence
-      ? `${previousEvidence.trim()}\n\n${currentRun}`
-      : `# Phase 1 Runtime Evidence\n\n${currentRun}`,
+      ? `${previousEvidence.trim()}\n\n${currentRun}${auditRun}`
+      : `# Phase 1 Runtime Evidence\n\n${currentRun}${auditRun}`,
   );
   console.log(`Runtime evidence written to ${reportPath}`);
   const failures = evidence.filter((item) => item.result === 'FAIL');
