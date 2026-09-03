@@ -202,3 +202,47 @@ Final Phase 1 status remains **PARTIAL**, and Phase 2 was not started.
 The runtime harness is documented in [docs/development/phase1-runtime-harness.md](docs/development/phase1-runtime-harness.md). It defines the Compose services, waits on PostgreSQL and MQTT readiness, starts the API, and requires HTTP 200 from `/api/v1/health` before running live tests. The suite uses marker-addressed test users and runtime-generated credentials, performs actual HTTP requests against `http://localhost:3002`, cleans up its users, and writes status-only evidence to `PHASE_1_RUNTIME_EVIDENCE.md`.
 
 This harness creation does not claim RBAC, IDOR, privilege escalation, JWT, disabled-user, sensitive-response, or CORS verification. Those remain UNVERIFIED until the live suite runs with the runtime gate satisfied. Secret history remains REQUIRES ROTATION. Phase 2 was not started.
+
+## Phase 1 Security Findings Investigation (2026-09-03)
+
+### 401 findings
+
+The initial failures were:
+
+| Endpoint | Method | Identity | Initial expected | Initial actual |
+|---|---|---|---:|---:|
+| `/api/v1/incidents` | GET | CITIZEN | 200 | 401 |
+| `/api/v1/alerts` | POST | CITIZEN | 403 | 401 |
+| `/api/v1/auth/admin/assign-role` | POST | CITIZEN | 403 | 401 |
+
+Root cause: the live harness provisioned `CITIZEN_A` and `CITIZEN_B`, then looked up `token('CITIZEN')`. That lookup returned no token and sent `Bearer undefined`; `JwtAuthGuard` rejected the request before `RolesGuard` could evaluate the citizen role. `/api/v1/auth/me` accepted `CITIZEN_A` because it used a real token. The harness was corrected to use `CITIZEN_A`; expected statuses were unchanged.
+
+Retest: incident listing `200`, alert creation `403`, and citizen role assignment `403`. This confirms the discrepancy was in test authentication construction, not an endpoint guard difference.
+
+### Disabled-user finding
+
+Initial: disabled `CITIZEN_A` with an existing access token received `200` from `/api/v1/auth/me` and failed the security expectation.
+
+Policy: account disabling must immediately block protected-resource access. Login already rejected inactive profiles, but access-token validation did not check current account state. `JwtStrategy.validate()` verified JWT claims only and did not reload `profiles.is_active`.
+
+Fix: `JwtStrategy.validate()` now calls `UsersService.findById(payload.sub)`. That active-profile lookup rejects inactive or missing users with `401`, without weakening signature, expiry, token-type, or refresh-token validation.
+
+Retest: disabled `CITIZEN_A` access token received `401`. The focused strategy regression test passed for both active and inactive/missing profiles.
+
+### Final checkpoint
+
+| Area | Result |
+|---|---|
+| RBAC | VERIFIED for the corrected live probes; full matrix remains limited to harness coverage |
+| IDOR | VERIFIED by preserved passing live evidence |
+| Privilege escalation | PARTIAL: citizen role-assignment probe rejected with 403; broader permission mutation matrix was not present in the harness |
+| JWT | VERIFIED by malformed, modified, expired, refresh-as-access, and access-as-refresh rejection probes |
+| Refresh rotation | VERIFIED by revoked-refresh and rotated-refresh reuse rejection probes |
+| Disabled users | VERIFIED: existing access token rejected after disablement |
+| Sensitive responses | UNVERIFIED |
+| CORS | VERIFIED for configured localhost origin and rejected origin response |
+| Tests | 122 passed, 0 failed including the new strategy regression |
+| Build | PASS |
+| Secret history | REQUIRES ROTATION |
+
+Phase 1 remains **PARTIAL** because historical credentials still require rotation and some broader security matrices remain outside the executed harness. Phase 2 was not started.

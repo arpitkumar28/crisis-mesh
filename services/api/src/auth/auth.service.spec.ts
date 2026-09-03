@@ -25,6 +25,7 @@ describe('AuthService', () => {
 
   const mockUsersService = {
     createProfile: jest.fn(),
+    findById: jest.fn(),
     getUserRoles: jest.fn(),
     updateLastLogin: jest.fn(),
     assignRole: jest.fn(),
@@ -62,6 +63,7 @@ describe('AuthService', () => {
     auditService = module.get<AuditService>(AuditService);
 
     jest.clearAllMocks();
+    mockUsersService.findById.mockResolvedValue({ id: 'user-id', is_active: true });
   });
 
   it('should be defined', () => {

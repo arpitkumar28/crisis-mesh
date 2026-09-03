@@ -15,6 +15,7 @@ const marker = 'phase1-test';
 const evidence = [];
 const tokenByIdentity = new Map();
 const userByIdentity = new Map();
+const citizenIdentity = 'CITIZEN_A';
 
 async function request(method, endpoint, identity, body, headers = {}) {
   const response = await fetch(`${apiUrl}${endpoint}`, { method, headers: { 'content-type': 'application/json', ...headers }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -70,9 +71,9 @@ async function run() {
     await ensureUsers(pool);
     await loginAll();
     for (const [identity] of identities) record('/api/v1/incidents', identity, 401, (await request('GET', '/api/v1/incidents', identity)).status);
-    record('/api/v1/incidents', 'CITIZEN', 200, (await request('GET', '/api/v1/incidents', 'CITIZEN', undefined, auth('CITIZEN'))).status);
-    record('/api/v1/alerts', 'CITIZEN', 403, (await request('POST', '/api/v1/alerts', 'CITIZEN', { type: 'PUBLIC', severity: 'LOW', title: `${marker}:alert` }, auth('CITIZEN'))).status);
-    record('/api/v1/auth/admin/assign-role', 'CITIZEN', 403, (await request('POST', '/api/v1/auth/admin/assign-role', 'CITIZEN', { userId: userByIdentity.get('CITIZEN_B').id, role: 'ADMIN' }, auth('CITIZEN'))).status);
+    record('/api/v1/incidents', citizenIdentity, 200, (await request('GET', '/api/v1/incidents', citizenIdentity, undefined, auth(citizenIdentity))).status);
+    record('/api/v1/alerts', citizenIdentity, 403, (await request('POST', '/api/v1/alerts', citizenIdentity, { type: 'PUBLIC', severity: 'LOW', title: `${marker}:alert` }, auth(citizenIdentity))).status);
+    record('/api/v1/auth/admin/assign-role', citizenIdentity, 403, (await request('POST', '/api/v1/auth/admin/assign-role', citizenIdentity, { userId: userByIdentity.get('CITIZEN_B').id, role: 'ADMIN' }, auth(citizenIdentity))).status);
     record('/api/v1/auth/admin/assign-role', 'ADMIN', 200, (await request('POST', '/api/v1/auth/admin/assign-role', 'ADMIN', { userId: userByIdentity.get('CITIZEN_B').id, role: 'CITIZEN' }, auth('ADMIN'))).status);
     const createdIncident = await request('POST', '/api/v1/incidents', 'CITIZEN_A', { type: 'OTHER', title: `${marker}:incident`, description: marker }, auth('CITIZEN_A'));
     record('/api/v1/incidents', 'CITIZEN_A', 201, createdIncident.status);
@@ -91,10 +92,15 @@ async function run() {
     record('/api/v1/auth/me', 'expired JWT', 401, (await request('GET', '/api/v1/auth/me', 'expired JWT', undefined, { authorization: `Bearer ${expiredJwt()}` })).status);
     record('/api/v1/auth/me', 'refresh as access', 401, (await request('GET', '/api/v1/auth/me', 'refresh as access', undefined, { authorization: `Bearer ${refresh}` })).status);
     record('/api/v1/auth/refresh', 'access as refresh', 401, (await request('POST', '/api/v1/auth/refresh', 'access as refresh', { refresh_token: access })).status);
-    record('/api/v1/auth/refresh', 'CITIZEN_A', 200, (await request('POST', '/api/v1/auth/refresh', 'CITIZEN_A', { refresh_token: refresh })).status);
+    const rotatedRefresh = await request('POST', '/api/v1/auth/refresh', 'CITIZEN_A', { refresh_token: refresh });
+    record('/api/v1/auth/refresh', 'CITIZEN_A', 200, rotatedRefresh.status);
+    const activeRefresh = rotatedRefresh.json?.data?.refresh_token;
     record('/api/v1/auth/refresh', 'revoked refresh', 401, (await request('POST', '/api/v1/auth/refresh', 'revoked refresh', { refresh_token: refresh })).status);
     await pool.query('UPDATE profiles SET is_active = false WHERE id = $1', [userByIdentity.get('CITIZEN_A').id]);
     record('/api/v1/auth/me', 'disabled CITIZEN_A', 401, (await request('GET', '/api/v1/auth/me', 'disabled CITIZEN_A', undefined, auth('CITIZEN_A'))).status);
+    record('/api/v1/incidents', 'disabled CITIZEN_A', 401, (await request('GET', '/api/v1/incidents', 'disabled CITIZEN_A', undefined, auth('CITIZEN_A'))).status);
+    record('/api/v1/auth/login', 'disabled CITIZEN_A', 401, (await request('POST', '/api/v1/auth/login', 'disabled CITIZEN_A', { email: userByIdentity.get('CITIZEN_A').email, password })).status);
+    record('/api/v1/auth/refresh', 'disabled CITIZEN_A', 401, (await request('POST', '/api/v1/auth/refresh', 'disabled CITIZEN_A', { refresh_token: activeRefresh })).status);
     await pool.query('UPDATE profiles SET is_active = true WHERE id = $1', [userByIdentity.get('CITIZEN_A').id]);
     for (const origin of ['http://localhost:3000', 'http://evil.example']) {
       const cors = await request('OPTIONS', '/api/v1/health', 'anonymous', undefined, { origin, 'access-control-request-method': 'GET' });
@@ -107,8 +113,17 @@ async function run() {
     await pool.end();
   }
   const reportPath = path.join(__dirname, '..', 'PHASE_1_RUNTIME_EVIDENCE.md');
+  const previousEvidence = fs.existsSync(reportPath)
+    ? fs.readFileSync(reportPath, 'utf8')
+    : '';
   const rows = evidence.map((item) => `| ${item.timestamp} | ${item.endpoint} | ${item.identity} | ${item.expected} | ${item.actual} | ${item.result} |`).join('\n');
-  fs.writeFileSync(reportPath, `# Phase 1 Runtime Evidence\n\nGenerated: ${new Date().toISOString()}\n\nNo tokens or passwords are recorded.\n\n| Timestamp | Endpoint | Identity | Expected | Actual | Result |\n|---|---|---|---:|---:|---|\n${rows}\n`);
+  const currentRun = `## Retest Run: ${new Date().toISOString()}\n\nNo tokens or passwords are recorded.\n\n| Timestamp | Endpoint | Identity | Expected | Actual | Result |\n|---|---|---|---:|---:|---:|\n${rows}\n`;
+  fs.writeFileSync(
+    reportPath,
+    previousEvidence
+      ? `${previousEvidence.trim()}\n\n${currentRun}`
+      : `# Phase 1 Runtime Evidence\n\n${currentRun}`,
+  );
   console.log(`Runtime evidence written to ${reportPath}`);
   const failures = evidence.filter((item) => item.result === 'FAIL');
   if (failures.length > 0) {

@@ -7,6 +7,7 @@ import {
   Logger,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthProvider } from './providers/jwt.provider';
 import { UsersService } from '../users/users.service';
@@ -162,6 +163,11 @@ export class AuthService {
         refreshToken,
         'refresh',
       );
+
+      const profile = await this.usersService.findById(payload.sub);
+      if (!profile) {
+        throw new UnauthorizedException('Account is inactive');
+      }
 
       const userProfile = {
         id: payload.sub,
