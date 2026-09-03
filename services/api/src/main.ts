@@ -12,16 +12,30 @@ async function bootstrap() {
   });
 
   const configService = new ConfigService();
+  const allowedOrigins = configService.corsOrigin;
+
+  app.use((request, response, next) => {
+    const origin = request.headers.origin;
+
+    if (origin && !allowedOrigins.includes(origin)) {
+      response.status(403).json({
+        statusCode: 403,
+        message: 'Origin not allowed',
+      });
+      return;
+    }
+
+    next();
+  });
 
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = configService.corsOrigin;
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, origin || true);
         return;
       }
 
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

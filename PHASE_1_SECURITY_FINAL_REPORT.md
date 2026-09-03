@@ -322,3 +322,42 @@ Retest: disabled `CITIZEN_A` access token received `401`. The focused strategy r
 | Secret history | REQUIRES ROTATION |
 
 Phase 1 remains **PARTIAL** because historical credentials still require rotation and some broader security matrices remain outside the executed harness. Phase 2 was not started.
+
+## Emergency Production Access Track (2026-09-03)
+
+### CORS retest
+
+The API was rebuilt with the CORS rejection fix and restarted as the Docker `crisis-mesh-api` container. No secret values were printed.
+
+| Request | Result | Relevant headers/evidence |
+|---|---:|---|
+| Approved `GET /api/v1/health` with `Origin: http://localhost:3000` | 200 | `Access-Control-Allow-Origin: http://localhost:3000`; `Access-Control-Allow-Credentials: true`; no wildcard |
+| Unauthorized `GET /api/v1/health` with `Origin: https://attacker.invalid` | 403 | Generic `Origin not allowed`; no `Access-Control-Allow-Origin`; no stack trace or internal details |
+| Approved `OPTIONS /api/v1/health` | 204 | Exact origin, credentials, methods `GET,POST,PUT,DELETE,PATCH,OPTIONS`, headers `Content-Type,Authorization` |
+| Unauthorized `OPTIONS /api/v1/health` | 403 | Generic response; no `Access-Control-Allow-Origin` |
+
+The previous callback threw an error, which caused the 500. The new middleware rejects disallowed origins with a generic 403 before CORS processing.
+
+### Secret and configuration review
+
+Current tracked configuration contains placeholders only. Ignored local environment files were inspected by variable name only and no values were copied or printed. Historical repository evidence cannot establish whether prior JWT, database, MQTT, News/API, Supabase service-role, or deployment credentials were operational. Local compose database and broker values are development-only. See [docs/security/SECRET_ROTATION.md](docs/security/SECRET_ROTATION.md).
+
+The local API rebuild also reported `NEWS_API_KEY` unset. This is recorded as unverified, not replaced with a guessed value. Production must provide every secret through deployment environment variables or a secret manager.
+
+### Final gate
+
+| Gate | Status | Evidence |
+|---|---|---|
+| CORS | PASS | Rebuilt local API curl evidence above |
+| Secret Rotation | REQUIRES MANUAL ROTATION | Provider-side revocation and replacement evidence absent |
+| Production Config | PARTIAL | Variable contract documented; production values and final URLs not provisioned |
+| Backend External Access | UNVERIFIED | `https://crisis-mesh-api.onrender.com/api/v1/health` timed out with curl status 000 |
+| Web External Access | UNVERIFIED | `https://crisis-mesh-eosin.vercel.app/` returned 200; login and workflow evidence not run |
+| Mobile External Access | UNVERIFIED | Explicit build-time URLs required; Android external test not run |
+| E2E Smoke Test | UNVERIFIED | Full role workflow requires deployed backend and test identities |
+
+**Phase 1: PARTIAL**
+
+**Deployment: BLOCKED**
+
+Required next action: manually rotate/revoke any historical operational credentials with the providers, provision production environment variables, deploy the API first, and run the external smoke test in [docs/deployment/PRODUCTION_DEPLOYMENT.md](docs/deployment/PRODUCTION_DEPLOYMENT.md). Do not promote the web or mobile clients until `GET /api/v1/health` and the authenticated role workflow pass from outside the local Docker/network environment.

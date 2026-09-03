@@ -6,22 +6,28 @@
 class AppConfig {
   AppConfig._();
 
-  // For Android emulator: 10.0.2.2:3002
-  // For iOS simulator: localhost:3002
-  // For physical device: your-machine-ip:3002
   static const apiOrigin = String.fromEnvironment(
     'CRISISMESH_API_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: '',
   );
 
   static const webSocketOrigin = String.fromEnvironment(
     'CRISISMESH_WS_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: '',
   );
 
-  static String get apiBaseUrl =>
-      '${apiOrigin.replaceFirst(RegExp(r'/+$'), '')}/api/';
+  static String get apiBaseUrl => '${_requiredOrigin(apiOrigin)}/api/';
 
   static String get socketUrl =>
-      webSocketOrigin.replaceFirst(RegExp(r'/+$'), '');
+      _requiredOrigin(webSocketOrigin);
+
+  static String _requiredOrigin(String origin) {
+    final normalizedOrigin = origin.trim().replaceFirst(RegExp(r'/+$'), '');
+    if (normalizedOrigin.isEmpty) {
+      throw StateError(
+        'CRISISMESH_API_URL and CRISISMESH_WS_URL must be provided at build time',
+      );
+    }
+    return normalizedOrigin;
+  }
 }
