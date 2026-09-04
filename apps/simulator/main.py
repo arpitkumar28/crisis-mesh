@@ -12,9 +12,13 @@ import asyncio
 import json
 import logging
 import random
+import ssl
+import uuid
 from datetime import datetime
 from typing import Optional
 from enum import Enum
+from urllib.parse import urlparse
+import certifi
 
 import paho.mqtt.client as mqtt
 
@@ -39,21 +43,38 @@ class SimulatorConfig:
     """Configuration for the simulator"""
     def __init__(
         self,
-        mqtt_broker: str = "mqtt://localhost:1883",
-        mqtt_port: int = 1883,
+        mqtt_broker_url: Optional[str] = None,
+        mqtt_broker: Optional[str] = None,
+        mqtt_port: Optional[int] = None,
         mqtt_username: Optional[str] = None,
         mqtt_password: Optional[str] = None,
         simulation_interval: int = 5,
         scenario: DisasterScenario = DisasterScenario.NORMAL,
         num_devices: int = 5,
     ):
-        self.mqtt_broker = mqtt_broker
-        self.mqtt_port = mqtt_port
+        # Prefer MQTT_BROKER_URL over MQTT_BROKER
+        broker_url = mqtt_broker_url or mqtt_broker or "mqtt://localhost:1883"
+        
+        # Parse the broker URL
+        parsed = urlparse(broker_url)
+        
+        self.mqtt_broker_url = broker_url
+        self.protocol = parsed.scheme  # mqtt or mqtts
+        self.host = parsed.hostname or "localhost"
+        self.port = parsed.port or (8883 if self.protocol == "mqtts" else 1883)
+        
+        # Override port if explicitly provided
+        if mqtt_port is not None:
+            self.port = mqtt_port
+        
         self.mqtt_username = mqtt_username
         self.mqtt_password = mqtt_password
         self.simulation_interval = simulation_interval
         self.scenario = scenario
         self.num_devices = num_devices
+        
+        # TLS configuration
+        self.tls_enabled = (self.protocol == "mqtts")
 
 
 class CrisisMeshSimulator:
@@ -71,6 +92,8 @@ class CrisisMeshSimulator:
         self.running = False
         self.devices = [f"sim-node-{i:03d}" for i in range(1, self.config.num_devices + 1)]
         self.scenario = self.config.scenario
+        # Generate unique client ID to avoid conflict with backend
+        self.client_id = f"crisis-mesh-simulator-{uuid.uuid4().hex[:8]}"
         
         logger.info(f"CrisisMesh Simulator initialized with {len(self.devices)} devices")
         logger.info(f"Scenario: {self.scenario.value}")
@@ -81,28 +104,47 @@ class CrisisMeshSimulator:
             if hasattr(mqtt, "CallbackAPIVersion"):
                 self.client = mqtt.Client(
                     mqtt.CallbackAPIVersion.VERSION2,
-                    client_id="crisis-mesh-simulator",
+                    client_id=self.client_id,
                 )
             else:
-                self.client = mqtt.Client(client_id="crisis-mesh-simulator")
+                self.client = mqtt.Client(client_id=self.client_id)
             self.client.on_connect = self._on_connect
             self.client.on_disconnect = self._on_disconnect
             
             # Set credentials if provided
+            username_configured = False
             if self.config.mqtt_username and self.config.mqtt_password:
                 self.client.username_pw_set(
                     self.config.mqtt_username,
                     self.config.mqtt_password
                 )
+                username_configured = True
             
-            # Extract host from broker URL
-            broker_host = self.config.mqtt_broker.replace("mqtt://", "").split(":")[0]
+            # Configure TLS for mqtts://
+            if self.config.tls_enabled:
+                # Use certifi CA bundle for reliable certificate verification
+                self.client.tls_set(
+                    ca_certs=certifi.where(),
+                    certfile=None,
+                    keyfile=None,
+                    cert_reqs=ssl.CERT_REQUIRED,
+                    tls_version=ssl.PROTOCOL_TLS_CLIENT,
+                )
+                self.client.tls_insecure_set(False)  # Ensure certificate verification is enabled
             
-            self.client.connect(broker_host, self.config.mqtt_port, keepalive=60)
+            # Log connection details (safe, no passwords)
+            logger.info("Connecting to MQTT broker:")
+            logger.info(f"  - Host: {self.config.host}")
+            logger.info(f"  - Port: {self.config.port}")
+            logger.info(f"  - Protocol: {self.config.protocol}")
+            logger.info(f"  - TLS enabled: {self.config.tls_enabled}")
+            logger.info(f"  - Username configured: {username_configured}")
+            logger.info(f"  - Client ID: {self.client_id}")
+            
+            self.client.connect(self.config.host, self.config.port, keepalive=60)
             self.client.loop_start()
             self.running = True
             
-            logger.info(f"Connecting to MQTT broker: {self.config.mqtt_broker}")
         except ConnectionRefusedError:
             logger.warning("MQTT broker unavailable - running in degraded mode")
             self.client = None
@@ -258,7 +300,10 @@ async def main():
     num_devices = int(os.getenv("NUM_DEVICES", "5"))
     
     config = SimulatorConfig(
-        mqtt_broker=os.getenv("MQTT_BROKER", "mqtt://localhost:1883"),
+        mqtt_broker_url=os.getenv("MQTT_BROKER_URL"),
+        mqtt_broker=os.getenv("MQTT_BROKER"),
+        mqtt_username=os.getenv("MQTT_USERNAME"),
+        mqtt_password=os.getenv("MQTT_PASSWORD"),
         scenario=scenario,
         num_devices=num_devices,
     )
