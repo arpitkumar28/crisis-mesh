@@ -41,11 +41,13 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // Deliberately redact the broker URL and password. This establishes what
       // the production process received without exposing credentials in logs.
       this.logger.log(
-        `MQTT connection configuration: hostname=${broker.hostname}, port=${broker.port}, protocol=${broker.protocol.replace(':', '')}, username=${JSON.stringify(username)}, password_present=${password.length > 0}, password_length=${password.length}, tls_certificate_verification_enabled=true`,
+        `MQTT connection configuration: hostname=${broker.hostname}, port=${broker.port}, protocol=${broker.protocol.replace(':', '')}, username=${JSON.stringify(username)}, password_present=${password.length > 0}, password_length=${password.length}, password_type=${typeof password}, tls_certificate_verification_enabled=true, clientId=crisis-mesh-backend, clean=true`,
       );
 
       this.client = mqtt.connect(brokerUrl, {
         clientId: 'crisis-mesh-backend',
+        username: username,
+        password: password,
         clean: true,
         connectTimeout: 4000,
         reconnectPeriod: 5000, // Enabled reconnection (P1 Fix)
@@ -69,9 +71,13 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         resolve();
       });
 
-      this.client.on('error', (error) => {
+      this.client.on('error', (error: any) => {
+        // Enhanced error reporting with CONNACK codes
+        const errorCode = error.code || 'unknown';
+        const errorMessage = error.message || 'unknown error';
+        const connackCode = error.returnCode !== undefined ? error.returnCode : 'N/A';
         this.logger.warn(
-          `⚠️  MQTT connection error: ${error.message} - attempt to reconnect in 5s`,
+          `⚠️  MQTT connection error: code=${errorCode}, message=${errorMessage}, connack_code=${connackCode} - attempt to reconnect in 5s`,
         );
         resolve();
       });
