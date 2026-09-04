@@ -59,6 +59,35 @@ export class RiskService {
     });
   }
 
+  /**
+   * Find recent RiskAssessments generated for a specific device.
+   *
+   * RiskAssessment has no device_id column (see risk-engine.service.ts —
+   * it only carries location_id/district_id), so device attribution lives
+   * in the `factors` JSON blob the risk engine writes on every assessment.
+   * This is used by the production E2E test endpoint to prove a specific
+   * test telemetry event produced a specific RiskAssessment, rather than
+   * an unrelated pre-existing row.
+   */
+  async findRecentForDevice(
+    deviceId: string,
+    limit = 20,
+  ): Promise<RiskAssessment[]> {
+    const recent = await this.riskAssessments.find({
+      order: { created_at: 'DESC' },
+      take: limit,
+    });
+
+    return recent.filter((assessment) => {
+      try {
+        const factors = JSON.parse(assessment.factors || '{}');
+        return factors.device_id === deviceId;
+      } catch {
+        return false;
+      }
+    });
+  }
+
   async getRiskSummary() {
     const [total, highRisk, criticalRisk, byType] = await Promise.all([
       this.riskAssessments.count({ where: { is_active: true } }),

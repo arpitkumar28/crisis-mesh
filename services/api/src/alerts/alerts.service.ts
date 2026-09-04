@@ -305,6 +305,25 @@ export class AlertsService {
     return { alerts, total };
   }
 
+  /**
+   * Find recent Alerts whose title contains the given text.
+   *
+   * Alert has no device_id column (see entities/alert.entity.ts), so for
+   * an automated risk-engine Alert, the device UUID lives in the title
+   * text the engine composes (see risk-engine.service.ts maybeCreateAlert).
+   * This is used by the production E2E test endpoint to prove a specific
+   * test telemetry event produced a specific Alert, rather than an
+   * unrelated pre-existing row.
+   */
+  async findRecentContainingText(text: string, limit = 20): Promise<Alert[]> {
+    return this.alertRepository
+      .createQueryBuilder('alert')
+      .where('alert.title LIKE :pattern', { pattern: `%${text}%` })
+      .orderBy('alert.issued_at', 'DESC')
+      .limit(limit)
+      .getMany();
+  }
+
   async getAlertSources(): Promise<string[]> {
     const result = await this.alertRepository
       .createQueryBuilder('alert')
