@@ -21,7 +21,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "phase1:live": "node ../../scripts/phase1-live-suite.js",
     "migration:run": "ts-node src/database/migration.cli.ts",
-    "migration:status": "ts-node -e \"import('./src/database/migration.service').then(m => m.MigrationService.prototype.getMigrationStatus().then(console.log).catch(console.error))\""
+    "migration:status": "ts-node -e \"import('./src/database/migration.service').then(m => m.MigrationService.prototype.getMigrationStatus().then(console.log).catch(console.error))\"",
+    "bootstrap:admin": "ts-node src/bootstrap/bootstrap.cli.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.2.8",

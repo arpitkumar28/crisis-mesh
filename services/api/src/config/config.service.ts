@@ -5,7 +5,10 @@ export class ConfigService {
   private readonly logger = new Logger(ConfigService.name);
 
   constructor() {
-    this.validateRequiredEnvVars();
+    // Skip validation in test environment
+    if (this.nodeEnv !== 'test') {
+      this.validateRequiredEnvVars();
+    }
   }
 
   private validateRequiredEnvVars(): void {
@@ -113,5 +116,9 @@ export class ConfigService {
 
   get isDevelopment(): boolean {
     return this.nodeEnv === 'development';
+  }
+
+  get(key: string): string | undefined {
+    return process.env[key];
   }
 }

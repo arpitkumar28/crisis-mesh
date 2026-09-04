@@ -20,6 +20,7 @@ import { DistrictsModule } from './districts/districts.module';
 import { WeatherModule } from './weather/weather.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { TestModule } from './test/test.module';
+import { BootstrapModule } from './bootstrap/bootstrap.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { TestModule } from './test/test.module';
     WeatherModule,
     IntelligenceModule,
     TestModule,
+    BootstrapModule,
   ],
   controllers: [],
   providers: [],
