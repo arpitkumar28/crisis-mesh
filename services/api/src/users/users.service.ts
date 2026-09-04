@@ -78,6 +78,18 @@ export class UsersService {
     });
   }
 
+  async findAll(): Promise<Profile[]> {
+    return this.profileRepository.find({
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async findByIdIncludingInactive(id: string): Promise<Profile | null> {
+    return this.profileRepository.findOne({
+      where: { id },
+    });
+  }
+
   async updateProfile(
     id: string,
     updateDto: UpdateProfileDto,

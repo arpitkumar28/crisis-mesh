@@ -64,8 +64,32 @@ export class IncidentsService {
     return savedIncident;
   }
 
-  async findAll(): Promise<Incident[]> {
+  /**
+   * CITIZEN accounts may only see incidents they reported themselves.
+   * Every other role sees the full list. Enforced here (server-side)
+   * rather than left to the frontend, since a client-side filter would
+   * still leak every citizen's incidents over the wire.
+   */
+  private scopeToOwnerIfCitizen(
+    where: Record<string, unknown>,
+    currentUser?: any,
+  ): Record<string, unknown> {
+    const roles = currentUser?.roles || [];
+    const isPrivileged =
+      roles.includes(UserRoleEnum.ADMIN) ||
+      roles.includes(UserRoleEnum.AUTHORITY) ||
+      roles.includes(UserRoleEnum.RESPONDER) ||
+      roles.includes(UserRoleEnum.ANALYST);
+
+    if (currentUser && !isPrivileged) {
+      return { ...where, reported_by: currentUser.id };
+    }
+    return where;
+  }
+
+  async findAll(currentUser?: any): Promise<Incident[]> {
     return this.incidentRepository.find({
+      where: this.scopeToOwnerIfCitizen({}, currentUser),
       relations: {
         location: true,
         reporter: true,
@@ -75,9 +99,12 @@ export class IncidentsService {
     });
   }
 
-  async findByStatus(status: IncidentStatus): Promise<Incident[]> {
+  async findByStatus(
+    status: IncidentStatus,
+    currentUser?: any,
+  ): Promise<Incident[]> {
     return this.incidentRepository.find({
-      where: { status },
+      where: this.scopeToOwnerIfCitizen({ status }, currentUser),
       relations: {
         location: true,
         reporter: true,
@@ -87,9 +114,9 @@ export class IncidentsService {
     });
   }
 
-  async findByType(type: IncidentType): Promise<Incident[]> {
+  async findByType(type: IncidentType, currentUser?: any): Promise<Incident[]> {
     return this.incidentRepository.find({
-      where: { type },
+      where: this.scopeToOwnerIfCitizen({ type }, currentUser),
       relations: {
         location: true,
         reporter: true,
@@ -99,15 +126,18 @@ export class IncidentsService {
     });
   }
 
-  async findActive(): Promise<Incident[]> {
+  async findActive(currentUser?: any): Promise<Incident[]> {
     return this.incidentRepository.find({
-      where: {
-        status: In([
-          IncidentStatus.REPORTED,
-          IncidentStatus.ACKNOWLEDGED,
-          IncidentStatus.IN_PROGRESS,
-        ]),
-      },
+      where: this.scopeToOwnerIfCitizen(
+        {
+          status: In([
+            IncidentStatus.REPORTED,
+            IncidentStatus.ACKNOWLEDGED,
+            IncidentStatus.IN_PROGRESS,
+          ]),
+        },
+        currentUser,
+      ),
       relations: {
         location: true,
         reporter: true,

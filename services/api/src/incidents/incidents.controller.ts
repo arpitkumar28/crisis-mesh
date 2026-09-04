@@ -54,8 +54,8 @@ export class IncidentsController {
     UserRoleEnum.ADMIN,
     UserRoleEnum.ANALYST,
   )
-  async findAll() {
-    const incidents = await this.incidentsService.findAll();
+  async findAll(@CurrentUser() user: any) {
+    const incidents = await this.incidentsService.findAll(user);
     return {
       success: true,
       message: 'Incidents retrieved successfully',
@@ -72,8 +72,11 @@ export class IncidentsController {
     UserRoleEnum.ADMIN,
     UserRoleEnum.ANALYST,
   )
-  async findByStatus(@Param('status') status: IncidentStatus) {
-    const incidents = await this.incidentsService.findByStatus(status);
+  async findByStatus(
+    @Param('status') status: IncidentStatus,
+    @CurrentUser() user: any,
+  ) {
+    const incidents = await this.incidentsService.findByStatus(status, user);
     return {
       success: true,
       message: 'Incidents retrieved successfully',
@@ -90,8 +93,8 @@ export class IncidentsController {
     UserRoleEnum.ADMIN,
     UserRoleEnum.ANALYST,
   )
-  async findByType(@Param('type') type: IncidentType) {
-    const incidents = await this.incidentsService.findByType(type);
+  async findByType(@Param('type') type: IncidentType, @CurrentUser() user: any) {
+    const incidents = await this.incidentsService.findByType(type, user);
     return {
       success: true,
       message: 'Incidents retrieved successfully',
@@ -108,8 +111,8 @@ export class IncidentsController {
     UserRoleEnum.ADMIN,
     UserRoleEnum.ANALYST,
   )
-  async findActive() {
-    const incidents = await this.incidentsService.findActive();
+  async findActive(@CurrentUser() user: any) {
+    const incidents = await this.incidentsService.findActive(user);
     return {
       success: true,
       message: 'Active incidents retrieved successfully',

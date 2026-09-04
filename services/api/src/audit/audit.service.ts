@@ -114,4 +114,12 @@ export class AuditService {
       take: limit,
     });
   }
+
+  async findAll(limit: number = 100, offset: number = 0): Promise<AuditLog[]> {
+    return this.auditLogRepository.find({
+      order: { timestamp: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+  }
 }
