@@ -7,6 +7,7 @@ import { Device } from '../entities/device.entity';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebSocketService } from '../websocket/websocket.service';
 import { SensorMetric } from '../entities/sensor.entity';
+import { RiskEngineService } from '../risk/risk-engine.service';
 
 interface TelemetryPayload {
   device_id: string;
@@ -39,6 +40,7 @@ export class TelemetryService {
     private readonly deviceRepository: Repository<Device>,
     private readonly mqttService: MqttService,
     private readonly webSocketService: WebSocketService,
+    private readonly riskEngineService: RiskEngineService,
   ) {}
 
   async onModuleInit() {
@@ -168,8 +170,22 @@ export class TelemetryService {
         timestamp: payload.timestamp,
       });
 
-      // Publish to alert topic if value exceeds thresholds
-      await this.checkThresholdsAndAlert(sensor, payload.value);
+      // Hand the persisted reading to the rule-based risk engine. This is
+      // the only place telemetry connects to risk/alert creation — no
+      // thresholds live here (see risk/risk-rules.ts).
+      const device = await this.deviceRepository.findOne({
+        where: { id: sensor.device_id },
+      });
+      if (device) {
+        await this.riskEngineService.evaluate({
+          device,
+          sensor,
+          metric: payload.metric,
+          value: payload.value,
+          unit: payload.unit,
+          timestamp,
+        });
+      }
     } catch (error: unknown) {
       this.logger.error(
         `Error processing telemetry message: ${error instanceof Error ? error.message : String(error)}`,
@@ -361,56 +377,6 @@ export class TelemetryService {
         `Error finding or creating sensor: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
-    }
-  }
-
-  private async checkThresholdsAndAlert(sensor: Sensor, value: number) {
-    try {
-      // Check if value exceeds max threshold
-      if (sensor.max_value !== null && value > sensor.max_value) {
-        const alertPayload = {
-          sensor_id: sensor.id,
-          device_id: sensor.device_id,
-          metric: sensor.metric,
-          value: value,
-          threshold: sensor.max_value,
-          severity: 'HIGH',
-          message: `${sensor.metric} value ${value} exceeds maximum threshold ${sensor.max_value}`,
-          timestamp: new Date().toISOString(),
-        };
-
-        await this.mqttService.publish(
-          'alert/threshold/exceeded',
-          alertPayload,
-          { qos: 1 },
-        );
-        this.logger.warn(`Threshold exceeded: ${alertPayload.message}`);
-      }
-
-      // Check if value is below min threshold
-      if (sensor.min_value !== null && value < sensor.min_value) {
-        const alertPayload = {
-          sensor_id: sensor.id,
-          device_id: sensor.device_id,
-          metric: sensor.metric,
-          value: value,
-          threshold: sensor.min_value,
-          severity: 'HIGH',
-          message: `${sensor.metric} value ${value} below minimum threshold ${sensor.min_value}`,
-          timestamp: new Date().toISOString(),
-        };
-
-        await this.mqttService.publish(
-          'alert/threshold/exceeded',
-          alertPayload,
-          { qos: 1 },
-        );
-        this.logger.warn(`Threshold exceeded: ${alertPayload.message}`);
-      }
-    } catch (error: unknown) {
-      this.logger.error(
-        `Error checking thresholds: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
   }
 

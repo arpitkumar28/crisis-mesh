@@ -1,10 +1,17 @@
 /* eslint-disable no-console */
 const https = require('node:https');
 
-const API_URL = 'https://crisis-mesh-api.onrender.com';
-const TEST_EMAIL = 'e2e-test-admin@crisismesh-test.invalid';
-const TEST_PASSWORD = 'E2E-Test-Pass-2026!';
+const API_URL = process.env.E2E_API_URL || 'https://crisis-mesh-api.onrender.com';
+const TEST_EMAIL = process.env.E2E_TEST_ADMIN_EMAIL;
+const TEST_PASSWORD = process.env.E2E_TEST_ADMIN_PASSWORD;
 const TEST_NAME = 'E2E Test Admin';
+
+if (!TEST_EMAIL || !TEST_PASSWORD) {
+  console.error('❌ Missing required environment variables.');
+  console.error('   Set E2E_TEST_ADMIN_EMAIL and E2E_TEST_ADMIN_PASSWORD before running this script.');
+  console.error('   Never hardcode credentials in this file.');
+  process.exit(1);
+}
 
 function makeRequest(method, path, data = null, token = null) {
   return new Promise((resolve, reject) => {
@@ -86,14 +93,15 @@ async function loginAdmin() {
 }
 
 async function runE2ETest(token) {
-  console.log('Step 3: Running production E2E MQTT telemetry test...');
-  
-  const testResult = await makeRequest('POST', '/api/v1/test/mqtt-telemetry', {
-    device_id: 'e2e-test-device-001',
-    metric: 'TEMPERATURE',
-    value: 25.5,
-    unit: '°C',
-  }, token);
+  console.log('Step 3: Running production E2E MQTT telemetry+risk+alert test...');
+  console.log('(device/test markers are generated server-side and are always unique — this call does not send a device_id)');
+
+  // No device_id is sent: the endpoint always generates a fresh, unique
+  // device/test marker itself so this run can never pass because of a
+  // stale row from a previous run. Metric/value/unit are left at the
+  // endpoint's defaults (an actionable FLOOD/CRITICAL reading) so the
+  // risk + alert stages of the pipeline are exercised, not just telemetry.
+  const testResult = await makeRequest('POST', '/api/v1/test/mqtt-telemetry', {}, token);
 
   if (testResult.status === 200) {
     console.log('✅ E2E test executed successfully');
@@ -120,18 +128,34 @@ async function main() {
     console.log('===================');
     console.log(`Test Marker: ${results.test_marker}`);
     console.log(`Timestamp: ${results.timestamp}`);
+    console.log(`Test Device (server-generated, unique): ${results.request?.device_id || 'n/a'}`);
     console.log(`MQTT Connected: ${results.mqtt_connected ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`MQTT Published: ${results.mqtt_published ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`Device Found: ${results.device_found ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`Telemetry Persisted: ${results.telemetry_persisted ? '✅ PASS' : '❌ FAIL'}`);
+    console.log(`Risk Engine Configured (RISK_ENGINE_SYSTEM_USER_ID set): ${results.risk_engine_configured ? '✅ YES' : '❌ NO'}`);
+    console.log(`Risk Assessment Created: ${results.risk_assessment_created ? '✅ PASS' : '❌ FAIL'}`);
+    console.log(`Alert Created: ${results.alert_created ? '✅ PASS' : '❌ FAIL'}`);
     console.log(`Overall Success: ${results.overall_success ? '✅ PASS' : '❌ FAIL'}`);
-    
+
     if (results.mqtt_topic) {
       console.log(`MQTT Topic: ${results.mqtt_topic}`);
     }
-    
+
     if (results.latest_telemetry) {
       console.log(`Latest Telemetry: ${results.latest_telemetry.metric}=${results.latest_telemetry.value}${results.latest_telemetry.unit}`);
+    }
+
+    if (results.risk_assessment) {
+      console.log(`Risk Assessment: ${results.risk_assessment.risk_type} ${results.risk_assessment.severity} (source: ${results.risk_assessment.source}, id: ${results.risk_assessment.id})`);
+    }
+
+    if (results.alert) {
+      console.log(`Alert: ${results.alert.type} ${results.alert.severity} (status: ${results.alert.status}, id: ${results.alert.id})`);
+    }
+
+    if (results.websocket_broadcast_note) {
+      console.log(`WebSocket Broadcast: ${results.websocket_broadcast_note}`);
     }
 
     if (results.error) {
