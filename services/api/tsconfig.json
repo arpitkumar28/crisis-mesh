@@ -21,7 +21,8 @@
     "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "moduleResolution": "node10",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "allowJs": true,
     "paths": {
       "@/*": [
