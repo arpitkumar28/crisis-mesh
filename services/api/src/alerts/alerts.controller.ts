@@ -165,57 +165,6 @@ export class AlertsController {
     };
   }
 
-  @Get(':id')
-  @Roles(
-    UserRoleEnum.CITIZEN,
-    UserRoleEnum.RESPONDER,
-    UserRoleEnum.AUTHORITY,
-    UserRoleEnum.ADMIN,
-    UserRoleEnum.ANALYST,
-  )
-  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    const alert = await this.alertsService.findOne(id, user);
-    return {
-      success: true,
-      message: 'Alert retrieved successfully',
-      data: alert,
-      request_id: crypto.randomUUID(),
-    };
-  }
-
-  @Put(':id')
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
-  async update(
-    @Param('id') id: string,
-    @Body() updateAlertDto: UpdateAlertDto,
-    @CurrentUser() user: any,
-  ) {
-    const alert = await this.alertsService.update(
-      id,
-      updateAlertDto,
-      user.id,
-      user,
-    );
-    return {
-      success: true,
-      message: 'Alert updated successfully',
-      data: alert,
-      request_id: crypto.randomUUID(),
-    };
-  }
-
-  @Delete(':id')
-  @Roles(UserRoleEnum.ADMIN)
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.alertsService.remove(id, user.id);
-    return {
-      success: true,
-      message: 'Alert deleted successfully',
-      data: null,
-      request_id: crypto.randomUUID(),
-    };
-  }
-
   @Get('filter')
   @Roles(
     UserRoleEnum.CITIZEN,
@@ -295,6 +244,57 @@ export class AlertsController {
       success: true,
       message: 'Alert types retrieved successfully',
       data: types,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Get(':id')
+  @Roles(
+    UserRoleEnum.CITIZEN,
+    UserRoleEnum.RESPONDER,
+    UserRoleEnum.AUTHORITY,
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.ANALYST,
+  )
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const alert = await this.alertsService.findOne(id, user);
+    return {
+      success: true,
+      message: 'Alert retrieved successfully',
+      data: alert,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Put(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
+  async update(
+    @Param('id') id: string,
+    @Body() updateAlertDto: UpdateAlertDto,
+    @CurrentUser() user: any,
+  ) {
+    const alert = await this.alertsService.update(
+      id,
+      updateAlertDto,
+      user.id,
+      user,
+    );
+    return {
+      success: true,
+      message: 'Alert updated successfully',
+      data: alert,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Delete(':id')
+  @Roles(UserRoleEnum.ADMIN)
+  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+    await this.alertsService.remove(id, user.id);
+    return {
+      success: true,
+      message: 'Alert deleted successfully',
+      data: null,
       request_id: crypto.randomUUID(),
     };
   }

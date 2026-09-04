@@ -1,116 +1,176 @@
 'use client';
 
-import React from 'react';
-import {
-  ChevronRight, Calendar, CheckCircle2
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import { apiClient } from '@/lib/api-client';
+import { Toast } from '@/lib/toast';
+
+const INCIDENT_TYPES = ['DISASTER', 'EMERGENCY', 'ACCIDENT', 'HAZARD', 'OTHER'] as const;
+const INCIDENT_SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+
+interface IncidentFormState {
+  type: (typeof INCIDENT_TYPES)[number];
+  title: string;
+  description: string;
+  severity: (typeof INCIDENT_SEVERITIES)[number] | '';
+}
+
+interface FormErrors {
+  title?: string;
+}
+
+const INITIAL_FORM: IncidentFormState = {
+  type: 'DISASTER',
+  title: '',
+  description: '',
+  severity: '',
+};
 
 export default function IncidentCreation() {
+  const router = useRouter();
+  const [form, setForm] = useState<IncidentFormState>(INITIAL_FORM);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const validate = (): boolean => {
+    const nextErrors: FormErrors = {};
+    if (!form.title.trim()) {
+      nextErrors.title = 'Incident title is required.';
+    } else if (form.title.length > 500) {
+      nextErrors.title = 'Incident title must be 500 characters or fewer.';
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting) return;
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        type: form.type,
+        title: form.title.trim(),
+      };
+      if (form.description.trim()) payload.description = form.description.trim();
+      if (form.severity) payload.severity = form.severity;
+
+      const response = await apiClient.post('/incidents', payload);
+      const created = response.data?.data;
+
+      Toast.success('Incident created successfully');
+      if (created?.id) {
+        router.push(`/incidents/${created.id}`);
+      } else {
+        router.push('/incidents');
+      }
+    } catch (error: any) {
+      const apiMessage = error.response?.data?.message;
+      const validationDetails = error.response?.data?.error?.details;
+      if (Array.isArray(validationDetails) && validationDetails.length > 0) {
+        Toast.error(validationDetails.join(' '));
+      } else {
+        Toast.error(apiMessage || 'Failed to create incident. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <OperationsShell eyebrow="Register and create new incident" title="Incident Creation">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black">AK</div>
-          <span className="text-[10px] font-black uppercase text-gray-400">Admin Authority</span>
-        </div>
-      </div>
-
       <div className="grid grid-cols-12 gap-8">
-        {/* Left: Step Indicator */}
-        <div className="col-span-12 lg:col-span-3 space-y-4">
-           <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm p-4">
-              <StepItem number={1} label="Incident Details" active={true} completed={false} />
-              <StepItem number={2} label="Location" active={false} completed={false} />
-              <StepItem number={3} label="Impact & Severity" active={false} completed={false} />
-              <StepItem number={4} label="Resources Needed" active={false} completed={false} />
-              <StepItem number={5} label="Review & Create" active={false} completed={false} />
-           </div>
-        </div>
+        <div className="col-span-12 lg:col-span-9 lg:col-start-1">
+          <form onSubmit={handleSubmit} className="bg-white rounded-[40px] border border-gray-200 p-10 shadow-sm">
+            <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-[0.2em] mb-10">Incident Details</h3>
 
-        {/* Right: Form Content */}
-        <div className="col-span-12 lg:col-span-9">
-           <div className="bg-white rounded-[40px] border border-gray-200 p-10 shadow-sm">
-              <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-[0.2em] mb-10">Incident Details</h3>
-              
-              <div className="space-y-8">
-                 <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Incident Type</label>
-                       <div className="relative">
-                          <select className="w-full appearance-none px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none">
-                             <option>Flood</option>
-                             <option>Fire</option>
-                             <option>Earthquake</option>
-                          </select>
-                          <ChevronRight size={14} className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-gray-400" />
-                       </div>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Incident Title</label>
-                       <input 
-                         type="text" 
-                         defaultValue="Flash Flood in Mahapura Area"
-                         className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none"
-                       />
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Date & Time</label>
-                       <div className="relative">
-                          <Calendar size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
-                          <input type="text" defaultValue="25 Aug 2025, 09:45 AM" className="w-full pl-14 pr-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a]" />
-                       </div>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Control Room</label>
-                       <div className="relative">
-                          <select className="w-full appearance-none px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none">
-                             <option>Jaipur South HQ</option>
-                             <option>Jaipur North HQ</option>
-                          </select>
-                          <ChevronRight size={14} className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-gray-400" />
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="space-y-2">
-                    <div className="flex justify-between items-center px-1">
-                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Initial Report</label>
-                    </div>
-                    <textarea 
-                      rows={4}
-                      className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none resize-none"
-                      defaultValue="Flash flood reported near Mahapura due to heavy overnight rainfall. Several low-lying areas are inundated."
-                    />
-                 </div>
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Incident Type</label>
+                  <div className="relative">
+                    <select
+                      value={form.type}
+                      onChange={(e) => setForm({ ...form, type: e.target.value as IncidentFormState['type'] })}
+                      className="w-full appearance-none px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none"
+                    >
+                      {INCIDENT_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                    <ChevronRight size={14} className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Severity (optional)</label>
+                  <div className="relative">
+                    <select
+                      value={form.severity}
+                      onChange={(e) => setForm({ ...form, severity: e.target.value as IncidentFormState['severity'] })}
+                      className="w-full appearance-none px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none"
+                    >
+                      <option value="">Unspecified</option>
+                      {INCIDENT_SEVERITIES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <ChevronRight size={14} className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-12 flex items-center justify-end gap-4">
-                 <button className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600">Cancel</button>
-                 <button className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 flex items-center gap-2">
-                    Next: Location <ChevronRight size={16} />
-                 </button>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Incident Title</label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder="e.g. Flash Flood in Mahapura Area"
+                  maxLength={500}
+                  className={`w-full px-6 py-4 bg-gray-50 border rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none ${
+                    errors.title ? 'border-red-400' : 'border-gray-100'
+                  }`}
+                />
+                {errors.title && <p className="text-[10px] font-bold text-red-500 ml-1">{errors.title}</p>}
               </div>
-           </div>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Description (optional)</label>
+                <textarea
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Describe what happened, where, and any immediate observations."
+                  className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-[#0f172a] focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-12 flex items-center justify-end gap-4">
+              <button
+                type="button"
+                onClick={() => router.push('/incidents')}
+                disabled={submitting}
+                className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-10 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 flex items-center gap-2"
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {submitting ? 'Creating...' : 'Create Incident'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </OperationsShell>
-  );
-}
-
-function StepItem({ number, label, active = false, completed = false }: { number: number; label: string; active?: boolean; completed?: boolean }) {
-  return (
-    <div className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-400'}`}>
-       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${
-         completed ? 'bg-blue-600 border-blue-600 text-white' : 
-         active ? 'border-blue-600 text-blue-600' : 'border-gray-200 text-gray-300'
-       }`}>
-          {completed ? <CheckCircle2 size={12} /> : number}
-       </div>
-       <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-    </div>
   );
 }
