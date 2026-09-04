@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { performLogout } from '@/lib/auth';
 
 const sidebarLinks = [
   { label: 'Heatmap & Risk', href: '/dashboard', Icon: Activity },
@@ -35,6 +36,12 @@ const sidebarLinks = [
 export function OperationsShell({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+
+  const handleLogout = () => {
+    performLogout();
+    router.push('/login');
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f1f5f9]">
@@ -64,21 +71,23 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
         </div>
 
         <div className="flex items-center gap-4 text-white">
-          <button className="relative p-2 hover:bg-white/10 rounded-full transition-colors">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-[7px] font-black w-3 h-3 flex items-center justify-center rounded-full border border-[#061a37]">1</span>
-          </button>
-
-          <div className="flex items-center gap-3 pl-4 border-l border-white/10 cursor-pointer group">
+          <div className="flex items-center gap-3 pl-4 border-l border-white/10 group">
             <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-black text-white leading-none uppercase">Admin</p>
-              <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Authority</p>
+              <p className="text-[10px] font-black text-white leading-none uppercase">{user?.name || 'Signed out'}</p>
+              <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{user?.role || '—'}</p>
             </div>
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-black shadow-lg">
-              AK
+              {(user?.name || '?').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
-            <ChevronDown size={12} className="text-gray-400" />
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </header>
 

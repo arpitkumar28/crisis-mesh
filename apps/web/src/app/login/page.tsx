@@ -26,12 +26,15 @@ export default function LoginPage() {
       });
 
       if (response.data.success) {
-        const { access_token, user } = response.data.data;
-        
+        const { access_token, refresh_token, user } = response.data.data;
+
         // Store token in cookies for middleware and localStorage for API client
         document.cookie = `access_token=${access_token}; path=/; max-age=86400; SameSite=Lax`;
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('user', JSON.stringify(user));
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token);
+        }
         
         // Update auth store
         setAuth({

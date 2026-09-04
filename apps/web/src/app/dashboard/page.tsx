@@ -12,6 +12,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
 import { apiClient } from '@/lib/api-client';
+import { wsClient } from '@/lib/websocket-client';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { Toast } from '@/lib/toast';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -21,6 +24,7 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const token = useAuthStore((state) => state.token);
 
   const fetchDashboardData = async () => {
     try {
@@ -36,6 +40,57 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    wsClient.connect(token);
+
+    // Every one of these events changes a number or list this dashboard
+    // renders (device/alert/incident counts, the map, the trend chart).
+    // Re-fetching the real overview on each event keeps every metric
+    // traceable to GET /v1/dashboard/overview rather than patching in
+    // partial broadcast payloads that don't match this page's shape.
+    const refresh = () => fetchDashboardData();
+    const onAlertCreated = (alert: any) => {
+      Toast.info(`New Alert: ${alert.message || alert.title || 'Alert created'}`);
+      refresh();
+    };
+
+    wsClient.on('telemetry.updated', refresh);
+    wsClient.on('device.status_changed', refresh);
+    wsClient.on('alert.created', onAlertCreated);
+    wsClient.on('alert.updated', refresh);
+    wsClient.on('incident.created', refresh);
+    wsClient.on('incident.updated', refresh);
+    wsClient.on('incident.status_changed', refresh);
+
+    let isFirstConnectionEvent = true;
+    const stopConnection = wsClient.onConnectionChange((state) => {
+      if (isFirstConnectionEvent) {
+        isFirstConnectionEvent = false;
+        return;
+      }
+      if (state === 'disconnected') {
+        Toast.warning('Live dashboard feed disconnected — reconnecting…');
+      } else if (state === 'reconnected') {
+        Toast.success('Live dashboard feed reconnected');
+        refresh();
+      } else if (state === 'auth_error') {
+        Toast.error('Your session has expired. Please log in again.');
+      }
+    });
+
+    return () => {
+      wsClient.off('telemetry.updated', refresh);
+      wsClient.off('device.status_changed', refresh);
+      wsClient.off('alert.created', onAlertCreated);
+      wsClient.off('alert.updated', refresh);
+      wsClient.off('incident.created', refresh);
+      wsClient.off('incident.updated', refresh);
+      wsClient.off('incident.status_changed', refresh);
+      stopConnection();
+    };
+  }, [token]);
 
   const metrics = data?.metrics || {
     total_devices: 0,

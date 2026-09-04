@@ -43,6 +43,22 @@ class WebSocketClient {
       this.notifyConnection('disconnected');
     });
 
+    // The gateway's auth middleware rejects an expired/invalid token
+    // with `next(new Error('Unauthorized'))` (see
+    // services/api/src/websocket/websocket.gateway.ts), which surfaces
+    // here as connect_error, not disconnect. Retrying with the same bad
+    // token forever would just loop silently — stop retrying and tell
+    // listeners explicitly so the app can react (e.g. re-auth or prompt
+    // login) instead of leaving the operator on a dead live feed with no
+    // signal why.
+    this.socket.on('connect_error', (err: Error) => {
+      console.log('WebSocket connect_error:', err.message);
+      if (err.message === 'Unauthorized') {
+        this.socket?.disconnect();
+        this.notifyConnection('auth_error');
+      }
+    });
+
     this.socket.on('connection.established', (data) => {
       console.log('Connection established:', data);
     });

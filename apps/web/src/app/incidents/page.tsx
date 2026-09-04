@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import { apiClient } from '@/lib/api-client';
+import { wsClient } from '@/lib/websocket-client';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { format } from 'date-fns';
 import { Toast } from '@/lib/toast';
 
@@ -35,6 +37,7 @@ export default function IncidentsPage() {
     resolved: 0,
     critical: 0
   });
+  const token = useAuthStore((state) => state.token);
 
   const fetchIncidents = async () => {
     setLoading(true);
@@ -64,6 +67,44 @@ export default function IncidentsPage() {
   useEffect(() => {
     fetchIncidents();
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    wsClient.connect(token);
+
+    const onIncidentCreated = (incident: any) => {
+      Toast.info(`New Incident: ${incident.title || 'Incident reported'}`);
+      fetchIncidents();
+    };
+    const refresh = () => fetchIncidents();
+
+    wsClient.on('incident.created', onIncidentCreated);
+    wsClient.on('incident.updated', refresh);
+    wsClient.on('incident.status_changed', refresh);
+
+    let isFirstConnectionEvent = true;
+    const stopConnection = wsClient.onConnectionChange((state) => {
+      if (isFirstConnectionEvent) {
+        isFirstConnectionEvent = false;
+        return;
+      }
+      if (state === 'disconnected') {
+        Toast.warning('Live incident feed disconnected — reconnecting…');
+      } else if (state === 'reconnected') {
+        Toast.success('Live incident feed reconnected');
+        refresh();
+      } else if (state === 'auth_error') {
+        Toast.error('Your session has expired. Please log in again.');
+      }
+    });
+
+    return () => {
+      wsClient.off('incident.created', onIncidentCreated);
+      wsClient.off('incident.updated', refresh);
+      wsClient.off('incident.status_changed', refresh);
+      stopConnection();
+    };
+  }, [token]);
 
   return (
     <OperationsShell eyebrow="Track and manage all active and past incidents" title="Incidents">

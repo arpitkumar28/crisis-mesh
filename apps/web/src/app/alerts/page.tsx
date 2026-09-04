@@ -51,22 +51,51 @@ export default function AlertsPage() {
 
     if (token) {
       wsClient.connect(token);
-      
+
+      // The alert.created/alert.updated broadcast payloads are minimal
+      // (alert_id, severity, type, location, message, timestamp) — not
+      // the full Alert shape this list renders. Splicing them in
+      // directly would render broken rows and risks duplicate entries
+      // if the event races the initial fetch. Re-fetching on the event
+      // is not polling (it's push-triggered, not interval-based) and
+      // guarantees complete, de-duplicated data.
       const handleAlertCreated = (newAlert: any) => {
-        setAlerts(prev => [newAlert, ...prev]);
-        Toast.info(`New Alert: ${newAlert.message || newAlert.title}`);
+        Toast.info(`New Alert: ${newAlert.message || newAlert.title || 'Alert created'}`);
+        fetchAlerts();
       };
 
-      const handleAlertUpdated = (updatedAlert: any) => {
-        setAlerts(prev => prev.map(a => a.id === updatedAlert.alert_id ? { ...a, ...updatedAlert } : a));
+      const handleAlertUpdated = () => {
+        fetchAlerts();
       };
 
       wsClient.on('alert.created', handleAlertCreated);
       wsClient.on('alert.updated', handleAlertUpdated);
 
+      // Surface real connection state — never silently miss alerts
+      // without telling the operator the live feed dropped. Skip the
+      // initial callback (onConnectionChange fires immediately with the
+      // pre-connect state), so a normal page load never shows a false
+      // "disconnected" warning.
+      let isFirstConnectionEvent = true;
+      const stopConnection = wsClient.onConnectionChange((state) => {
+        if (isFirstConnectionEvent) {
+          isFirstConnectionEvent = false;
+          return;
+        }
+        if (state === 'disconnected') {
+          Toast.warning('Live alert feed disconnected — reconnecting…');
+        } else if (state === 'reconnected') {
+          Toast.success('Live alert feed reconnected');
+          fetchAlerts();
+        } else if (state === 'auth_error') {
+          Toast.error('Your session has expired. Please log in again.');
+        }
+      });
+
       return () => {
         wsClient.off('alert.created', handleAlertCreated);
         wsClient.off('alert.updated', handleAlertUpdated);
+        stopConnection();
       };
     }
   }, [token]);
