@@ -22,7 +22,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "allowJs": true,
     "paths": {
       "@/*": [
