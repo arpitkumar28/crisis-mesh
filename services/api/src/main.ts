@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
@@ -39,6 +39,15 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }),
+  );
+
+  // Strips any field marked @Exclude() (e.g. Profile.password_hash) from
+  // every JSON response, including nested relations (e.g. an Alert's
+  // `issuer` or an Incident's `reporter`/`assignee`) — a defense-in-depth
+  // backstop against ever serializing a password hash over the wire,
+  // regardless of which controller loaded the relation.
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
   );
 
   // Standardized API response/error handling (Phase 1 Foundation)

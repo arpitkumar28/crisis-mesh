@@ -35,8 +35,4 @@ export class CreateAlertDto {
   @IsArray()
   @IsString({ each: true })
   affected_regions?: string[];
-
-  @IsOptional()
-  @IsString()
-  incident_id?: string;
 }

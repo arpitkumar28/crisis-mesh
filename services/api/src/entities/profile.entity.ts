@@ -7,6 +7,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { UserRole } from './user-role.entity';
 
 export enum UserRoleEnum {
@@ -25,6 +26,13 @@ export class Profile {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
+  // Excluded from every JSON response via the global ClassSerializerInterceptor
+  // (see main.ts) — this is a defense-in-depth backstop, not the only guard:
+  // controllers should still avoid returning raw Profile relations
+  // unnecessarily. Loading it (e.g. to check a password at login) is
+  // unaffected, since @Exclude only strips it at response-serialization
+  // time, never at query time.
+  @Exclude()
   @Column({ type: 'varchar', length: 255, nullable: true })
   password_hash: string;
 

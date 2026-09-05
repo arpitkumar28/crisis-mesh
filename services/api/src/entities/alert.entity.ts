@@ -114,6 +114,20 @@ export class Alert {
   @JoinColumn({ name: 'incident_id' })
   incident: Incident;
 
+  @Column({
+    name: 'acknowledged_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  acknowledged_at: Date;
+
+  @Column({ name: 'acknowledged_by', nullable: true })
+  acknowledged_by: string;
+
+  @ManyToOne(() => Profile, { nullable: true })
+  @JoinColumn({ name: 'acknowledged_by' })
+  acknowledger: Profile;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   created_at: Date;
 

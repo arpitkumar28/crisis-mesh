@@ -6,6 +6,7 @@ import { AlertsService } from '../alerts/alerts.service';
 import { WebSocketService } from '../websocket/websocket.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { AuditService } from '../audit/audit.service';
+import { IncidentsService } from '../incidents/incidents.service';
 import { SensorReading } from '../entities/sensor-reading.entity';
 import { Sensor } from '../entities/sensor.entity';
 import { Device } from '../entities/device.entity';
@@ -104,6 +105,13 @@ describe('Simulator FLOODING scenario -> risk -> alert -> websocket (integration
     log: jest.fn().mockResolvedValue(undefined),
   };
 
+  // Not exercised by this scenario (Alert creation never escalates to an
+  // incident on its own — that's an explicit authority action) — present
+  // only to satisfy AlertsService's constructor dependency.
+  const mockIncidentsService = {
+    create: jest.fn(),
+  };
+
   beforeAll(() => {
     process.env.RISK_ENGINE_SYSTEM_USER_ID = 'system-actor-uuid-flood-test';
   });
@@ -131,6 +139,7 @@ describe('Simulator FLOODING scenario -> risk -> alert -> websocket (integration
         { provide: MqttService, useValue: mockMqttService },
         { provide: WebSocketService, useValue: mockWebSocketService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: IncidentsService, useValue: mockIncidentsService },
       ],
     }).compile();
 

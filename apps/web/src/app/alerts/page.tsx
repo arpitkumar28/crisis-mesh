@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Bell, AlertTriangle, Shield, Cloud, Activity,
   MapPin, Clock, Info, Search,
-  ChevronRight, CheckCircle2,
+  CheckCircle2,
   AlertCircle, Zap, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
@@ -23,16 +23,26 @@ interface Alert {
   status: string;
   source: string;
   issued_at: string;
+  acknowledged_at?: string | null;
+  incident_id?: string | null;
   location?: {
     name: string;
   };
 }
 
+// Mirrors the backend's @Roles(ADMIN, AUTHORITY) guard on
+// PATCH /v1/alerts/:id/acknowledge and POST /v1/alerts/:id/escalate (see
+// services/api/src/alerts/alerts.controller.ts) — this only controls
+// whether the controls render; the backend enforces the real check.
+const CAN_REVIEW_ALERT_ROLES = ['ADMIN', 'AUTHORITY'];
+
 export default function AlertsPage() {
   const [selectedTab, setSelectedTab] = useState('All Alerts');
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuthStore();
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const { token, user } = useAuthStore();
+  const canReview = !!user?.role && CAN_REVIEW_ALERT_ROLES.includes(user.role);
 
   const fetchAlerts = async () => {
     try {
@@ -99,6 +109,38 @@ export default function AlertsPage() {
       };
     }
   }, [token]);
+
+  const handleAcknowledge = async (alertId: string) => {
+    setActioningId(alertId);
+    try {
+      await apiClient.patch(`/alerts/${alertId}/acknowledge`);
+      Toast.success('Alert acknowledged');
+      fetchAlerts();
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
+      Toast.error('Failed to acknowledge alert');
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const handleEscalate = async (alertId: string) => {
+    setActioningId(alertId);
+    try {
+      const response = await apiClient.post(`/alerts/${alertId}/escalate`);
+      Toast.success('Alert escalated to a new incident');
+      fetchAlerts();
+      const incidentId = response.data?.data?.incident?.id;
+      if (incidentId) {
+        window.location.href = `/incidents/${incidentId}`;
+      }
+    } catch (error: any) {
+      console.error('Failed to escalate alert:', error);
+      Toast.error(error.response?.data?.message || 'Failed to escalate alert');
+    } finally {
+      setActioningId(null);
+    }
+  };
 
   const filteredAlerts = alerts.filter(alert => {
     if (selectedTab === 'All Alerts') return true;
@@ -174,7 +216,7 @@ export default function AlertsPage() {
             </div>
           ) : (
             filteredAlerts.map((alert) => (
-              <div key={alert.id} className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors group cursor-pointer">
+              <div key={alert.id} className="p-6 flex items-center gap-6 hover:bg-gray-50 transition-colors group">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shrink-0 ${
                   alert.severity === 'CRITICAL' ? 'bg-red-50 border-red-100 text-red-600' :
                   alert.severity === 'HIGH' ? 'bg-orange-50 border-orange-100 text-orange-600' :
@@ -203,18 +245,50 @@ export default function AlertsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-right">
-                  <div>
+                <div className="flex items-center gap-4 text-right shrink-0">
+                  <div className="flex flex-col items-end gap-1">
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1 ${
                       alert.status === 'ACTIVE' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
                     }`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${alert.status === 'ACTIVE' ? 'bg-green-600 animate-pulse' : 'bg-gray-400'}`}></div>
                       {alert.status}
                     </span>
+                    {alert.acknowledged_at && (
+                      <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1">
+                        <CheckCircle2 size={10} /> Acknowledged
+                      </span>
+                    )}
                   </div>
-                  <button className="text-gray-300 group-hover:text-blue-600 transition-colors">
-                    <ChevronRight size={20} />
-                  </button>
+
+                  {canReview && (
+                    <div className="flex items-center gap-2">
+                      {!alert.acknowledged_at && (
+                        <button
+                          onClick={() => handleAcknowledge(alert.id)}
+                          disabled={actioningId === alert.id}
+                          className="px-3 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                        >
+                          {actioningId === alert.id ? <Loader2 size={12} className="animate-spin" /> : 'Acknowledge'}
+                        </button>
+                      )}
+                      {alert.incident_id ? (
+                        <a
+                          href={`/incidents/${alert.incident_id}`}
+                          className="px-3 py-2 bg-gray-50 text-gray-500 border border-gray-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                        >
+                          View Incident
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => handleEscalate(alert.id)}
+                          disabled={actioningId === alert.id}
+                          className="px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-100 disabled:opacity-50 transition-colors"
+                        >
+                          {actioningId === alert.id ? <Loader2 size={12} className="animate-spin" /> : 'Escalate'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))

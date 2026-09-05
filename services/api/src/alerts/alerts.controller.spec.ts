@@ -5,6 +5,8 @@ import { AlertsController } from './alerts.controller';
 import { AlertsService } from './alerts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ROLES_KEY } from '../auth/roles.decorator';
+import { UserRoleEnum } from '../entities/profile.entity';
 
 /**
  * Regression test for a route-ordering bug: `@Get(':id')` was declared before
@@ -32,6 +34,8 @@ describe('AlertsController (route ordering, HTTP)', () => {
     findByFilters: jest.fn(),
     getAlertSources: jest.fn(),
     getAlertTypes: jest.fn(),
+    acknowledge: jest.fn(),
+    escalateToIncident: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -99,5 +103,50 @@ describe('AlertsController (route ordering, HTTP)', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual({ id: 'alert-123', title: 'Test Alert' });
     expect(mockAlertsService.findOne.mock.calls[0][0]).toBe('alert-123');
+  });
+
+  it('PATCH /v1/alerts/:id/acknowledge resolves to acknowledge, not update or findOne', async () => {
+    mockAlertsService.acknowledge.mockResolvedValue({ id: 'alert-1', acknowledged_at: new Date().toISOString() });
+
+    const res = await request(app.getHttpServer()).patch('/v1/alerts/alert-1/acknowledge');
+
+    expect(res.status).toBe(200);
+    expect(mockAlertsService.acknowledge).toHaveBeenCalledTimes(1);
+    expect(mockAlertsService.acknowledge.mock.calls[0][0]).toBe('alert-1');
+    expect(mockAlertsService.update).not.toHaveBeenCalled();
+    expect(mockAlertsService.findOne).not.toHaveBeenCalled();
+  });
+
+  it('POST /v1/alerts/:id/escalate resolves to escalateToIncident and returns both alert and incident', async () => {
+    mockAlertsService.escalateToIncident.mockResolvedValue({
+      alert: { id: 'alert-1', incident_id: 'incident-1' },
+      incident: { id: 'incident-1', title: 'Escalated from alert: Test' },
+    });
+
+    const res = await request(app.getHttpServer()).post('/v1/alerts/alert-1/escalate');
+
+    expect(res.status).toBe(201);
+    expect(mockAlertsService.escalateToIncident).toHaveBeenCalledTimes(1);
+    expect(mockAlertsService.escalateToIncident.mock.calls[0][0]).toBe('alert-1');
+    expect(res.body.data.alert.incident_id).toBe('incident-1');
+    expect(res.body.data.incident.id).toBe('incident-1');
+  });
+});
+
+describe('AlertsController — RBAC role metadata on the review/escalation endpoints', () => {
+  it('PATCH :id/acknowledge: allows ADMIN/AUTHORITY, excludes CITIZEN/RESPONDER/ANALYST', () => {
+    const roles = Reflect.getMetadata(ROLES_KEY, AlertsController.prototype.acknowledge);
+    expect(roles).toEqual(expect.arrayContaining([UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY]));
+    expect(roles).not.toContain(UserRoleEnum.CITIZEN);
+    expect(roles).not.toContain(UserRoleEnum.RESPONDER);
+    expect(roles).not.toContain(UserRoleEnum.ANALYST);
+  });
+
+  it('POST :id/escalate: allows ADMIN/AUTHORITY, excludes CITIZEN/RESPONDER/ANALYST', () => {
+    const roles = Reflect.getMetadata(ROLES_KEY, AlertsController.prototype.escalate);
+    expect(roles).toEqual(expect.arrayContaining([UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY]));
+    expect(roles).not.toContain(UserRoleEnum.CITIZEN);
+    expect(roles).not.toContain(UserRoleEnum.RESPONDER);
+    expect(roles).not.toContain(UserRoleEnum.ANALYST);
   });
 });
