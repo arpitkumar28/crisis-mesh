@@ -53,7 +53,12 @@ function getApiClient() {
       throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
     }
 
-    const normalizedBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    // Accept NEXT_PUBLIC_API_URL in any of the shapes people reasonably
+    // set it to — the bare origin, origin+/api, or origin+/api/v1 — and
+    // always land on origin+/api/v1. Stripping only a trailing /api (not
+    // /api/v1) meant a value that already included /v1 doubled up to
+    // .../api/v1/api/v1 on every request, a real deployment-config trap.
+    const normalizedBaseUrl = API_BASE_URL.replace(/\/api(\/v1)?\/?$/, '').replace(/\/+$/, '');
     const apiBaseURL = `${normalizedBaseUrl}/api/v1`;
 
     apiClientInstance = axios.create({
