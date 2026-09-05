@@ -12,6 +12,27 @@ import {
 import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
 import { formatDistanceToNow } from 'date-fns';
+import { parseGeoPoint } from '@/lib/geo';
+
+const ALERT_TYPE_LABELS: Record<string, string> = {
+  WEATHER: 'Severe weather',
+  FLOOD: 'Flood risk',
+  EARTHQUAKE: 'Earthquake risk',
+  WILDFIRE: 'Wildfire risk',
+  LANDSLIDE: 'Landslide risk',
+  TSUNAMI: 'Tsunami risk',
+  CYCLONE: 'Cyclone risk',
+  MANUAL: 'Active alert',
+};
+
+// Alert.title is an internal, backend-generated string that can embed a
+// raw device UUID (e.g. "FLOOD risk: WATER_LEVEL 4.4 from device
+// 2f59cd65-..."). This public, unauthenticated page shows a district
+// name when one exists, or a plain hazard-type label otherwise — never
+// the raw title text.
+function publicAlertHeadline(alert: any): string {
+  return alert?.location?.name || ALERT_TYPE_LABELS[alert?.type] || 'Active alert';
+}
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -34,6 +55,7 @@ export default function PublicHome() {
   const [newsLoading, setNewsLoading] = useState(true);
   const [districtCount, setDistrictCount] = useState<number | null>(null);
   const [topAlert, setTopAlert] = useState<any>(null);
+  const [mapEntities, setMapEntities] = useState<any[]>([]);
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('crisismesh-theme') as ThemePreference | null;
@@ -87,8 +109,27 @@ export default function PublicHome() {
 
     const fetchTopAlert = async () => {
       try {
-        const response = await apiClient.get('/public/alerts/active', { params: { limit: 1 } });
-        setTopAlert((response.data.data || [])[0] || null);
+        const response = await apiClient.get('/public/alerts/active', { params: { limit: 10 } });
+        const alerts: any[] = response.data.data || [];
+        setTopAlert(alerts[0] || null);
+
+        const entities = alerts
+          .map((alert) => {
+            const coords = alert.location?.location ? parseGeoPoint(alert.location.location) : null;
+            if (!coords) return null;
+            return {
+              id: alert.id,
+              kind: 'alert' as const,
+              title: publicAlertHeadline(alert),
+              detail: alert.severity,
+              severity: alert.severity,
+              status: alert.status,
+              latitude: coords.lat,
+              longitude: coords.lng,
+            };
+          })
+          .filter(Boolean);
+        setMapEntities(entities);
       } catch (err) {
         console.error('Public alerts API Error:', err);
       }
@@ -267,22 +308,22 @@ export default function PublicHome() {
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Live Monitoring</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">Rules</h4>
-                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Based Risk Alerts</p>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">Rule-Based</h4>
+                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Risk Alerts</p>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-6 relative h-80 sm:h-96 lg:h-[500px]">
                <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group dark:border-slate-800 dark:bg-slate-900">
-                  <LiveMap entities={[]} />
+                  <LiveMap entities={mapEntities} />
                   {topAlert && (
                     <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
                       <div className="flex items-center gap-2 mb-2 sm:mb-3 text-red-600">
                          <AlertTriangle size={16} />
                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest">{topAlert.severity} Alert</span>
                       </div>
-                      <p className="text-[11px] sm:text-xs font-black text-[#061a37]">{topAlert.title}</p>
+                      <p className="text-[11px] sm:text-xs font-black text-[#061a37]">{publicAlertHeadline(topAlert)}</p>
                       <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase mt-2">
                         {formatDistanceToNow(new Date(topAlert.issued_at), { addSuffix: true })}
                       </p>
@@ -326,15 +367,17 @@ export default function PublicHome() {
                   </button>
                 </div>
                 <div className="relative h-[360px] overflow-hidden rounded-[24px] border border-gray-200 bg-slate-900 dark:border-slate-700">
-                  <LiveMap entities={[]} />
+                  <LiveMap entities={mapEntities} />
                   {topAlert && (
                     <div className="absolute bottom-4 right-4 w-[220px] rounded-2xl bg-white/95 p-4 shadow-xl dark:bg-slate-900/90">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-[9px] font-black uppercase tracking-[0.24em] text-red-600">{topAlert.severity}</p>
                         <span className="rounded-full bg-red-50 px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-red-700 dark:bg-red-950/40 dark:text-red-300">{topAlert.type}</span>
                       </div>
-                      <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">{topAlert.location?.name || topAlert.title}</p>
-                      <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">{topAlert.title}</p>
+                      <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">{publicAlertHeadline(topAlert)}</p>
+                      <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">
+                        {formatDistanceToNow(new Date(topAlert.issued_at), { addSuffix: true })}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -538,11 +581,6 @@ export default function PublicHome() {
               <p className="text-sm font-medium text-gray-500 leading-relaxed dark:text-slate-300">
                 Empowering authorities and citizens with India&apos;s most advanced disaster intelligence and emergency coordination platform.
               </p>
-              <div className="flex gap-4">
-                 {[0,1,2,3].map((item) => (
-                   <div key={item} className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 dark:bg-slate-800 dark:border-slate-700" />
-                 ))}
-              </div>
             </div>
 
             <div className="lg:col-span-2">
