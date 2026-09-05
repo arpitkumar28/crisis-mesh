@@ -141,6 +141,24 @@ export class JwtAuthProvider implements IAuthProvider {
     }
   }
 
+  /**
+   * Revokes a specific refresh token so it can never be used again, even
+   * though JWTs are otherwise stateless. Used by logout — tolerant of a
+   * missing/already-invalid token (logout should never fail just because
+   * the client no longer has a usable session to kill).
+   */
+  async revokeRefreshToken(token: string): Promise<void> {
+    if (!token) return;
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+      if (payload?.jti) {
+        this.revokedRefreshTokens.add(payload.jti);
+      }
+    } catch {
+      // Already expired/invalid/malformed — nothing to revoke.
+    }
+  }
+
   async refreshToken(token: string): Promise<string> {
     try {
       const payload = await this.validateToken(token, 'refresh');

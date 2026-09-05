@@ -191,6 +191,26 @@ export class AuthService {
     }
   }
 
+  async logout(
+    userId: string,
+    email: string,
+    refreshToken?: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    if (refreshToken) {
+      await this.authProvider.revokeRefreshToken(refreshToken);
+    }
+    await this.auditService.logAuthentication(
+      userId,
+      email,
+      'LOGOUT',
+      ipAddress,
+      userAgent,
+    );
+    this.logger.log(`User logged out: ${email}`);
+  }
+
   async assignRole(
     userId: string,
     role: UserRoleEnum,

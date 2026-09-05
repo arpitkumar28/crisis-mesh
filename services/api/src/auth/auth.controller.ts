@@ -91,10 +91,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(
     @CurrentUser() user: any,
+    @Body() body: { refresh_token?: string },
     @ClientInfo() clientInfo: { ip: string; userAgent: string },
   ) {
-    // In a JWT stateless setup, logout is primarily client-side
-    // However, we can add the token to a blacklist if needed
+    await this.authService.logout(
+      user.id,
+      user.email,
+      body?.refresh_token,
+      clientInfo.ip,
+      clientInfo.userAgent,
+    );
     return {
       success: true,
       message: 'Logout successful',

@@ -38,8 +38,8 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
 
-  const handleLogout = () => {
-    performLogout();
+  const handleLogout = async () => {
+    await performLogout();
     router.push('/login');
   };
 

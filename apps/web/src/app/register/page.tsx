@@ -5,9 +5,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { setAuth } = useAuthStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,13 +34,32 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await apiClient.post('/auth/register', {
+      // Never sends a role — the backend's RegisterDto has no such field
+      // and the global ValidationPipe (whitelist + forbidNonWhitelisted)
+      // would reject the request outright if one were added here.
+      const response = await apiClient.post('/auth/register', {
         name: name.trim(),
         email: email.trim(),
         password,
       });
 
-      router.push('/login?registered=1');
+      const { access_token, refresh_token, user } = response.data.data;
+
+      // The backend already returns a real session on successful
+      // registration — establish it immediately instead of making the
+      // new user log in again with the password they just typed.
+      document.cookie = `access_token=${access_token}; path=/; max-age=86400; SameSite=Lax`;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      if (refresh_token) {
+        localStorage.setItem('refresh_token', refresh_token);
+      }
+      const roles: string[] = user.roles || [];
+      setAuth({ id: user.id, email: user.email, name: user.name, role: roles[0] || 'User' }, access_token);
+
+      // Public registration only ever assigns CITIZEN (enforced
+      // server-side), so this always lands on the citizen experience.
+      router.push('/citizen');
     } catch (requestError: any) {
       const message = requestError?.response?.data?.message || requestError?.message || 'Registration failed. Please try again.';
       setError(Array.isArray(message) ? message.join(' ') : message);
