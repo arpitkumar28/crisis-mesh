@@ -7,7 +7,8 @@ import {
   MapPin, Bell, Cloud, Activity,
   Search, ChevronRight, ArrowRight, ChevronDown,
   Siren, Users, Globe, Menu, X,
-  AlertTriangle, CloudRain, Droplets, Sun, Moon, RefreshCw
+  AlertTriangle, CloudRain, Droplets, Sun, Moon, RefreshCw,
+  Phone, Radio, TrendingUp
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
@@ -324,7 +325,7 @@ export default function PublicHome() {
 
               <div className="flex flex-wrap items-center gap-3 pt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400">
                 <span className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-blue-700 dark:bg-slate-800 dark:text-blue-300">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" /> Trusted in 28 states
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" /> Pan-India district coverage
                 </span>
                 <span className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-red-700 dark:bg-slate-800 dark:text-red-300">
                   <div className="h-2 w-2 rounded-full bg-red-500" /> 24/7 monitoring
@@ -347,8 +348,8 @@ export default function PublicHome() {
               </div>
             </div>
 
-            <div className="lg:col-span-6 relative h-80 sm:h-96 lg:h-[500px]">
-               <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group dark:border-slate-800 dark:bg-slate-900">
+            <div className="lg:col-span-6">
+               <div className="relative h-80 sm:h-96 lg:h-[500px] bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group dark:border-slate-800 dark:bg-slate-900">
                   <LiveMap entities={mapEntities} />
                   {topAlert && (
                     <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
@@ -363,90 +364,63 @@ export default function PublicHome() {
                     </div>
                   )}
                </div>
+               <div className="mt-3 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Safe</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Watch</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" /> Warning</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> Critical</span>
+               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-6 bg-white dark:bg-slate-900">
+      {/* Emergency Helplines — standard national numbers, always visible */}
+      <section className="bg-[#061a37] py-4 dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+            <Phone size={13} className="text-red-400" /> National Helplines
+          </span>
+          {[
+            { label: 'Emergency', number: '112' },
+            { label: 'Disaster Management', number: '1078' },
+            { label: 'Ambulance', number: '108' },
+            { label: 'Fire', number: '101' },
+          ].map((line) => (
+            <span key={line.label} className="flex items-baseline gap-2 text-xs font-bold text-white">
+              <span className="font-black text-blue-400">{line.number}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{line.label}</span>
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* Why CrisisMesh Works */}
+      <section className="py-16 lg:py-20 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-[28px] border border-gray-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="max-w-2xl mb-12">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Why CrisisMesh Works</p>
+            <h3 className="mt-3 text-3xl lg:text-4xl font-black text-[#061a37] dark:text-white">Data-driven action, not just alerts.</h3>
+            <p className="mt-4 text-base font-medium text-gray-600 dark:text-slate-300">
+              A single operational view built on live sensor data and a rule-based risk engine —
+              so every alert on CrisisMesh points to a verified, actionable condition.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: 'Districts monitored', value: districtCount !== null ? `${districtCount}` : '—' },
-              { label: 'Live risk assessment', value: 'Rule-Based' },
-              { label: 'Monitoring', value: '24/7' },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl bg-white p-5 text-center shadow-sm border border-gray-100 dark:bg-slate-900 dark:border-slate-800">
-                <p className="text-3xl font-black text-[#061a37] dark:text-white">{stat.value}</p>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-slate-400">{stat.label}</p>
+              { title: 'Real-time coordination', text: 'Unify alerts, risk levels, and district status in one operational view.', icon: <Radio size={22} />, accent: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
+              { title: 'Community visibility', text: 'Help citizens understand safe routes, shelter access, and active warnings instantly.', icon: <Users size={22} />, accent: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' },
+              { title: 'Faster response', text: 'Reduce delays with condition-aware dispatch and verified emergency zones.', icon: <TrendingUp size={22} />, accent: 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300' },
+            ].map((item) => (
+              <div key={item.title} className="rounded-[24px] border border-gray-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-950/60">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${item.accent}`}>
+                  {item.icon}
+                </div>
+                <h4 className="mt-5 text-base font-black text-[#061a37] dark:text-white">{item.title}</h4>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-gray-600 dark:text-slate-300">{item.text}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-10 bg-white dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            <div className="lg:col-span-7">
-              <div className="rounded-[30px] border border-gray-200 bg-slate-50 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
-                <div className="mb-4 flex items-center justify-between gap-4 px-2">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Live Risk Overview</p>
-                    <h3 className="mt-2 text-2xl font-black text-[#061a37] dark:text-white">National incident map</h3>
-                  </div>
-                  <button className="rounded-full border border-blue-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300">
-                    View full map
-                  </button>
-                </div>
-                <div className="relative h-[360px] overflow-hidden rounded-[24px] border border-gray-200 bg-slate-900 dark:border-slate-700">
-                  <LiveMap entities={mapEntities} />
-                  {topAlert && (
-                    <div className="absolute bottom-4 right-4 w-[220px] rounded-2xl bg-white/95 p-4 shadow-xl dark:bg-slate-900/90">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[9px] font-black uppercase tracking-[0.24em] text-red-600">{topAlert.severity}</p>
-                        <span className="rounded-full bg-red-50 px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-red-700 dark:bg-red-950/40 dark:text-red-300">{topAlert.type}</span>
-                      </div>
-                      <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">{publicAlertHeadline(topAlert)}</p>
-                      <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">
-                        {formatDistanceToNow(new Date(topAlert.issued_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.22em] text-gray-500 dark:text-slate-400">
-                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Safe</span>
-                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-yellow-400" /> Watch</span>
-                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> Warning</span>
-                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> Critical</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5">
-              <div className="rounded-[30px] border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-600">Why CrisisMesh works</p>
-                <h3 className="mt-3 text-3xl font-black text-[#061a37] dark:text-white">Data-driven action, not just alerts.</h3>
-
-                <div className="mt-6 space-y-4">
-                  {[
-                    { title: 'Real-time coordination', text: 'Unify alerts, risk levels, and district status in one operational view.', accent: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' },
-                    { title: 'Community visibility', text: 'Help citizens understand safe routes, shelter access, and active warnings instantly.', accent: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' },
-                    { title: 'Faster response', text: 'Reduce delays with condition-aware dispatch and verified emergency zones.', accent: 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300' },
-                  ].map((item) => (
-                    <div key={item.title} className="flex gap-4 rounded-2xl border border-gray-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl font-black ${item.accent}`}>
-                        {item.title.charAt(0)}
-                      </div>
-                      <div>
-                        <h4 className="text-base font-black text-[#061a37] dark:text-white">{item.title}</h4>
-                        <p className="mt-1 text-sm font-medium text-gray-600 dark:text-slate-300">{item.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -497,16 +471,16 @@ export default function PublicHome() {
       </section>
 
       {/* Latest Intelligence Section */}
-      <section className="py-20 bg-[#f8fafc]">
+      <section className="py-20 bg-[#f8fafc] dark:bg-slate-950">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             {/* Left: District Tracker */}
-            <div className="lg:col-span-4 bg-white rounded-[32px] p-8 border border-gray-200 shadow-sm">
+            <div className="lg:col-span-4 bg-white rounded-[32px] p-8 border border-gray-200 shadow-sm dark:bg-slate-900 dark:border-slate-800">
                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black text-[#061a37] uppercase tracking-tight">{location.name} Desk</h3>
+                  <h3 className="text-xl font-black text-[#061a37] uppercase tracking-tight dark:text-white">{location.name} Desk</h3>
                   <button
                     onClick={() => setIsLocationPickerOpen((open) => !open)}
-                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest"
+                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest dark:text-blue-400"
                   >
                     Change Area
                   </button>
@@ -520,11 +494,11 @@ export default function PublicHome() {
 
                <div className="space-y-6">
                   <div className="flex items-center gap-6">
-                     <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+                     <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 dark:bg-blue-950/30 dark:border-blue-900/50 dark:text-blue-300">
                         {weatherLoading ? <RefreshCw size={32} className="animate-spin" /> : <CloudRain size={32} />}
                      </div>
                      <div>
-                        <h4 className="text-4xl font-black text-[#061a37]">
+                        <h4 className="text-4xl font-black text-[#061a37] dark:text-white">
                            {weatherLoading ? '--' : (weatherData?.temperature?.toFixed(1) || '--')}°C
                         </h4>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
@@ -538,7 +512,7 @@ export default function PublicHome() {
                      <WeatherMetric label="Humidity" value={weatherLoading ? '--' : `${weatherData?.humidity?.toFixed(0) || '--'}%`} icon={<Bell size={14} />} />
                   </div>
 
-                  <div className="pt-6 border-t border-gray-100">
+                  <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Latest Local News</p>
                      <div className="space-y-4">
                         {newsLoading ? (
@@ -547,10 +521,10 @@ export default function PublicHome() {
                           </div>
                         ) : newsData.length > 0 ? (
                           newsData.slice(0, 2).map((article, index) => (
-                            <NewsMini 
-                              key={index} 
-                              title={article.title || 'Weather Update'} 
-                              time={article.publishedAt ? `${Math.floor((Date.now() - new Date(article.publishedAt).getTime()) / 60000)}m ago` : 'Recently'} 
+                            <NewsMini
+                              key={index}
+                              title={article.title || 'Weather Update'}
+                              time={article.publishedAt ? `${Math.floor((Date.now() - new Date(article.publishedAt).getTime()) / 60000)}m ago` : 'Recently'}
                             />
                           ))
                         ) : (
@@ -559,7 +533,7 @@ export default function PublicHome() {
                           </div>
                         )}
                      </div>
-                     <Link href="/news" className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors">
+                     <Link href="/news" className="w-full mt-6 flex items-center justify-center gap-2 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-700">
                         View All News <ArrowRight size={14} />
                      </Link>
                   </div>
@@ -582,27 +556,27 @@ export default function PublicHome() {
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex items-center gap-6 group hover:border-blue-500 transition-all cursor-pointer">
-                     <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600 border border-cyan-100 group-hover:bg-cyan-600 group-hover:text-white transition-all overflow-hidden">
+                  <Link href="/news" className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex items-center gap-6 group hover:border-blue-500 transition-all dark:bg-slate-900 dark:border-slate-800">
+                     <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center text-cyan-600 border border-cyan-100 group-hover:bg-cyan-600 group-hover:text-white transition-all overflow-hidden dark:bg-cyan-950/30 dark:border-cyan-900/50 dark:text-cyan-300">
                         <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={64} height={64} className="w-full h-full object-cover" />
                      </div>
                      <div>
-                        <h4 className="text-lg font-black text-[#061a37]">Stay Informed</h4>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Get verified area updates</p>
+                        <h4 className="text-lg font-black text-[#061a37] dark:text-white">Stay Informed</h4>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 dark:text-slate-400">Get verified area updates</p>
                      </div>
-                     <ChevronRight className="ml-auto text-gray-300 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                     <ChevronRight className="ml-auto text-gray-300 group-hover:text-blue-600 transition-colors dark:text-slate-600" />
+                  </Link>
 
-                  <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex items-center gap-6 group hover:border-blue-500 transition-all cursor-pointer">
-                     <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  <Link href="/volunteers" className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm flex items-center gap-6 group hover:border-blue-500 transition-all dark:bg-slate-900 dark:border-slate-800">
+                     <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all dark:bg-indigo-950/30 dark:border-indigo-900/50 dark:text-indigo-300">
                         <Users size={32} />
                      </div>
                      <div>
-                        <h4 className="text-lg font-black text-[#061a37]">Volunteer</h4>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Join relief operations</p>
+                        <h4 className="text-lg font-black text-[#061a37] dark:text-white">Volunteer</h4>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 dark:text-slate-400">Join relief operations</p>
                      </div>
-                     <ChevronRight className="ml-auto text-gray-300 group-hover:text-blue-600 transition-colors" />
-                  </div>
+                     <ChevronRight className="ml-auto text-gray-300 group-hover:text-blue-600 transition-colors dark:text-slate-600" />
+                  </Link>
                </div>
             </div>
           </div>
@@ -688,12 +662,12 @@ function ServiceCard({ icon, title, desc, href, color, bg }: { icon: React.React
 
 function WeatherMetric({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-      <div className="flex items-center gap-2 mb-2 text-blue-600">
+    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 dark:bg-slate-800 dark:border-slate-700">
+      <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
         {icon}
         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
       </div>
-      <p className="text-sm font-black text-[#061a37] uppercase">{value}</p>
+      <p className="text-sm font-black text-[#061a37] uppercase dark:text-white">{value}</p>
     </div>
   );
 }
@@ -703,7 +677,7 @@ function NewsMini({ title, time }: { title: string; time: string }) {
     <div className="flex items-start gap-3 group cursor-pointer">
        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0"></div>
        <div>
-          <h5 className="text-xs font-black text-[#061a37] leading-tight group-hover:text-blue-600 transition-colors">{title}</h5>
+          <h5 className="text-xs font-black text-[#061a37] leading-tight group-hover:text-blue-600 transition-colors dark:text-white">{title}</h5>
           <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">{time}</p>
        </div>
     </div>
