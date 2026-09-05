@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
+import { formatDistanceToNow } from 'date-fns';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -31,6 +32,8 @@ export default function PublicHome() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [newsData, setNewsData] = useState<any[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [districtCount, setDistrictCount] = useState<number | null>(null);
+  const [topAlert, setTopAlert] = useState<any>(null);
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('crisismesh-theme') as ThemePreference | null;
@@ -73,8 +76,28 @@ export default function PublicHome() {
       }
     };
 
+    const fetchDistrictCount = async () => {
+      try {
+        const response = await apiClient.get('/public/districts');
+        setDistrictCount((response.data.data || []).length);
+      } catch (err) {
+        console.error('Districts API Error:', err);
+      }
+    };
+
+    const fetchTopAlert = async () => {
+      try {
+        const response = await apiClient.get('/public/alerts/active', { params: { limit: 1 } });
+        setTopAlert((response.data.data || [])[0] || null);
+      } catch (err) {
+        console.error('Public alerts API Error:', err);
+      }
+    };
+
     fetchWeatherData();
     fetchNewsData();
+    fetchDistrictCount();
+    fetchTopAlert();
   }, []);
 
   useEffect(() => {
@@ -236,7 +259,7 @@ export default function PublicHome() {
 
               <div className="grid grid-cols-3 gap-4 sm:gap-8 pt-4 sm:pt-8">
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">766</h4>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">{districtCount !== null ? districtCount : '—'}</h4>
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Districts Tracked</p>
                 </div>
                 <div className="space-y-1">
@@ -244,8 +267,8 @@ export default function PublicHome() {
                    <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Live Monitoring</p>
                 </div>
                 <div className="space-y-1">
-                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">AI</h4>
-                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Risk Prediction</p>
+                   <h4 className="text-xl sm:text-3xl font-black text-[#061a37] dark:text-white">Rules</h4>
+                   <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wider">Based Risk Alerts</p>
                 </div>
               </div>
             </div>
@@ -253,29 +276,18 @@ export default function PublicHome() {
             <div className="lg:col-span-6 relative h-80 sm:h-96 lg:h-[500px]">
                <div className="absolute inset-0 bg-[#061a37] rounded-2xl sm:rounded-3xl lg:rounded-[40px] shadow-lg sm:shadow-2xl overflow-hidden border-4 sm:border-8 border-white group dark:border-slate-800 dark:bg-slate-900">
                   <LiveMap entities={[]} />
-                  <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
-                    <div className="flex items-center gap-2 mb-2 sm:mb-3 text-red-600">
-                       <AlertTriangle size={16} />
-                       <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest">Incident Alert</span>
+                  {topAlert && (
+                    <div className="absolute top-4 right-4 sm:top-6 sm:right-6 p-3 sm:p-4 bg-white/90 backdrop-blur-md rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl border border-gray-100 max-w-[160px] sm:max-w-[200px]">
+                      <div className="flex items-center gap-2 mb-2 sm:mb-3 text-red-600">
+                         <AlertTriangle size={16} />
+                         <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest">{topAlert.severity} Alert</span>
+                      </div>
+                      <p className="text-[11px] sm:text-xs font-black text-[#061a37]">{topAlert.title}</p>
+                      <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase mt-2">
+                        {formatDistanceToNow(new Date(topAlert.issued_at), { addSuffix: true })}
+                      </p>
                     </div>
-                    <p className="text-[11px] sm:text-xs font-black text-[#061a37]">Urban Flooding reported in Jaipur South</p>
-                    <p className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase mt-2">2 minutes ago</p>
-                  </div>
-               </div>
-               {/* Floating elements */}
-               <div className="absolute -bottom-6 -left-6 sm:-bottom-8 sm:-left-8 p-4 sm:p-6 bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-gray-100 max-w-[180px] sm:max-w-[240px] hidden sm:block animate-bounce-slow">
-                  <div className="flex items-center gap-3 mb-4">
-                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                        <Activity size={20} />
-                     </div>
-                     <div>
-                        <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase">Mesh Health</p>
-                        <p className="text-base sm:text-lg font-black text-[#061a37]">98.2%</p>
-                     </div>
-                  </div>
-                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                     <div className="h-full bg-green-500 w-[98%]"></div>
-                  </div>
+                  )}
                </div>
             </div>
           </div>
@@ -286,9 +298,9 @@ export default function PublicHome() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 rounded-[28px] border border-gray-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/60">
             {[
-              { label: 'Districts monitored', value: '766+' },
-              { label: 'Live sensors', value: '12k+' },
-              { label: 'Residents informed', value: '2.4M' },
+              { label: 'Districts monitored', value: districtCount !== null ? `${districtCount}` : '—' },
+              { label: 'Live risk assessment', value: 'Rule-Based' },
+              { label: 'Monitoring', value: '24/7' },
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl bg-white p-5 text-center shadow-sm border border-gray-100 dark:bg-slate-900 dark:border-slate-800">
                 <p className="text-3xl font-black text-[#061a37] dark:text-white">{stat.value}</p>
@@ -315,17 +327,16 @@ export default function PublicHome() {
                 </div>
                 <div className="relative h-[360px] overflow-hidden rounded-[24px] border border-gray-200 bg-slate-900 dark:border-slate-700">
                   <LiveMap entities={[]} />
-                  <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-200 backdrop-blur-sm">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" /> 98% network health
-                  </div>
-                  <div className="absolute bottom-4 right-4 w-[220px] rounded-2xl bg-white/95 p-4 shadow-xl dark:bg-slate-900/90">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.24em] text-red-600">Critical</p>
-                      <span className="rounded-full bg-red-50 px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-red-700 dark:bg-red-950/40 dark:text-red-300">Flood</span>
+                  {topAlert && (
+                    <div className="absolute bottom-4 right-4 w-[220px] rounded-2xl bg-white/95 p-4 shadow-xl dark:bg-slate-900/90">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[9px] font-black uppercase tracking-[0.24em] text-red-600">{topAlert.severity}</p>
+                        <span className="rounded-full bg-red-50 px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-red-700 dark:bg-red-950/40 dark:text-red-300">{topAlert.type}</span>
+                      </div>
+                      <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">{topAlert.location?.name || topAlert.title}</p>
+                      <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">{topAlert.title}</p>
                     </div>
-                    <p className="mt-3 text-sm font-black text-[#061a37] dark:text-white">Jaipur South</p>
-                    <p className="mt-1 text-[10px] font-bold text-gray-500 dark:text-slate-300">Waterlogging &ot; 2 roads blocked</p>
-                  </div>
+                  )}
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.22em] text-gray-500 dark:text-slate-400">
                   <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Safe</span>
@@ -474,14 +485,12 @@ export default function PublicHome() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 blur-[100px]"></div>
                   <h3 className="text-3xl font-black mb-4 leading-tight">Ready for any disaster. <br />Everywhere in India.</h3>
                   <p className="text-gray-400 font-medium max-w-lg mb-10 leading-relaxed">
-                    Our IoT sensor network and AI models provide localized risk
-                    assessment for over 700+ districts across India.
+                    Our IoT sensor network and rule-based risk engine provide localized
+                    risk assessment{districtCount !== null ? ` across ${districtCount} tracked districts` : ' across India'}.
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                    <RegionStat label="IoT Sensors" value="12k+" />
-                    <RegionStat label="Safe Shelters" value="5,400" />
-                    <RegionStat label="Active Users" value="2.4M" />
-                    <RegionStat label="Rescue Units" value="850" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <RegionStat label="Districts tracked" value={districtCount !== null ? `${districtCount}` : '—'} />
+                    <RegionStat label="Monitoring" value="24/7" />
                   </div>
                </div>
 
@@ -558,11 +567,10 @@ export default function PublicHome() {
 
             <div className="lg:col-span-4 bg-gray-50 rounded-3xl p-8 border border-gray-100 dark:bg-slate-800 dark:border-slate-700">
                <h4 className="text-sm font-black text-[#061a37] mb-2 uppercase tracking-tight dark:text-white">Stay Connected</h4>
-               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6 dark:text-slate-300">Subscribe to our newsletter for major safety updates.</p>
-               <div className="flex gap-2">
-                  <input type="email" placeholder="Email address" className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none dark:bg-slate-900 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-400" />
-                  <button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">Join</button>
-               </div>
+               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6 dark:text-slate-300">Follow live news and safety updates directly on the platform.</p>
+               <Link href="/news" className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700">
+                  View News <ArrowRight size={14} />
+               </Link>
             </div>
           </div>
 

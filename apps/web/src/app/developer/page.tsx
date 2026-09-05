@@ -1,10 +1,12 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
-  Terminal, Globe, Zap, ShieldCheck, Database, Copy, ExternalLink
+  Terminal, Globe, Zap, ShieldCheck, Database, Copy
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import { Toast } from '@/lib/toast';
 
 const endpoints = [
   { method: 'GET', path: '/api/v1/alerts', desc: 'Get all active alerts' },
@@ -36,8 +38,12 @@ export default function DeveloperPortal() {
                     <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-2">API Overview</h3>
                     <p className="text-xs font-bold text-gray-400">RESTful and WebSocket APIs for real-time data integration.</p>
                  </div>
-                 <button className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
-                    View API Documentation
+                 <button
+                   disabled
+                   title="Interactive API documentation is not yet published"
+                   className="px-6 py-2.5 bg-gray-100 text-gray-400 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
+                 >
+                    Documentation Coming Soon
                  </button>
               </div>
 
@@ -95,7 +101,15 @@ export default function DeveloperPortal() {
                                 </td>
                                 <td className="px-6 py-4 text-[10px] font-bold text-gray-400">{ep.desc}</td>
                                 <td className="px-6 py-4 text-right">
-                                   <button className="text-gray-600 group-hover:text-white transition-colors"><Copy size={14} /></button>
+                                   <button
+                                     onClick={() => {
+                                       navigator.clipboard.writeText(ep.path);
+                                       Toast.success('Endpoint copied to clipboard');
+                                     }}
+                                     className="text-gray-600 group-hover:text-white transition-colors"
+                                   >
+                                     <Copy size={14} />
+                                   </button>
                                 </td>
                              </tr>
                           ))}
@@ -139,33 +153,26 @@ export default function DeveloperPortal() {
                  <span className="text-gray-500">{/* // Initialize client */}</span> <br />
                  const cm = new CrisisMesh(&apos;API_KEY&apos;);
               </div>
-              <button className="w-full py-4 bg-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">
-                 Generate API Key
+              <button
+                disabled
+                title="Self-service API key generation is not yet implemented"
+                className="w-full py-4 bg-white/5 border border-white/10 text-gray-500 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed"
+              >
+                 API Key Generation Coming Soon
               </button>
            </div>
 
            <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm">
-              <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-6">System Status</h3>
-              <div className="space-y-4">
-                 <StatusItem label="API Services" status="Online" color="text-green-500" />
-                 <StatusItem label="WebSocket" status="Online" color="text-green-500" />
-                 <StatusItem label="MQTT Broker" status="Online" color="text-green-500" />
-                 <StatusItem label="Data Processing" status="Operational" color="text-green-500" />
-              </div>
-              <div className="mt-8 p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                 <span className="text-[9px] font-black text-gray-400 uppercase">Uptime last 30 days</span>
-                 <span className="text-[10px] font-black text-[#0f172a]">99.98%</span>
-              </div>
-           </div>
-           
-           <div className="bg-blue-50 rounded-[32px] border border-blue-100 p-8">
-              <h3 className="font-black text-blue-600 uppercase tracking-wider text-xs mb-6">Help & Resources</h3>
-              <div className="space-y-4">
-                 <HelpLink label="API Reference" />
-                 <HelpLink label="Webhooks Guide" />
-                 <HelpLink label="SDK Downloads" />
-                 <HelpLink label="Sample Code" />
-              </div>
+              <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-4">System Status</h3>
+              <p className="text-[10px] font-bold text-gray-400 mb-4">
+                 Live backend/database/MQTT health, not a fabricated uptime figure.
+              </p>
+              <Link
+                href="/settings/system-health"
+                className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+              >
+                 View System Health →
+              </Link>
            </div>
         </div>
       </div>
@@ -173,20 +180,3 @@ export default function DeveloperPortal() {
   );
 }
 
-function StatusItem({ label, status, color }: { label: string; status: string; color: string }) {
-  return (
-    <div className="flex items-center justify-between">
-       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
-       <span className={`text-[10px] font-black uppercase ${color}`}>{status}</span>
-    </div>
-  );
-}
-
-function HelpLink({ label }: { label: string }) {
-  return (
-    <a href="#" className="flex items-center justify-between text-[10px] font-black text-blue-800/60 uppercase tracking-widest hover:text-blue-600 transition-colors">
-       {label}
-       <ExternalLink size={12} />
-    </a>
-  );
-}
