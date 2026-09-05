@@ -129,16 +129,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(width: 8),
                         const Text(
                           'CRISIS',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 25,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF102043)),
+                              color: Color(0xFF102043)),
                         ),
                         const Text('MESH',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0757E8)))
+                                color: Color(0xFF0757E8)))
                       ]),
                   const SizedBox(height: 8),
                   const Text(

@@ -11,12 +11,12 @@ class AppConfig {
   // For physical device: your-machine-ip:3002
   static const apiOrigin = String.fromEnvironment(
     'CRISISMESH_API_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: 'http://10.0.2.2:3002',
   );
 
   static const webSocketOrigin = String.fromEnvironment(
     'CRISISMESH_WS_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: 'http://10.0.2.2:3002',
   );
 
   static String get apiBaseUrl =>

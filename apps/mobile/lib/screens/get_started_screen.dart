@@ -21,18 +21,18 @@ class GetStartedScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   const Text(
                     'CRISIS',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF102043),
+                      color: Color(0xFF102043),
                     ),
                   ),
                   const Text(
                     'MESH',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0757E8),
+                      color: Color(0xFF0757E8),
                     ),
                   ),
                 ],
