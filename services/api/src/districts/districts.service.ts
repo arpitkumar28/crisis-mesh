@@ -136,51 +136,22 @@ export class DistrictsService {
       pollution: district.pollution_risk_percent,
     };
 
-    // Get crisis mesh sensor intelligence (simulated based on device data)
-    const crisisMeshIntelligence = {
-      water_level: {
-        current: '15 cm',
-        trend: '+15 cm',
-        time_period: 'Last 1h',
-        status: 'High',
-      },
-      rainfall_intensity: {
-        current: '72 mm/h',
-        intensity: 'Heavy',
-        today_total: '72 mm',
-      },
-      soil_moisture: {
-        current: '89%',
-        status: 'Saturated',
-      },
-      ai_risk_prediction: {
-        risk_level: '87%',
-        severity: 'High',
-        confidence: '96%',
-        trend: 'increasing',
-      },
-      ai_insight:
-        district.ai_risk_insight ||
-        'Urban flooding risk increasing due to heavy rainfall and saturated soil conditions. Monitor low-lying areas closely.',
-    };
-
-    // Break down emergency resources by type
+    // Break down emergency resources by type — real counts only, including
+    // zero. A fallback like `|| 32` here would silently misreport a
+    // district with genuinely zero hospitals as having 32.
     const emergencyResources = {
-      hospitals: resources.filter((r) => r.type === 'HOSPITAL').length || 32,
+      hospitals: resources.filter((r) => r.type === 'HOSPITAL').length,
       shelters: shelterCount,
-      police_stations: resources.filter((r) => r.type === 'POLICE').length || 9,
-      fire_stations: resources.filter((r) => r.type === 'FIRE').length || 6,
+      police_stations: resources.filter((r) => r.type === 'POLICE').length,
+      fire_stations: resources.filter((r) => r.type === 'FIRE').length,
       helpline: '112',
-      ambulance: resources.filter((r) => r.type === 'AMBULANCE').length || 24,
+      ambulance: resources.filter((r) => r.type === 'AMBULANCE').length,
     };
 
-    // Calculate risk trend (simulated based on timestamps)
-    const riskTrend = district.last_risk_assessment
-      ? this.calculateRiskTrend(
-          district.last_risk_assessment,
-          district.overall_risk_percent,
-        )
-      : { trend: 'stable', change: 0 };
+    // Real trend: compare the two most recent RiskAssessment rows for
+    // this district. With fewer than two, there is nothing to compare —
+    // report 'unknown' rather than guessing from elapsed time.
+    const riskTrend = this.calculateRiskTrend(riskAssessments);
 
     return {
       district: {
@@ -230,7 +201,6 @@ export class DistrictsService {
         total: totalDevices,
         offline: totalDevices - onlineDevices,
         operational_percentage: operationalPercentage,
-        crisis_mesh_intelligence: crisisMeshIntelligence,
       },
       weather: latestWeather
         ? {
@@ -260,22 +230,28 @@ export class DistrictsService {
     };
   }
 
+  /**
+   * Real trend from the two most recent RiskAssessment rows for this
+   * district (riskAssessments is ordered newest-first). With fewer than
+   * two assessments there is nothing to compare a change against, so
+   * this reports 'unknown' rather than guessing from elapsed time.
+   */
   private calculateRiskTrend(
-    lastAssessment: Date,
-    currentRisk: string,
-  ): { trend: string; change: number } {
-    const hoursSinceAssessment =
-      (Date.now() - lastAssessment.getTime()) / (1000 * 60 * 60);
-    const risk = parseFloat(currentRisk);
-
-    // Simulate trend calculation based on time elapsed
-    if (hoursSinceAssessment < 6) {
-      return { trend: 'increasing', change: 12 };
-    } else if (hoursSinceAssessment < 12) {
-      return { trend: 'stable', change: 0 };
-    } else {
-      return { trend: 'decreasing', change: -5 };
+    riskAssessments: RiskAssessment[],
+  ): { trend: string; change: number | null } {
+    if (riskAssessments.length < 2) {
+      return { trend: 'unknown', change: null };
     }
+
+    const latest = parseFloat(riskAssessments[0].risk_level);
+    const previous = parseFloat(riskAssessments[1].risk_level);
+    if (Number.isNaN(latest) || Number.isNaN(previous)) {
+      return { trend: 'unknown', change: null };
+    }
+
+    const change = Math.round((latest - previous) * 10) / 10;
+    const trend = change > 0.5 ? 'increasing' : change < -0.5 ? 'decreasing' : 'stable';
+    return { trend, change };
   }
 
   private getRiskSeverity(riskPercent: string): string {

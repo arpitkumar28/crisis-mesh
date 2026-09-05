@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { AssignRoleDto } from './dto/assign-role.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './roles.decorator';
@@ -113,7 +114,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async assignRole(
     @CurrentUser() user: any,
-    @Body() body: { userId: string; role: UserRoleEnum },
+    @Body() body: AssignRoleDto,
     @ClientInfo() clientInfo: { ip: string; userAgent: string },
   ) {
     await this.authService.assignRole(body.userId, body.role, user.id);
@@ -129,7 +130,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async removeRole(
     @CurrentUser() user: any,
-    @Body() body: { userId: string; role: UserRoleEnum },
+    @Body() body: AssignRoleDto,
   ) {
     await this.authService.removeRole(body.userId, body.role);
     return {

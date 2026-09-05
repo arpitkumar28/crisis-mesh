@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
-  Map as MapIcon, ChevronDown, Radio, Cpu, Router, TestTube2,
-  Maximize2, Loader2,
+  ChevronDown, Radio, Cpu, Router, TestTube2,
+  Maximize2, Minimize2, Loader2,
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
@@ -45,6 +45,22 @@ export default function SensorNetworkPage() {
   const [error, setError] = useState(false);
   const [statusCounts, setStatusCounts] = useState<StatusCounts | null>(null);
   const [devicesByType, setDevicesByType] = useState<Record<string, DeviceRecord[]>>({});
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const mapPanelRef = useRef<HTMLDivElement>(null);
+
+  const toggleMapFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      mapPanelRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsMapFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,12 +170,16 @@ export default function SensorNetworkPage() {
 
       <div className="grid grid-cols-12 gap-6 h-[600px]">
         {/* Left: Map */}
-        <div className="col-span-12 lg:col-span-8 bg-blue-50 rounded-2xl border border-gray-200 overflow-hidden relative shadow-sm">
+        <div ref={mapPanelRef} className="col-span-12 lg:col-span-8 bg-blue-50 rounded-2xl border border-gray-200 overflow-hidden relative shadow-sm">
            <LiveMap entities={mapEntities} />
 
            <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
-              <button className="p-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg text-[#0f172a]"><Maximize2 size={20} /></button>
-              <button className="p-3 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-all"><MapIcon size={20} /></button>
+              <button
+                onClick={toggleMapFullscreen}
+                className="p-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg text-[#0f172a]"
+              >
+                {isMapFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              </button>
            </div>
         </div>
 

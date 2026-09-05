@@ -1,155 +1,195 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Bell, Mail, MessageSquare, Smartphone, Globe,
-  ChevronRight, Save, AlertTriangle,
-  Info, Clock
+  Bell, AlertTriangle, Info, CheckCircle2, Loader2,
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
+import { NotAvailable } from '@/components/not-available';
+import { apiClient } from '@/lib/api-client';
+import { useAuthStore } from '@/lib/store/auth-store';
+import { formatDistanceToNow } from 'date-fns';
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  priority: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+const TABS = [
+  'Alert History',
+  'Notification Preferences',
+  'Subscribed Districts',
+  'Email Subscriptions',
+  'SMS & WhatsApp',
+];
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState('Notification Preferences');
+  const [activeTab, setActiveTab] = useState('Alert History');
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .get('/notifications')
+      .then((res) => {
+        if (!cancelled) setNotifications(res.data.data ?? res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setNotifications([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const markRead = async (id: string) => {
+    setMarkingId(id);
+    try {
+      await apiClient.patch(`/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+      );
+    } catch {
+      // leave state unchanged on failure
+    } finally {
+      setMarkingId(null);
+    }
+  };
 
   return (
-    <OperationsShell eyebrow="Manage your alerts, notifications and communication channels" title="Notifications & Subscriptions">
+    <OperationsShell
+      eyebrow="Your alert history and communication channels"
+      title="Notifications & Subscriptions"
+    >
       <div className="grid grid-cols-12 gap-8">
-        {/* Left Sidebar - Tabs */}
         <div className="col-span-12 lg:col-span-3">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-             <div className="p-2">
-                {['Notification Preferences', 'Subscribed Districts', 'Email Subscriptions', 'SMS & WhatsApp', 'Push Notifications', 'Alert History'].map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                      activeTab === tab ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tab}
-                    <ChevronRight size={14} className={activeTab === tab ? 'opacity-100' : 'opacity-0'} />
-                  </button>
-                ))}
-             </div>
+            <div className="p-2">
+              {TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    activeTab === tab
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-6 bg-[#0f172a] rounded-2xl p-6 text-white shadow-xl">
-             <h3 className="text-sm font-black uppercase tracking-widest mb-4">Emergency Broadcast</h3>
-             <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                Broadcast critical safety information to all registered users in a specific radius.
-             </p>
-             <button className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
-                <AlertTriangle size={16} /> Create Broadcast
-             </button>
+          <div className="mt-6 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">
+              Account Contact
+            </h3>
+            <p className="text-xs font-bold text-[#0f172a] break-all">
+              {user?.email || 'Not signed in'}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-widest leading-relaxed">
+              Manage your email address in Profile settings.
+            </p>
           </div>
         </div>
 
-        {/* Right Content */}
         <div className="col-span-12 lg:col-span-9 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-             <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">{activeTab}</h3>
-                <button className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2">
-                   <Save size={16} /> Save Settings
-                </button>
-             </div>
-
-             <div className="space-y-8">
-                {/* Alert Notifications */}
-                <div>
-                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Alert Notifications</h4>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <NotificationToggle
-                        title="Critical Alerts"
-                        desc="Immediate life-threatening situations"
-                        icon={<AlertTriangle className="text-red-500" />}
-                        active
-                      />
-                      <NotificationToggle
-                        title="High Priority Alerts"
-                        desc="Severe weather and regional incidents"
-                        icon={<Bell className="text-orange-500" />}
-                        active
-                      />
-                      <NotificationToggle
-                        title="Medium Priority Alerts"
-                        desc="Local updates and monitoring reports"
-                        icon={<Info className="text-blue-500" />}
-                        active
-                      />
-                      <NotificationToggle
-                        title="Informational Alerts"
-                        desc="General news and platform updates"
-                        icon={<Globe className="text-gray-400" />}
-                      />
-                   </div>
+          {activeTab === 'Alert History' && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+              <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight mb-8">
+                Alert History
+              </h3>
+              {loading ? (
+                <div className="flex items-center justify-center py-16 text-gray-400">
+                  <Loader2 className="animate-spin" size={24} />
                 </div>
-
-                {/* Communication Channels */}
-                <div>
-                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Communication Channels</h4>
-                   <div className="space-y-4">
-                      <ChannelRow icon={<Mail />} label="Email Notifications" value="admin@crisismesh.gov.in" active />
-                      <ChannelRow icon={<Smartphone />} label="SMS Alerts" value="+91 98765 43210" active />
-                      <ChannelRow icon={<Bell />} label="Web Push Notifications" value="Standard browser notifications" active />
-                      <ChannelRow icon={<MessageSquare />} label="WhatsApp Updates" value="+91 98765 43210" />
-                   </div>
-                </div>
-
-                {/* Quiet Hours */}
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                   <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                         <Clock size={20} className="text-[#0f172a]" />
-                         <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider">Quiet Hours</h4>
+              ) : notifications.length === 0 ? (
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center py-16">
+                  No notifications yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`flex items-start justify-between gap-4 p-4 rounded-2xl border ${
+                        n.is_read ? 'border-gray-100 bg-gray-50' : 'border-blue-200 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {n.priority === 'CRITICAL' || n.priority === 'HIGH' ? (
+                          <AlertTriangle className="text-red-500 mt-0.5" size={18} />
+                        ) : (
+                          <Info className="text-blue-500 mt-0.5" size={18} />
+                        )}
+                        <div>
+                          <p className="text-xs font-black text-[#0f172a] uppercase tracking-tight">
+                            {n.title}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">{n.message}</p>
+                          <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-widest">
+                            {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
                       </div>
-                      <button className="text-[10px] font-black text-blue-600 uppercase">Edit</button>
-                   </div>
-                   <p className="text-xs font-bold text-gray-500">10:00 PM - 06:00 AM</p>
-                   <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">No notifications during quiet hours except critical alerts.</p>
+                      {!n.is_read && (
+                        <button
+                          onClick={() => markRead(n.id)}
+                          disabled={markingId === n.id}
+                          className="shrink-0 flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase tracking-widest disabled:opacity-50"
+                        >
+                          <CheckCircle2 size={14} /> Mark read
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-             </div>
-          </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'Notification Preferences' && (
+            <NotAvailable
+              icon={Bell}
+              title="Preference Management Not Available"
+              description="Per-category notification preferences are not yet backed by the platform. Critical alerts are always visible in Alert History and delivered over the live WebSocket connection."
+            />
+          )}
+
+          {activeTab === 'Subscribed Districts' && (
+            <NotAvailable
+              title="District Subscriptions Not Available"
+              description="Subscribing to specific districts for targeted alerts is not yet supported by the backend."
+            />
+          )}
+
+          {activeTab === 'Email Subscriptions' && (
+            <NotAvailable
+              title="Email Delivery Not Available"
+              description="Email notification delivery is not yet implemented. Alerts are currently delivered in-app and over the live WebSocket connection only."
+            />
+          )}
+
+          {activeTab === 'SMS & WhatsApp' && (
+            <NotAvailable
+              title="SMS & WhatsApp Delivery Not Available"
+              description="SMS and WhatsApp notification channels are not yet implemented."
+            />
+          )}
         </div>
       </div>
     </OperationsShell>
-  );
-}
-
-function NotificationToggle({ title, desc, icon, active = false }: { title: string; desc: string; icon: React.ReactNode; active?: boolean }) {
-  return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-          {icon}
-        </div>
-        <div>
-          <h5 className="text-xs font-black text-[#0f172a] uppercase tracking-tight">{title}</h5>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{desc}</p>
-        </div>
-      </div>
-      <button className={`w-10 h-5 rounded-full relative transition-colors ${active ? 'bg-blue-600' : 'bg-gray-200'}`}>
-        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${active ? 'left-6' : 'left-1'}`}></div>
-      </button>
-    </div>
-  );
-}
-
-function ChannelRow({ icon, label, value, active = false }: { icon: React.ReactNode; label: string; value: string; active?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-      <div className="flex items-center gap-4">
-        <div className="text-blue-600">
-          {icon}
-        </div>
-        <div>
-          <h5 className="text-xs font-black text-[#0f172a] uppercase tracking-tight">{label}</h5>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{value}</p>
-        </div>
-      </div>
-      <button className={`w-10 h-5 rounded-full relative transition-colors ${active ? 'bg-blue-600' : 'bg-gray-200'}`}>
-        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${active ? 'left-6' : 'left-1'}`}></div>
-      </button>
-    </div>
   );
 }

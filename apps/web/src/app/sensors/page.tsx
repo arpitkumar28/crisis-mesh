@@ -13,17 +13,29 @@ import {
 import { apiClient } from '@/lib/api-client';
 import { Toast } from '@/lib/toast';
 
+type Tab = 'Air Quality' | 'Rainfall' | 'River Levels' | 'Weather';
+
+const TAB_METRICS: Record<Tab, string[]> = {
+  'Air Quality': ['AIR_QUALITY'],
+  Rainfall: ['RAINFALL'],
+  'River Levels': ['WATER_LEVEL'],
+  Weather: ['TEMPERATURE', 'HUMIDITY', 'WIND_SPEED', 'PRESSURE'],
+};
+
 export default function EnvironmentalMonitoring() {
   const [loading, setLoading] = useState(true);
   const [telemetry, setTelemetry] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>({});
+  const [activeTab, setActiveTab] = useState<Tab>('Air Quality');
+  const [lastSyncOk, setLastSyncOk] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   const fetchData = async () => {
     try {
       const response = await apiClient.get('/dashboard/overview');
       const data = response.data.data;
       setTelemetry(data.telemetry || []);
-      
+
       // Extract latest values for key metrics
       const latest: any = {};
       data.telemetry.forEach((t: any) => {
@@ -32,9 +44,12 @@ export default function EnvironmentalMonitoring() {
         }
       });
       setMetrics(latest);
+      setLastSyncOk(true);
+      setLastSyncedAt(new Date());
     } catch (error) {
       console.error('Failed to fetch sensor data:', error);
       Toast.error('Sensor synchronization failed');
+      setLastSyncOk(false);
     } finally {
       setLoading(false);
     }
@@ -46,13 +61,32 @@ export default function EnvironmentalMonitoring() {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter telemetry for trend chart (simulating history from latest readings for now)
+  const activeMetrics = TAB_METRICS[activeTab];
   const chartData = telemetry
-    .filter(t => t.metric === 'AIR_QUALITY' || t.metric === 'AQI')
-    .map(t => ({
-      time: typeof window !== 'undefined' ? new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-      aqi: t.value
-    })).reverse();
+    .filter((t) => activeMetrics.includes(t.metric))
+    .map((t) => ({
+      time: new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      value: t.value,
+    }))
+    .reverse();
+
+  const downloadTelemetryLog = () => {
+    const header = 'device_id,device_name,metric,value,unit,quality_flag,timestamp\n';
+    const rows = telemetry
+      .map((t) =>
+        [t.device_id, t.device_name ?? '', t.metric, t.value, t.unit, t.quality_flag, t.timestamp]
+          .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+          .join(','),
+      )
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `telemetry-${new Date().toISOString().slice(0, 19)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -69,22 +103,21 @@ export default function EnvironmentalMonitoring() {
     <OperationsShell eyebrow="Air quality, rainfall, river & weather sensors" title="Environmental Monitoring">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-6">
-          <TabButton label="Air Quality" active />
-          <TabButton label="Rainfall" />
-          <TabButton label="River Levels" />
-          <TabButton label="Weather" />
+          {(Object.keys(TAB_METRICS) as Tab[]).map((tab) => (
+            <TabButton key={tab} label={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)} />
+          ))}
         </div>
         <div className="flex items-center gap-4">
            <div className="text-right">
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Mesh Status</p>
-              <span className="flex items-center gap-1 text-[10px] font-black text-green-600 uppercase">
-                <div className="w-1 h-1 rounded-full bg-green-600"></div> Connected
+              <span className={`flex items-center gap-1 text-[10px] font-black uppercase ${lastSyncOk ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`w-1 h-1 rounded-full ${lastSyncOk ? 'bg-green-600' : 'bg-red-600'}`}></div> {lastSyncOk ? 'Synced' : 'Sync Failed'}
               </span>
            </div>
            <div className="h-8 w-px bg-gray-200 mx-2"></div>
            <div className="text-right">
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Last Updated</p>
-              <p className="text-xs font-black text-[#0f172a]">{typeof window !== 'undefined' ? new Date().toLocaleTimeString() : ''}</p>
+              <p className="text-xs font-black text-[#0f172a]">{lastSyncedAt ? lastSyncedAt.toLocaleTimeString() : '--'}</p>
            </div>
         </div>
       </div>
@@ -95,42 +128,48 @@ export default function EnvironmentalMonitoring() {
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-8">Live Sensor Matrix</h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-               <AQIMetric 
-                  label="AQI" 
-                  value={metrics.AIR_QUALITY?.value || '42'} 
-                  status={getAQIStatus(metrics.AIR_QUALITY?.value || 42)} 
-                  color="text-green-600" 
-                  bg="bg-green-50" 
-                  sub={`Unit: ${metrics.AIR_QUALITY?.unit || 'AQI'}`} 
+               <AQIMetric
+                  label="AQI"
+                  value={metrics.AIR_QUALITY?.value != null ? String(metrics.AIR_QUALITY.value) : '--'}
+                  status={metrics.AIR_QUALITY?.value != null ? getAQIStatus(metrics.AIR_QUALITY.value) : 'No Data'}
+                  color="text-green-600"
+                  bg="bg-green-50"
+                  sub={`Unit: ${metrics.AIR_QUALITY?.unit || 'AQI'}`}
                />
-               <EnvMetric label="Temperature" value={metrics.TEMPERATURE?.value || '--'} unit="°C" status="Stable" color="text-blue-600" />
-               <EnvMetric label="Humidity" value={metrics.HUMIDITY?.value || '--'} unit="%" status="Normal" color="text-cyan-600" />
-               <EnvMetric label="Rainfall" value={metrics.RAINFALL?.value || '0'} unit="mm" status="No Threat" color="text-blue-500" />
+               <EnvMetric label="Temperature" value={metrics.TEMPERATURE?.value != null ? String(metrics.TEMPERATURE.value) : '--'} unit="°C" status={metrics.TEMPERATURE ? 'Reporting' : 'No Data'} color="text-blue-600" />
+               <EnvMetric label="Humidity" value={metrics.HUMIDITY?.value != null ? String(metrics.HUMIDITY.value) : '--'} unit="%" status={metrics.HUMIDITY ? 'Reporting' : 'No Data'} color="text-cyan-600" />
+               <EnvMetric label="Rainfall" value={metrics.RAINFALL?.value != null ? String(metrics.RAINFALL.value) : '--'} unit="mm" status={metrics.RAINFALL ? 'Reporting' : 'No Data'} color="text-blue-500" />
             </div>
 
             <div>
                <div className="flex items-center justify-between mb-6">
-                  <h4 className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">Real-time Data Stream</h4>
+                  <h4 className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">Real-time Data Stream — {activeTab}</h4>
                   <div className="flex items-center gap-4 text-[8px] font-black text-gray-400 uppercase tracking-widest">
                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Sensor Reading</div>
                   </div>
                </div>
                <div className="h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                     <AreaChart data={chartData.length > 0 ? chartData : [{time: '0s', aqi: 42}, {time: '30s', aqi: 45}]}>
-                        <defs>
-                           <linearGradient id="aqiGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                           </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} />
-                        <Tooltip />
-                        <Area type="monotone" dataKey="aqi" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#aqiGrad)" />
-                     </AreaChart>
-                  </ResponsiveContainer>
+                  {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                       <AreaChart data={chartData}>
+                          <defs>
+                             <linearGradient id="aqiGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                             </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} />
+                          <Tooltip />
+                          <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#aqiGrad)" />
+                       </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-400">
+                      <p className="text-[10px] font-black uppercase tracking-widest">No recent {activeTab.toLowerCase()} readings in the current feed</p>
+                    </div>
+                  )}
                </div>
             </div>
           </div>
@@ -138,10 +177,10 @@ export default function EnvironmentalMonitoring() {
           <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm p-8">
              <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-8">Field Condition Snapshot</h3>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <WeatherDetail icon={<Thermometer size={20} />} label="Surface Temp" value={`${metrics.TEMPERATURE?.value || '--'}°C`} sub="Ambient" />
-                <WeatherDetail icon={<Droplets size={20} />} label="Atm. Humidity" value={`${metrics.HUMIDITY?.value || '--'}%`} sub="Saturation" />
-                <WeatherDetail icon={<Wind size={20} />} label="Wind Velocity" value={`${metrics.WIND_SPEED?.value || '12'} km/h`} sub="Direction: NE" />
-                <WeatherDetail icon={<Gauge size={20} />} label="Baro Pressure" value={`${metrics.PRESSURE?.value || '1013'} hPa`} sub="Normal" />
+                <WeatherDetail icon={<Thermometer size={20} />} label="Surface Temp" value={metrics.TEMPERATURE?.value != null ? `${metrics.TEMPERATURE.value}°C` : '--'} sub="Ambient" />
+                <WeatherDetail icon={<Droplets size={20} />} label="Atm. Humidity" value={metrics.HUMIDITY?.value != null ? `${metrics.HUMIDITY.value}%` : '--'} sub="Saturation" />
+                <WeatherDetail icon={<Wind size={20} />} label="Wind Velocity" value={metrics.WIND_SPEED?.value != null ? `${metrics.WIND_SPEED.value} km/h` : '--'} sub="Speed only" />
+                <WeatherDetail icon={<Gauge size={20} />} label="Baro Pressure" value={metrics.PRESSURE?.value != null ? `${metrics.PRESSURE.value} hPa` : '--'} sub="Sensor reading" />
              </div>
           </div>
         </div>
@@ -150,7 +189,7 @@ export default function EnvironmentalMonitoring() {
            <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm p-8">
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Station Feed</h3>
-                 <button 
+                 <button
                   onClick={fetchData}
                   className="text-[9px] font-black text-blue-600 uppercase hover:underline"
                 >
@@ -180,13 +219,17 @@ export default function EnvironmentalMonitoring() {
                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
                     <Activity size={20} />
                  </div>
-                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Mesh Intelligence</h4>
+                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Mesh Feed</h4>
               </div>
               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6">
-                 Real-time anomaly detection is active. The system is monitoring {telemetry.length} data points across the district for threshold violations.
+                 Currently tracking {telemetry.length} recent readings across the mesh network.
               </p>
-              <button className="w-full py-3 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
-                 Download Telemetry Log
+              <button
+                onClick={downloadTelemetryLog}
+                disabled={telemetry.length === 0}
+                className="w-full py-3 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                 Download Telemetry Log (CSV)
               </button>
            </div>
         </div>
@@ -202,11 +245,14 @@ function getAQIStatus(value: number) {
   return 'Hazardous';
 }
 
-function TabButton({ label, active = false }: { label: string; active?: boolean }) {
+function TabButton({ label, active = false, onClick }: { label: string; active?: boolean; onClick: () => void }) {
   return (
-    <button className={`text-[10px] font-black uppercase tracking-widest pb-2 border-b-2 transition-all ${
-      active ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent hover:text-gray-600'
-    }`}>
+    <button
+      onClick={onClick}
+      className={`text-[10px] font-black uppercase tracking-widest pb-2 border-b-2 transition-all ${
+        active ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent hover:text-gray-600'
+      }`}
+    >
       {label}
     </button>
   );

@@ -154,7 +154,7 @@ export default function DistrictDetailPage() {
           </div>
           <div className="flex items-end gap-2 mt-4">
              <h4 className={`text-3xl font-black ${risk >= 70 ? 'text-red-600' : 'text-[#0f172a]'}`}>{risk.toFixed(0)}%</h4>
-             {intelligence.overall_risk.change !== 0 && (
+             {intelligence.overall_risk.change !== null && intelligence.overall_risk.change !== 0 && (
                <div className={`flex items-center gap-1 text-[10px] font-bold mb-1 ${isRising ? 'text-red-500' : 'text-green-600'}`}>
                   {isRising ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {Math.abs(intelligence.overall_risk.change)}%
                </div>

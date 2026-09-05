@@ -2,13 +2,16 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Layers, Search, ZoomIn, ZoomOut,
+  Layers, ZoomIn, ZoomOut,
   Navigation, MapPin, Clock,
   Loader2, RefreshCw
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 import { apiClient } from '@/lib/api-client';
+import { wsClient } from '@/lib/websocket-client';
+import { parseGeoPoint } from '@/lib/geo';
+import type { MapCommand, MapStyle } from '@/components/live-map';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -26,46 +29,51 @@ interface MapEntity {
   longitude?: number;
 }
 
+type LayerKey = 'incident' | 'alert' | 'device';
+
+const LAYERS: { key: LayerKey; label: string; color: string }[] = [
+  { key: 'incident', label: 'Incidents', color: 'bg-orange-500' },
+  { key: 'alert', label: 'Alerts', color: 'bg-red-500' },
+  { key: 'device', label: 'Sensor Network', color: 'bg-green-500' },
+];
+
 export default function CommandMapPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [entities, setEntities] = useState<MapEntity[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [visibleLayers, setVisibleLayers] = useState<Record<LayerKey, boolean>>({
+    incident: true,
+    alert: true,
+    device: true,
+  });
+  const [mapStyle, setMapStyle] = useState<MapStyle>('Default');
+  const [mapCommand, setMapCommand] = useState<MapCommand | undefined>(undefined);
+  const [wsConnected, setWsConnected] = useState(wsClient.isConnected());
 
-  // Helper to parse PostGIS geography string
-  // This handles simple WKT "POINT(lng lat)" or common JSON formats
-  const parseGeo = useCallback((geo: any) => {
-    if (typeof geo === 'string' && geo.includes('POINT')) {
-      const match = geo.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/);
-      if (match) {
-        return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
-      }
-    }
-    if (geo && typeof geo === 'object' && geo.coordinates) {
-      return { lng: geo.coordinates[0], lat: geo.coordinates[1] };
-    }
-    // Fallback: If the backend already sends lat/lng in location object
-    return null;
+  useEffect(() => {
+    const stopConnection = wsClient.onConnectionChange((state) => {
+      setWsConnected(state === 'connected' || state === 'reconnected');
+    });
+    return () => {
+      stopConnection();
+    };
   }, []);
 
   const fetchMapData = useCallback(async () => {
     setLoading(true);
     try {
-      // Using the specialized map endpoint if available, otherwise fallback to separate ones
-      // Based on DashboardService, there's a getPublicMap logic, but let's check if there's a controller for it
-      // For now, we'll fetch incidents and alerts which are P0/P1 requirements
-      const [incidentsRes, alertsRes] = await Promise.all([
+      const [incidentsRes, alertsRes, devicesRes] = await Promise.all([
         apiClient.get('/incidents'),
-        apiClient.get('/alerts/active')
+        apiClient.get('/alerts/active'),
+        apiClient.get('/devices'),
       ]);
 
       const mapEntities: MapEntity[] = [];
 
       incidentsRes.data.data.forEach((item: any) => {
         if (item.location?.location) {
-          // Parse PostGIS location if it's in a usable format or has lat/lng
-          // Assuming the backend might be sending lat/lng now or we need to extract from WKT/WKB
-          // If the backend sends WKT "POINT(lng lat)"
-          const coords = parseGeo(item.location.location);
+          const coords = parseGeoPoint(item.location.location);
           if (coords) {
             mapEntities.push({
               id: item.id,
@@ -83,7 +91,7 @@ export default function CommandMapPage() {
 
       alertsRes.data.data.forEach((item: any) => {
         if (item.location?.location) {
-          const coords = parseGeo(item.location.location);
+          const coords = parseGeoPoint(item.location.location);
           if (coords) {
             mapEntities.push({
               id: item.id,
@@ -99,18 +107,40 @@ export default function CommandMapPage() {
         }
       });
 
+      devicesRes.data.data.forEach((item: any) => {
+        if (item.location?.location) {
+          const coords = parseGeoPoint(item.location.location);
+          if (coords) {
+            mapEntities.push({
+              id: item.id,
+              kind: 'device',
+              title: item.serial_number || item.name || 'Sensor',
+              detail: item.type,
+              status: item.status,
+              latitude: coords.lat,
+              longitude: coords.lng
+            });
+          }
+        }
+      });
+
       setEntities(mapEntities);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Failed to fetch map data:', error);
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parseGeo]);
+  }, []);
 
   useEffect(() => {
     fetchMapData();
   }, [fetchMapData]);
+
+  const visibleEntities = entities.filter((e) => visibleLayers[e.kind as LayerKey] !== false);
+  const dispatchMapCommand = (type: MapCommand['type']) =>
+    setMapCommand((prev) => ({ type, token: (prev?.token ?? 0) + 1 }));
 
   return (
     <OperationsShell eyebrow="Interactive geospatial disaster intelligence" title="Live Operational Map">
@@ -127,25 +157,29 @@ export default function CommandMapPage() {
 
            <div className="flex-1 overflow-y-auto p-5 space-y-8">
               <div>
-                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Active Operations</p>
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Operational Layers</p>
                  <div className="space-y-3">
-                    <LayerToggle label="Incidents" color="bg-orange-500" active count={entities.filter(e => e.kind === 'incident').length} />
-                    <LayerToggle label="Alerts" color="bg-red-500" active count={entities.filter(e => e.kind === 'alert').length} />
-                 </div>
-              </div>
-
-              <div>
-                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Infrastructure</p>
-                 <div className="space-y-3">
-                    <LayerToggle label="Sensor Network" color="bg-green-500" active />
-                    <LayerToggle label="Relief Shelters" color="bg-cyan-500" />
-                    <LayerToggle label="Road Blockages" color="bg-gray-700" />
+                    {LAYERS.map((layer) => (
+                      <LayerToggle
+                        key={layer.key}
+                        label={layer.label}
+                        color={layer.color}
+                        active={visibleLayers[layer.key]}
+                        count={entities.filter((e) => e.kind === layer.key).length}
+                        onToggle={() =>
+                          setVisibleLayers((prev) => ({ ...prev, [layer.key]: !prev[layer.key] }))
+                        }
+                      />
+                    ))}
                  </div>
               </div>
            </div>
 
            <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <button className="w-full py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-white hover:border-blue-500 transition-all">
+              <button
+                onClick={() => setVisibleLayers({ incident: true, alert: true, device: true })}
+                className="w-full py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-white hover:border-blue-500 transition-all"
+              >
                  Reset All Layers
               </button>
            </div>
@@ -162,14 +196,6 @@ export default function CommandMapPage() {
                  >
                     <Layers size={20} />
                  </button>
-                 <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="text"
-                      placeholder="Search location..."
-                      className="w-80 pl-12 pr-4 py-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg text-sm font-bold text-[#0f172a] focus:outline-none"
-                    />
-                 </div>
               </div>
 
               <div className="flex items-center gap-3 pointer-events-auto">
@@ -180,8 +206,18 @@ export default function CommandMapPage() {
                    </div>
                  )}
                  <div className="flex bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg p-1">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase tracking-widest">2D</button>
-                    <button className="px-4 py-2 text-gray-400 text-xs font-black uppercase tracking-widest">SAT</button>
+                    <button
+                      onClick={() => setMapStyle('Default')}
+                      className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${mapStyle === 'Default' ? 'bg-blue-600 text-white' : 'text-gray-400'}`}
+                    >
+                      2D
+                    </button>
+                    <button
+                      onClick={() => setMapStyle('Satellite')}
+                      className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${mapStyle === 'Satellite' ? 'bg-blue-600 text-white' : 'text-gray-400'}`}
+                    >
+                      SAT
+                    </button>
                  </div>
               </div>
            </div>
@@ -189,10 +225,24 @@ export default function CommandMapPage() {
            {/* Floating Map Controls (Bottom Right) */}
            <div className="absolute bottom-8 right-8 z-10 flex flex-col gap-3">
               <div className="flex bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                 <button className="p-3 hover:bg-white text-gray-600 border-r border-gray-100 transition-colors"><ZoomIn size={20} /></button>
-                 <button className="p-3 hover:bg-white text-gray-600 transition-colors"><ZoomOut size={20} /></button>
+                 <button
+                   onClick={() => dispatchMapCommand('zoomIn')}
+                   className="p-3 hover:bg-white text-gray-600 border-r border-gray-100 transition-colors"
+                 >
+                   <ZoomIn size={20} />
+                 </button>
+                 <button
+                   onClick={() => dispatchMapCommand('zoomOut')}
+                   className="p-3 hover:bg-white text-gray-600 transition-colors"
+                 >
+                   <ZoomOut size={20} />
+                 </button>
               </div>
-              <button className="p-3 bg-blue-600 text-white border border-blue-500 rounded-xl shadow-lg hover:bg-blue-700 transition-all">
+              <button
+                onClick={() => dispatchMapCommand('recenter')}
+                title="Recenter on India"
+                className="p-3 bg-blue-600 text-white border border-blue-500 rounded-xl shadow-lg hover:bg-blue-700 transition-all"
+              >
                  <Navigation size={20} />
               </button>
            </div>
@@ -202,14 +252,14 @@ export default function CommandMapPage() {
               <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl p-5">
                  <div className="flex items-center justify-between mb-4">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Map Status</h4>
-                    <span className="flex items-center gap-1 text-[10px] font-black text-green-600 uppercase">
-                       <div className="w-1 h-1 rounded-full bg-green-600"></div> Connected
+                    <span className={`flex items-center gap-1 text-[10px] font-black uppercase ${wsConnected ? 'text-green-600' : 'text-gray-400'}`}>
+                       <div className={`w-1 h-1 rounded-full ${wsConnected ? 'bg-green-600' : 'bg-gray-400'}`}></div> {wsConnected ? 'Connected' : 'Disconnected'}
                     </span>
                  </div>
                  <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                       <div className={`w-2.5 h-2.5 rounded-full ${entities.length > 0 ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`}></div>
-                       <p className="text-xs font-bold text-[#0f172a]">{entities.length} Active Operational Markers</p>
+                       <div className={`w-2.5 h-2.5 rounded-full ${visibleEntities.length > 0 ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`}></div>
+                       <p className="text-xs font-bold text-[#0f172a]">{visibleEntities.length} Active Operational Markers</p>
                     </div>
                     <div className="flex items-center gap-3 text-gray-500">
                        <MapPin size={14} className="text-blue-500" />
@@ -221,19 +271,23 @@ export default function CommandMapPage() {
 
            {/* Actual Map Component */}
            <div className="flex-1 bg-blue-50">
-              <LiveMap entities={entities} />
+              <LiveMap entities={visibleEntities} mapStyle={mapStyle} showZoomControl={false} command={mapCommand} />
            </div>
 
            {/* Map Footer Info */}
            <div className="bg-white border-t border-gray-100 p-4 flex items-center justify-between">
               <div className="flex items-center gap-8">
                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Real-time Synchronization Active</span>
+                    <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      {wsConnected ? 'Real-time Synchronization Active' : 'Live Feed Disconnected'}
+                    </span>
                  </div>
                  <div className="flex items-center gap-2">
                     <Clock size={14} className="text-gray-400" />
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Last Updated: {new Date().toLocaleTimeString()}</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      {lastUpdated ? `Last Updated: ${lastUpdated.toLocaleTimeString()}` : 'Not yet synced'}
+                    </span>
                  </div>
               </div>
               <div className="flex items-center gap-4">
@@ -247,16 +301,20 @@ export default function CommandMapPage() {
   );
 }
 
-function LayerToggle({ label, color, active = false, count }: { label: string; color: string; active?: boolean; count?: number }) {
+function LayerToggle({ label, color, active = false, count, onToggle }: { label: string; color: string; active?: boolean; count?: number; onToggle: () => void }) {
   return (
-    <div className="flex items-center justify-between group cursor-pointer">
+    <div className="flex items-center justify-between group cursor-pointer" onClick={onToggle}>
        <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded ${color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
           <span className={`text-xs font-bold transition-colors ${active ? 'text-[#0f172a]' : 'text-gray-400 group-hover:text-gray-600'}`}>{label}</span>
           {count !== undefined && <span className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded-md font-bold text-gray-500">{count}</span>}
        </div>
-       <button className={`w-8 h-4 rounded-full relative transition-colors ${active ? 'bg-blue-600' : 'bg-gray-200'}`}>
-          <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${active ? 'left(4.5)' : 'left-0.5'}`} style={{ left: active ? '18px' : '2px' }}></div>
+       <button
+         type="button"
+         onClick={(e) => { e.stopPropagation(); onToggle(); }}
+         className={`w-8 h-4 rounded-full relative transition-colors ${active ? 'bg-blue-600' : 'bg-gray-200'}`}
+       >
+          <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all" style={{ left: active ? '18px' : '2px' }}></div>
        </button>
     </div>
   );
