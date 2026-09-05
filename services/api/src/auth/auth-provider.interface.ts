@@ -26,6 +26,12 @@ export interface IAuthProvider {
   refreshToken(token: string): Promise<string>;
 
   /**
+   * Revoke a specific refresh token (e.g. on logout) so it can never be
+   * used again. Must be tolerant of an already-invalid/expired token.
+   */
+  revokeRefreshToken(token: string): Promise<void>;
+
+  /**
    * Hash password for storage
    */
   hashPassword(password: string): Promise<string>;

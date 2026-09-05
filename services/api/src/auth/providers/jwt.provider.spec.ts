@@ -295,6 +295,33 @@ describe('JwtAuthProvider', () => {
     });
   });
 
+  describe('revokeRefreshToken (used by logout)', () => {
+    it('revokes a valid refresh token so a later refresh attempt with it is rejected', async () => {
+      const token = 'session_refresh_token';
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 'user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        roles: [UserRoleEnum.CITIZEN],
+        type: 'refresh',
+        jti: 'logout-jti-1',
+      });
+
+      await provider.revokeRefreshToken(token);
+
+      await expect(provider.refreshToken(token)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('does nothing and does not throw for an empty token', async () => {
+      await expect(provider.revokeRefreshToken('')).resolves.toBeUndefined();
+    });
+
+    it('does not throw for an already-invalid/malformed token', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('invalid signature'));
+      await expect(provider.revokeRefreshToken('garbage')).resolves.toBeUndefined();
+    });
+  });
+
   describe('hashPassword', () => {
     it('should hash password', async () => {
       const password = 'password123';

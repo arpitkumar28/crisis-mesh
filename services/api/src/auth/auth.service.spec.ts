@@ -21,6 +21,7 @@ describe('AuthService', () => {
     comparePassword: jest.fn(),
     refreshToken: jest.fn(),
     validateToken: jest.fn(),
+    revokeRefreshToken: jest.fn(),
   };
 
   const mockUsersService = {
@@ -123,6 +124,60 @@ describe('AuthService', () => {
       );
     });
 
+    it('never stores the plaintext password — only the hashed value reaches the profile', async () => {
+      const hashedPassword = 'hashed_password';
+      mockAuthProvider.hashPassword.mockResolvedValue(hashedPassword);
+      mockUsersService.createProfile.mockResolvedValue({ id: 'user-id', email: registerDto.email, name: registerDto.name });
+      mockUsersService.getUserRoles.mockResolvedValue([UserRoleEnum.CITIZEN]);
+      mockAuthProvider.generateToken.mockResolvedValue('token');
+
+      await service.register(registerDto);
+
+      const profileArg = mockUsersService.createProfile.mock.calls[0][0];
+      expect(profileArg.password_hash).toBe(hashedPassword);
+      expect(profileArg.password_hash).not.toBe(registerDto.password);
+      expect(profileArg).not.toHaveProperty('password');
+    });
+
+    it('cannot be used to escalate role — an injected role field is ignored and CITIZEN is always assigned', async () => {
+      mockAuthProvider.hashPassword.mockResolvedValue('hashed');
+      mockUsersService.createProfile.mockResolvedValue({ id: 'user-id', email: registerDto.email, name: registerDto.name });
+      mockUsersService.getUserRoles.mockResolvedValue([UserRoleEnum.CITIZEN]);
+      mockAuthProvider.generateToken.mockResolvedValue('token');
+
+      // RegisterDto has no `role` property at all, and the global
+      // ValidationPipe (whitelist + forbidNonWhitelisted, see main.ts)
+      // would reject this at the HTTP layer before it ever reaches here.
+      // This proves the service layer itself never reads/forwards such
+      // a field even if something injected it past validation.
+      const maliciousDto = { ...registerDto, role: UserRoleEnum.ADMIN } as any;
+
+      const result = await service.register(maliciousDto);
+
+      expect(mockUsersService.createProfile).toHaveBeenCalledWith(
+        expect.not.objectContaining({ role: expect.anything() }),
+        UserRoleEnum.CITIZEN,
+      );
+      expect(result.user.roles).toEqual([UserRoleEnum.CITIZEN]);
+    });
+
+    it('never returns password_hash in the auth result', async () => {
+      mockAuthProvider.hashPassword.mockResolvedValue('hashed');
+      mockUsersService.createProfile.mockResolvedValue({
+        id: 'user-id',
+        email: registerDto.email,
+        name: registerDto.name,
+        password_hash: 'hashed',
+      });
+      mockUsersService.getUserRoles.mockResolvedValue([UserRoleEnum.CITIZEN]);
+      mockAuthProvider.generateToken.mockResolvedValue('token');
+
+      const result = await service.register(registerDto);
+
+      expect(result.user).not.toHaveProperty('password_hash');
+      expect(result.user).not.toHaveProperty('password');
+    });
+
     it('should throw ConflictException if email already exists', async () => {
       mockAuthProvider.hashPassword.mockResolvedValue('hashed');
       mockUsersService.createProfile.mockRejectedValue(
@@ -188,6 +243,22 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
     });
+
+    it('never returns password_hash in the auth result', async () => {
+      mockAuthProvider.validateCredentials.mockResolvedValue({
+        id: 'user-id',
+        email: loginDto.email,
+        name: 'Test User',
+        roles: [UserRoleEnum.CITIZEN],
+        password_hash: 'hashed_password',
+      });
+      mockAuthProvider.generateToken.mockResolvedValue('access_token');
+
+      const result = await service.login(loginDto);
+
+      expect(result.user).not.toHaveProperty('password_hash');
+      expect(result.user).not.toHaveProperty('password');
+    });
   });
 
   describe('refreshToken', () => {
@@ -250,6 +321,36 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
       expect(mockAuthProvider.refreshToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('logout', () => {
+    it('revokes the presented refresh token and audits the logout', async () => {
+      mockAuthProvider.revokeRefreshToken.mockResolvedValue(undefined);
+
+      await service.logout('user-id', 'test@example.com', 'a_refresh_token', '127.0.0.1', 'test-agent');
+
+      expect(mockAuthProvider.revokeRefreshToken).toHaveBeenCalledWith('a_refresh_token');
+      expect(auditService.logAuthentication).toHaveBeenCalledWith(
+        'user-id',
+        'test@example.com',
+        'LOGOUT',
+        '127.0.0.1',
+        'test-agent',
+      );
+    });
+
+    it('does not attempt to revoke anything when no refresh token is presented, but still audits', async () => {
+      await service.logout('user-id', 'test@example.com');
+
+      expect(mockAuthProvider.revokeRefreshToken).not.toHaveBeenCalled();
+      expect(auditService.logAuthentication).toHaveBeenCalledWith(
+        'user-id',
+        'test@example.com',
+        'LOGOUT',
+        undefined,
+        undefined,
+      );
     });
   });
 

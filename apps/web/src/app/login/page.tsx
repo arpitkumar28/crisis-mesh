@@ -37,15 +37,19 @@ export default function LoginPage() {
         }
         
         // Update auth store
+        const roles: string[] = user.roles || [];
         setAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.roles?.[0] || 'User',
+          role: roles[0] || 'User',
         }, access_token);
 
         Toast.success('Login successful');
-        router.push('/dashboard');
+        // Route by the user's real role from the backend — never a
+        // hardcoded destination regardless of who logged in.
+        const isPrivileged = roles.some((r) => ['ADMIN', 'AUTHORITY', 'RESPONDER', 'ANALYST'].includes(r));
+        router.push(isPrivileged ? '/dashboard' : '/citizen');
       } else {
         Toast.error(response.data.message || 'Login failed');
       }

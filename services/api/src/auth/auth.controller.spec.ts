@@ -13,6 +13,7 @@ describe('AuthController', () => {
     register: jest.fn(),
     login: jest.fn(),
     refreshToken: jest.fn(),
+    logout: jest.fn(),
     assignRole: jest.fn(),
     removeRole: jest.fn(),
   };
@@ -172,18 +173,47 @@ describe('AuthController', () => {
   });
 
   describe('logout', () => {
-    it('should logout successfully', async () => {
+    it('should revoke the refresh token and log out successfully', async () => {
       const mockUser = {
         id: 'user-id',
         email: 'test@example.com',
       };
 
-      const result = await controller.logout(mockUser, { ip: '127.0.0.1', userAgent: 'test-agent' });
+      mockAuthService.logout.mockResolvedValue(undefined);
+
+      const result = await controller.logout(
+        mockUser,
+        { refresh_token: 'a_refresh_token' },
+        { ip: '127.0.0.1', userAgent: 'test-agent' },
+      );
 
       expect(result).toEqual({
         success: true,
         message: 'Logout successful',
       });
+      expect(mockAuthService.logout).toHaveBeenCalledWith(
+        'user-id',
+        'test@example.com',
+        'a_refresh_token',
+        '127.0.0.1',
+        'test-agent',
+      );
+    });
+
+    it('should still succeed when no refresh token is sent', async () => {
+      const mockUser = { id: 'user-id', email: 'test@example.com' };
+      mockAuthService.logout.mockResolvedValue(undefined);
+
+      const result = await controller.logout(mockUser, {}, { ip: '127.0.0.1', userAgent: 'test-agent' });
+
+      expect(result.success).toBe(true);
+      expect(mockAuthService.logout).toHaveBeenCalledWith(
+        'user-id',
+        'test@example.com',
+        undefined,
+        '127.0.0.1',
+        'test-agent',
+      );
     });
   });
 
