@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  Map as MapIcon, ChevronDown, Zap, Search, Maximize2, ArrowUpRight, Loader2
+  Map as MapIcon, Zap, Maximize2, Minimize2, ArrowUpRight, Loader2
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
@@ -15,6 +15,7 @@ import { apiClient } from '@/lib/api-client';
 import { wsClient } from '@/lib/websocket-client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Toast } from '@/lib/toast';
+import { parseGeoPoint } from '@/lib/geo';
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -24,7 +25,23 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [isHeatmapFullscreen, setIsHeatmapFullscreen] = useState(false);
+  const heatmapPanelRef = useRef<HTMLDivElement>(null);
   const token = useAuthStore((state) => state.token);
+
+  const toggleHeatmapFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      heatmapPanelRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsHeatmapFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -122,14 +139,12 @@ export default function DashboardPage() {
 
   return (
     <OperationsShell eyebrow="Visualization intensity and vulnerability" title="Heatmap & Risk Analysis">
-      {/* Top Filter Bar */}
+      {/* Top Bar */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
-          <FilterSelect label="Risk Type" value="Flood Risk" />
-          <FilterSelect label="Time Range" value="Last 7 Days" />
-          <FilterSelect label="District" value="Jaipur" />
-        </div>
-        <button 
+        <span className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black text-gray-500 uppercase tracking-widest">
+          Last 7 Days — All Active Alerts &amp; Incidents
+        </span>
+        <button
           onClick={fetchDashboardData}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
         >
@@ -140,21 +155,32 @@ export default function DashboardPage() {
       <div className="grid grid-cols-12 gap-6">
         {/* Main Content: Heatmap */}
         <div className="col-span-12 xl:col-span-8 space-y-6">
-          <div className="bg-white rounded-[24px] border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+          <div ref={heatmapPanelRef} className="bg-white rounded-[24px] border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="font-bold text-[#0f172a] text-sm flex items-center gap-2">
                 <MapIcon size={16} className="text-blue-600" />
                 Regional Risk Heatmap
               </h3>
               <div className="flex items-center gap-4">
-                 <button className="p-2 hover:bg-gray-50 rounded-lg"><Search size={14} className="text-gray-400" /></button>
-                 <button className="p-2 hover:bg-gray-50 rounded-lg"><Maximize2 size={14} className="text-gray-400" /></button>
+                 <button onClick={toggleHeatmapFullscreen} className="p-2 hover:bg-gray-50 rounded-lg">
+                   {isHeatmapFullscreen ? <Minimize2 size={14} className="text-gray-400" /> : <Maximize2 size={14} className="text-gray-400" />}
+                 </button>
               </div>
             </div>
             <div className="flex-1 relative bg-blue-50">
               <LiveMap entities={[
-                ...(data?.incidents || []).map((i: any) => ({ ...i, entityType: 'incident' })),
-                ...(data?.alerts || []).map((a: any) => ({ ...a, entityType: 'alert' }))
+                ...(data?.incidents || [])
+                  .map((i: any) => {
+                    const coords = i.location?.location ? parseGeoPoint(i.location.location) : null;
+                    return coords ? { id: i.id, kind: 'incident', title: i.title, detail: i.description || i.type, severity: i.severity, status: i.status, latitude: coords.lat, longitude: coords.lng } : null;
+                  })
+                  .filter(Boolean),
+                ...(data?.alerts || [])
+                  .map((a: any) => {
+                    const coords = a.location?.location ? parseGeoPoint(a.location.location) : null;
+                    return coords ? { id: a.id, kind: 'alert', title: a.title, detail: a.description || a.type, severity: a.severity, status: a.status, latitude: coords.lat, longitude: coords.lng } : null;
+                  })
+                  .filter(Boolean),
               ]} />
 
               {/* Floating Map Legend */}
@@ -289,17 +315,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </OperationsShell>
-  );
-}
-
-function FilterSelect({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em]">{label}</span>
-      <button className="flex items-center gap-6 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-bold text-[#0f172a] hover:bg-gray-100 transition-colors">
-        {value}
-        <ChevronDown size={12} className="text-gray-400" />
-      </button>
-    </div>
   );
 }

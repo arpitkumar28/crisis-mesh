@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  ShieldCheck, CheckCircle2, AlertTriangle, 
-  Droplets, Flame, Wind, 
-  Thermometer, ChevronRight, 
+import { useRouter } from 'next/navigation';
+import {
+  ShieldCheck, CheckCircle2, AlertTriangle,
+  Droplets, Flame, Wind,
+  Thermometer,
   Activity, Download
 } from 'lucide-react';
 
@@ -18,8 +19,87 @@ const categories = [
   { id: 'general', label: 'General' },
 ];
 
+const safetyCards = [
+  {
+    category: 'flood',
+    title: 'During Floods',
+    icon: <Droplets className="text-blue-500" />,
+    dos: ['Move to higher ground.', 'Switch off electricity.', 'Avoid walking in flood water.'],
+    donts: ['Do not touch electric poles.', 'Do not drive in flooded areas.'],
+  },
+  {
+    category: 'cyclone',
+    title: 'During Cyclone',
+    icon: <Wind className="text-cyan-500" />,
+    dos: ['Stay indoors.', 'Keep windows & doors shut.', 'Listen for official updates.'],
+    donts: ['Do not go near windows.', 'Do not ignore official warnings.'],
+  },
+  {
+    category: 'earthquake',
+    title: 'During Earthquakes',
+    icon: <Activity className="text-orange-500" />,
+    dos: ['Drop, Cover, Hold on.', 'Stay away from glass/windows.', 'Move to an open area if outside.'],
+    donts: ['Do not use elevators.', 'Do not run outside during shaking.'],
+  },
+  {
+    category: 'fire',
+    title: 'During Fires',
+    icon: <Flame className="text-red-500" />,
+    dos: ['Get out, stay out.', 'Stay low to the floor.', 'Stop, Drop, and Roll if on fire.'],
+    donts: ['Do not use elevators.', 'Do not go back inside for anything.'],
+  },
+  {
+    category: 'heatwave',
+    title: 'Heatwave Safety',
+    icon: <Thermometer className="text-yellow-600" />,
+    dos: ['Drink plenty of water.', 'Wear light clothing.', 'Stay in shaded/cool areas.'],
+    donts: ['Avoid high-protein food.', 'Avoid strenuous activity at peak hours.'],
+  },
+  {
+    category: 'general',
+    title: 'General Safety',
+    icon: <ShieldCheck className="text-green-500" />,
+    dos: ['Keep emergency kit ready.', 'Stay informed.', 'Help others in need.'],
+    donts: ['Do not spread rumors.', 'Do not panic during emergency.'],
+  },
+];
+
+const initialChecklist = [
+  { label: 'Drinking Water', checked: true },
+  { label: 'Dry Food', checked: true },
+  { label: 'First Aid Kit', checked: true },
+  { label: 'Torch', checked: true },
+  { label: 'Battery', checked: true },
+  { label: 'Cash & ID', checked: false },
+  { label: 'Power Bank', checked: false },
+  { label: 'Documents', checked: false },
+  { label: 'Whistle', checked: false },
+];
+
 export default function SafetyTipsPage() {
   const [activeTab, setActiveTab] = useState('all');
+  const [checklist, setChecklist] = useState(initialChecklist);
+  const router = useRouter();
+
+  const visibleCards =
+    activeTab === 'all' ? safetyCards : safetyCards.filter((c) => c.category === activeTab);
+
+  const toggleChecklistItem = (index: number) => {
+    setChecklist((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, checked: !item.checked } : item)),
+    );
+  };
+
+  const downloadChecklist = () => {
+    const lines = checklist.map((item) => `[${item.checked ? 'x' : ' '}] ${item.label}`).join('\n');
+    const blob = new Blob([`CrisisMesh Emergency Kit Checklist\n\n${lines}\n`], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'emergency-kit-checklist.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] p-6 lg:p-10">
@@ -33,7 +113,10 @@ export default function SafetyTipsPage() {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Stay Informed • Stay Safe during disasters</p>
           </div>
         </div>
-        <button className="px-6 py-2.5 bg-[#061a37] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+        <button
+          onClick={() => router.push('/citizen')}
+          className="px-6 py-2.5 bg-[#061a37] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
+        >
            Back to Dashboard
         </button>
       </header>
@@ -41,12 +124,12 @@ export default function SafetyTipsPage() {
       {/* Filter Tabs */}
       <div className="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
         {categories.map(cat => (
-          <button 
+          <button
             key={cat.id}
             onClick={() => setActiveTab(cat.id)}
             className={`flex items-center gap-3 px-6 py-3.5 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all border shrink-0 shadow-sm ${
-              activeTab === cat.id 
-                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' 
+              activeTab === cat.id
+                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20'
                 : 'bg-white text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-600'
             }`}
           >
@@ -60,42 +143,9 @@ export default function SafetyTipsPage() {
         {/* Main Content */}
         <div className="col-span-12 lg:col-span-9">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <SafetyCard 
-                title="During Floods" 
-                icon={<Droplets className="text-blue-500" />}
-                dos={["Move to higher ground.", "Switch off electricity.", "Avoid walking in flood water."]}
-                donts={["Do not touch electric poles.", "Do not drive in flooded areas."]}
-              />
-              <SafetyCard 
-                title="During Cyclone" 
-                icon={<Wind className="text-cyan-500" />}
-                dos={["Stay indoors.", "Keep windows & doors shut.", "Listen for official updates."]}
-                donts={["Do not go near windows.", "Do not ignore official warnings."]}
-              />
-              <SafetyCard 
-                title="During Earthquakes" 
-                icon={<Activity className="text-orange-500" />}
-                dos={["Drop, Cover, Hold on.", "Stay away from glass/windows.", "Move to an open area if outside."]}
-                donts={["Do not use elevators.", "Do not run outside during shaking."]}
-              />
-              <SafetyCard 
-                title="During Fires" 
-                icon={<Flame className="text-red-500" />}
-                dos={["Get out, stay out.", "Stay low to the floor.", "Stop, Drop, and Roll if on fire."]}
-                donts={["Do not use elevators.", "Do not go back inside for anything."]}
-              />
-              <SafetyCard 
-                title="Heatwave Safety" 
-                icon={<Thermometer className="text-yellow-600" />}
-                dos={["Drink plenty of water.", "Wear light clothing.", "Stay in shaded/cool areas."]}
-                donts={["Avoid high-protein food.", "Avoid strenuous activity at peak hours."]}
-              />
-              <SafetyCard 
-                title="General Safety" 
-                icon={<ShieldCheck className="text-green-500" />}
-                dos={["Keep emergency kit ready.", "Stay informed.", "Help others in need."]}
-                donts={["Do not spread rumors.", "Do not panic during emergency."]}
-              />
+              {visibleCards.map((card) => (
+                <SafetyCard key={card.category} title={card.title} icon={card.icon} dos={card.dos} donts={card.donts} />
+              ))}
            </div>
         </div>
 
@@ -104,17 +154,14 @@ export default function SafetyTipsPage() {
            <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm">
               <h3 className="font-black text-[#0f172a] uppercase tracking-wider text-xs mb-8 text-center">Emergency Kit Checklist</h3>
               <div className="space-y-4">
-                 <CheckItem label="Drinking Water" checked />
-                 <CheckItem label="Dry Food" checked />
-                 <CheckItem label="First Aid Kit" checked />
-                 <CheckItem label="Torch" checked />
-                 <CheckItem label="Battery" checked />
-                 <CheckItem label="Cash & ID" />
-                 <CheckItem label="Power Bank" />
-                 <CheckItem label="Documents" />
-                 <CheckItem label="Whistle" />
+                 {checklist.map((item, i) => (
+                   <CheckItem key={item.label} label={item.label} checked={item.checked} onToggle={() => toggleChecklistItem(i)} />
+                 ))}
               </div>
-              <button className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center justify-center gap-2">
+              <button
+                onClick={downloadChecklist}
+                className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center justify-center gap-2"
+              >
                  <Download size={14} /> Download Checklist
               </button>
            </div>
@@ -146,7 +193,7 @@ function SafetyCard({ title, icon, dos, donts }: { title: string; icon: React.Re
           </div>
           <h3 className="font-black text-[#0f172a] uppercase tracking-tight text-sm">{title}</h3>
        </div>
-       
+
        <div className="flex-1 space-y-6">
           <div>
              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-3">Do&apos;s</p>
@@ -171,23 +218,19 @@ function SafetyCard({ title, icon, dos, donts }: { title: string; icon: React.Re
              </ul>
           </div>
        </div>
-       
-       <button className="mt-8 flex items-center gap-2 text-[9px] font-black text-blue-600 uppercase tracking-widest group">
-          Read More <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-       </button>
     </div>
   );
 }
 
-function CheckItem({ label, checked = false }: { label: string; checked?: boolean }) {
+function CheckItem({ label, checked = false, onToggle }: { label: string; checked?: boolean; onToggle: () => void }) {
   return (
-    <div className="flex items-center gap-3 group cursor-pointer">
+    <button onClick={onToggle} className="flex items-center gap-3 group cursor-pointer w-full text-left">
        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
           checked ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 text-transparent group-hover:border-blue-400'
        }`}>
           <CheckCircle2 size={12} strokeWidth={3} />
        </div>
        <span className={`text-[10px] font-black uppercase tracking-widest ${checked ? 'text-[#0f172a]' : 'text-gray-400'}`}>{label}</span>
-    </div>
+    </button>
   );
 }

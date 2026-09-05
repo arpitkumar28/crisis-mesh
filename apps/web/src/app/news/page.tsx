@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Search, Bell, Share2, Bookmark, ExternalLink, Hash, ArrowUpRight, RefreshCw
+  Search, ExternalLink, Hash, RefreshCw, MailX
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 import Image from 'next/image';
@@ -148,8 +148,6 @@ export default function NewsPage() {
                               <ExternalLink size={16} />
                             </a>
                           )}
-                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Share2 size={16} /></button>
-                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Bookmark size={16} /></button>
                         </div>
                       </div>
                     </div>
@@ -184,26 +182,18 @@ export default function NewsPage() {
             </div>
           </div>
 
-          {/* Newsletter / Subscription */}
+          {/* Email/SMS subscriptions: no delivery backend exists yet (see
+              apps/web/src/app/notifications/page.tsx), so this is an
+              honest status card rather than a non-functional signup form. */}
           <div className="bg-[#0f172a] rounded-[32px] p-8 text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[80px]"></div>
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center mb-6 shadow-xl shadow-blue-600/20">
-              <Bell size={28} />
+            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+              <MailX size={24} className="text-gray-400" />
             </div>
-            <h3 className="text-xl font-black mb-3 tracking-tight">Subscribe to Updates</h3>
-            <p className="text-xs font-bold text-gray-400 leading-relaxed mb-8">
-              Get critical disaster alerts and news updates directly to your inbox or mobile device.
+            <h3 className="text-xl font-black mb-3 tracking-tight">Email Subscriptions Not Available</h3>
+            <p className="text-xs font-bold text-gray-400 leading-relaxed">
+              Email and SMS delivery of alerts is not yet implemented. Critical alerts appear in your Notifications feed while you are signed in.
             </p>
-            <div className="space-y-4 relative z-10">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-black focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all"
-              />
-              <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20">
-                Subscribe Now
-              </button>
-            </div>
           </div>
 
           {/* Official Resources */}
@@ -222,19 +212,19 @@ export default function NewsPage() {
   );
 }
 
+// No confirmed link destination exists for these agencies, so this is a
+// static reference list rather than a clickable directory — an
+// unverified guessed URL would risk sending users to the wrong account.
 function OfficialSource({ name, handle, initial }: { name: string; handle: string; initial: string }) {
   return (
-    <div className="flex items-center justify-between group cursor-pointer">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-blue-600 text-xs font-black border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
-          {initial}
-        </div>
-        <div>
-          <h5 className="text-[11px] font-black text-[#0f172a] uppercase tracking-tight group-hover:text-blue-600 transition-colors">{name}</h5>
-          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{handle}</p>
-        </div>
+    <div className="flex items-center gap-4">
+      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-blue-600 text-xs font-black border border-gray-100">
+        {initial}
       </div>
-      <ArrowUpRight size={16} className="text-gray-300 group-hover:text-blue-600 transition-all group-hover:scale-110" />
+      <div>
+        <h5 className="text-[11px] font-black text-[#0f172a] uppercase tracking-tight">{name}</h5>
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{handle}</p>
+      </div>
     </div>
   );
 }
