@@ -18,6 +18,10 @@ export class WeatherService {
     string,
     { expiresAt: number; data: WeatherForecast }
   >();
+  private readonly geocodeCache = new Map<
+    string,
+    { expiresAt: number; data: LocationSearchResult[] }
+  >();
 
   constructor(
     @InjectRepository(WeatherObservation)
@@ -75,6 +79,60 @@ export class WeatherService {
         `Weather data unavailable: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  /**
+   * Resolves a free-text place name (city, district, or state) to real
+   * coordinates via Open-Meteo's public geocoding API — no API key, no
+   * hardcoded coordinate table to maintain, and it covers every place
+   * in India (or anywhere) rather than a fixed list this repo would
+   * otherwise have to seed and keep accurate by hand.
+   */
+  async searchLocations(query: string): Promise<LocationSearchResult[]> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return [];
+
+    const key = trimmed.toLowerCase();
+    const cached = this.geocodeCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+    try {
+      const data = await this.fetchLocations(trimmed);
+      // Place names don't change; cache generously to spare the free
+      // geocoding provider from repeat lookups of the same query.
+      this.geocodeCache.set(key, { data, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+      return data;
+    } catch (error) {
+      if (cached) {
+        this.logger.warn(`Geocoding provider unavailable; serving stale cache for "${key}"`);
+        return cached.data;
+      }
+      throw new ServiceUnavailableException(
+        `Location search unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async fetchLocations(query: string): Promise<LocationSearchResult[]> {
+    const baseUrl = (
+      process.env.OPEN_METEO_GEOCODING_BASE_URL || 'https://geocoding-api.open-meteo.com'
+    ).replace(/\/+$/, '');
+    const endpoint = new URL(`${baseUrl}/v1/search`);
+    endpoint.searchParams.set('name', query);
+    endpoint.searchParams.set('count', '10');
+    endpoint.searchParams.set('language', 'en');
+    endpoint.searchParams.set('format', 'json');
+    endpoint.searchParams.set('countryCode', 'IN');
+    const response = await fetch(endpoint, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = (await response.json()) as { results?: OpenMeteoGeocodingResult[] };
+    return (payload.results || []).map((result) => ({
+      name: result.name,
+      state: result.admin1 || null,
+      country: result.country || 'India',
+      latitude: result.latitude,
+      longitude: result.longitude,
+    }));
   }
 
   private async fetchLive(
@@ -232,4 +290,18 @@ type OpenMeteoForecastResponse = {
   current?: Record<string, unknown>;
   hourly?: Record<string, unknown>;
   daily?: Record<string, unknown>;
+};
+export type LocationSearchResult = {
+  name: string;
+  state: string | null;
+  country: string;
+  latitude: number;
+  longitude: number;
+};
+type OpenMeteoGeocodingResult = {
+  name: string;
+  admin1?: string;
+  country?: string;
+  latitude: number;
+  longitude: number;
 };

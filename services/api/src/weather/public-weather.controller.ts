@@ -61,6 +61,17 @@ export class PublicWeatherController {
     };
   }
 
+  @Get('search')
+  async searchLocations(@Query('query') query?: string) {
+    const results = await this.weatherService.searchLocations(query || '');
+    return {
+      success: true,
+      message: 'Locations retrieved successfully',
+      data: results,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const weather = await this.weatherService.findOne(id);

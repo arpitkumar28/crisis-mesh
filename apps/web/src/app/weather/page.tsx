@@ -13,21 +13,39 @@ import {
   ResponsiveContainer, Cell
 } from 'recharts';
 import apiClient from '@/lib/api-client';
+import { LocationSearch, type SelectedLocation } from '@/components/location-search';
 
-// Jaipur coordinates
-const JAIPUR_LAT = 26.9124;
-const JAIPUR_LON = 75.7873;
+const DEFAULT_LOCATION: SelectedLocation = {
+  name: 'Jaipur',
+  state: 'Rajasthan',
+  country: 'India',
+  latitude: 26.9124,
+  longitude: 75.7873,
+};
+const STORAGE_KEY = 'crisismesh-weather-location';
 
 export default function WeatherForecastPage() {
+  const [location, setLocation] = useState<SelectedLocation>(DEFAULT_LOCATION);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchWeatherData = async () => {
+  // Restore the last place the user searched for, so switching pages
+  // (or reloading) doesn't silently reset them back to Jaipur.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) setLocation(JSON.parse(stored));
+    } catch {
+      // ignore malformed/unavailable storage — default location stands
+    }
+  }, []);
+
+  const fetchWeatherData = async (target: SelectedLocation) => {
     setLoading(true);
     setError('');
     try {
-      const response = await apiClient.get(`/public/weather/${JAIPUR_LAT}/${JAIPUR_LON}`);
+      const response = await apiClient.get(`/public/weather/${target.latitude}/${target.longitude}`);
       setWeatherData(response.data.data);
     } catch (err) {
       setError('Failed to load weather data. Please try again.');
@@ -38,8 +56,18 @@ export default function WeatherForecastPage() {
   };
 
   useEffect(() => {
-    fetchWeatherData();
-  }, []);
+    fetchWeatherData(location);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.latitude, location.longitude]);
+
+  const handleSelectLocation = (selected: SelectedLocation) => {
+    setLocation(selected);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      // best-effort only
+    }
+  };
 
   const getWeatherIcon = (code: number) => {
     if (code === 0) return <Sun size={28} />;
@@ -112,6 +140,12 @@ export default function WeatherForecastPage() {
 
   return (
     <OperationsShell eyebrow="Real-time meteorological intelligence and forecasting" title="Weather & Forecast">
+      {/* Location Search */}
+      <div className="mb-8 max-w-md">
+        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Change Location</label>
+        <LocationSearch onSelect={handleSelectLocation} placeholder="Search any city, district or state in India…" />
+      </div>
+
       {/* Top Section: Current Weather & 7-Day Forecast */}
       <div className="grid grid-cols-12 gap-8 mb-8">
         {/* Current Weather Card */}
@@ -123,7 +157,7 @@ export default function WeatherForecastPage() {
                 <div className="flex justify-between items-start mb-8">
                    <div>
                       <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-1">Current Weather</h4>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Jaipur, Rajasthan</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{location.name}{location.state ? `, ${location.state}` : ''}</p>
                    </div>
                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400 border border-white/5">
                       {loading ? <RefreshCw size={28} className="animate-spin" /> : getWeatherIcon(weatherData?.weatherCode || 0)}
@@ -138,7 +172,7 @@ export default function WeatherForecastPage() {
                   <div className="text-center py-8">
                     <AlertTriangle size={32} className="text-red-400 mx-auto mb-2" />
                     <p className="text-sm text-red-400">{error}</p>
-                    <button onClick={fetchWeatherData} className="mt-4 text-xs font-black text-blue-400 uppercase tracking-widest hover:underline">
+                    <button onClick={() => fetchWeatherData(location)} className="mt-4 text-xs font-black text-blue-400 uppercase tracking-widest hover:underline">
                       Retry
                     </button>
                   </div>
@@ -169,7 +203,7 @@ export default function WeatherForecastPage() {
            <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm h-full flex flex-col">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xs font-black text-[#0f172a] uppercase tracking-wider">7-Day Forecast</h3>
-                <button onClick={fetchWeatherData} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                <button onClick={() => fetchWeatherData(location)} className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
                   <RefreshCw size={12} /> Refresh
                 </button>
               </div>
@@ -265,7 +299,7 @@ export default function WeatherForecastPage() {
                   <p className="text-xs mt-1">Current conditions are normal</p>
                 </div>
               )}
-              <button onClick={fetchWeatherData} className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+              <button onClick={() => fetchWeatherData(location)} className="w-full mt-8 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
                 <RefreshCw size={12} /> Refresh Data
               </button>
            </div>
@@ -279,7 +313,7 @@ export default function WeatherForecastPage() {
                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Meteorological Insight</h4>
               </div>
               <p className="text-xs font-bold text-gray-400 leading-relaxed mb-6">
-                 {weatherData ? `Current temperature in Jaipur is ${weatherData.temperature?.toFixed(1)}°C with ${weatherData.humidity?.toFixed(0)}% humidity. ${getWeatherCondition(weatherData.weatherCode || 0)} conditions reported. Data source: ${weatherData.source || 'Open-Meteo'}` : 'Loading weather intelligence data...'}
+                 {weatherData ? `Current temperature in ${location.name} is ${weatherData.temperature?.toFixed(1)}°C with ${weatherData.humidity?.toFixed(0)}% humidity. ${getWeatherCondition(weatherData.weatherCode || 0)} conditions reported. Data source: ${weatherData.source || 'Open-Meteo'}` : 'Loading weather intelligence data...'}
               </p>
               <button className="flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest hover:underline">
                  Read Full Analysis Report <ChevronRight size={14} />
