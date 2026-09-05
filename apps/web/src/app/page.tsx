@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import apiClient from '@/lib/api-client';
 import { formatDistanceToNow } from 'date-fns';
 import { parseGeoPoint } from '@/lib/geo';
+import { LocationSearch, type SelectedLocation } from '@/components/location-search';
 
 const ALERT_TYPE_LABELS: Record<string, string> = {
   WEATHER: 'Severe weather',
@@ -41,14 +42,20 @@ const LiveMap = dynamic(() => import('@/components/live-map'), {
 
 type ThemePreference = 'system' | 'light' | 'dark';
 
-// Jaipur coordinates
-const JAIPUR_LAT = 26.9124;
-const JAIPUR_LON = 75.7873;
+const DEFAULT_LOCATION: SelectedLocation = {
+  name: 'Jaipur',
+  state: 'Rajasthan',
+  country: 'India',
+  latitude: 26.9124,
+  longitude: 75.7873,
+};
+const WEATHER_LOCATION_STORAGE_KEY = 'crisismesh-weather-location';
 
 export default function PublicHome() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [themePreference, setThemePreference] = useState<ThemePreference>('system');
+  const [location, setLocation] = useState<SelectedLocation>(DEFAULT_LOCATION);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [newsData, setNewsData] = useState<any[]>([]);
@@ -56,6 +63,28 @@ export default function PublicHome() {
   const [districtCount, setDistrictCount] = useState<number | null>(null);
   const [topAlert, setTopAlert] = useState<any>(null);
   const [mapEntities, setMapEntities] = useState<any[]>([]);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+
+  // Restore the last place searched on the Weather Desk, so this widget
+  // stays in sync with whatever the user picked there (or here).
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(WEATHER_LOCATION_STORAGE_KEY);
+      if (stored) setLocation(JSON.parse(stored));
+    } catch {
+      // ignore malformed/unavailable storage — default location stands
+    }
+  }, []);
+
+  const handleSelectLocation = (selected: SelectedLocation) => {
+    setLocation(selected);
+    setIsLocationPickerOpen(false);
+    try {
+      window.localStorage.setItem(WEATHER_LOCATION_STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      // best-effort only
+    }
+  };
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem('crisismesh-theme') as ThemePreference | null;
@@ -72,12 +101,12 @@ export default function PublicHome() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch weather data for Jaipur
+  // Fetch weather and local news for the selected location.
   useEffect(() => {
     const fetchWeatherData = async () => {
       setWeatherLoading(true);
       try {
-        const response = await apiClient.get(`/public/weather/${JAIPUR_LAT}/${JAIPUR_LON}`);
+        const response = await apiClient.get(`/public/weather/${location.latitude}/${location.longitude}`);
         setWeatherData(response.data.data);
       } catch (err) {
         console.error('Weather API Error:', err);
@@ -89,7 +118,7 @@ export default function PublicHome() {
     const fetchNewsData = async () => {
       setNewsLoading(true);
       try {
-        const response = await apiClient.get('/news?query=weather');
+        const response = await apiClient.get('/news', { params: { query: location.name } });
         setNewsData(response.data.data || []);
       } catch (err) {
         console.error('News API Error:', err);
@@ -98,6 +127,12 @@ export default function PublicHome() {
       }
     };
 
+    fetchWeatherData();
+    fetchNewsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.latitude, location.longitude, location.name]);
+
+  useEffect(() => {
     const fetchDistrictCount = async () => {
       try {
         const response = await apiClient.get('/public/districts');
@@ -135,8 +170,6 @@ export default function PublicHome() {
       }
     };
 
-    fetchWeatherData();
-    fetchNewsData();
     fetchDistrictCount();
     fetchTopAlert();
   }, []);
@@ -469,10 +502,21 @@ export default function PublicHome() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             {/* Left: District Tracker */}
             <div className="lg:col-span-4 bg-white rounded-[32px] p-8 border border-gray-200 shadow-sm">
-               <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-black text-[#061a37] uppercase tracking-tight">Jaipur Desk</h3>
-                  <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Change Area</button>
+               <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black text-[#061a37] uppercase tracking-tight">{location.name} Desk</h3>
+                  <button
+                    onClick={() => setIsLocationPickerOpen((open) => !open)}
+                    className="text-[10px] font-black text-blue-600 uppercase tracking-widest"
+                  >
+                    Change Area
+                  </button>
                </div>
+
+               {isLocationPickerOpen && (
+                 <div className="mb-6">
+                   <LocationSearch onSelect={handleSelectLocation} placeholder="Search any city, district or state…" autoFocus />
+                 </div>
+               )}
 
                <div className="space-y-6">
                   <div className="flex items-center gap-6">
@@ -484,7 +528,7 @@ export default function PublicHome() {
                            {weatherLoading ? '--' : (weatherData?.temperature?.toFixed(1) || '--')}°C
                         </h4>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                           {weatherLoading ? 'Loading...' : `${weatherData?.precipitation ? 'Rain' : 'Clear'} • Jaipur`}
+                           {weatherLoading ? 'Loading...' : `${weatherData?.precipitation ? 'Rain' : 'Clear'} • ${location.name}`}
                         </p>
                      </div>
                   </div>
