@@ -33,9 +33,12 @@ ALTER TABLE risk_assessments
 -- risk_level was created as the `risk_level` ENUM (MINIMAL/LOW/MODERATE/
 -- HIGH/CRITICAL); every consumer (RiskEngineService, RiskService,
 -- DistrictsService) reads/writes it as a 0-100 decimal score instead.
--- Safe to convert directly: no application code has ever successfully
--- written a row here (see above), so there is no real enum data to
--- preserve or migrate.
+-- No application code has ever successfully written a row here (see
+-- above), so there is no real enum data at risk from any code path this
+-- repository controls — but rather than assume that covers every way a
+-- row could exist (e.g. a manually seeded or externally restored row),
+-- the conversion maps each enum value to a representative score instead
+-- of discarding it with USING NULL.
 DO $$
 BEGIN
   IF EXISTS (
@@ -46,7 +49,16 @@ BEGIN
   ) THEN
     ALTER TABLE risk_assessments
       ALTER COLUMN risk_level DROP DEFAULT,
-      ALTER COLUMN risk_level TYPE DECIMAL(5, 2) USING NULL,
+      ALTER COLUMN risk_level TYPE DECIMAL(5, 2) USING (
+        CASE risk_level::text
+          WHEN 'MINIMAL' THEN 10.00
+          WHEN 'LOW' THEN 25.00
+          WHEN 'MODERATE' THEN 50.00
+          WHEN 'HIGH' THEN 75.00
+          WHEN 'CRITICAL' THEN 90.00
+          ELSE NULL
+        END
+      ),
       ALTER COLUMN risk_level DROP NOT NULL;
   END IF;
 END $$;
