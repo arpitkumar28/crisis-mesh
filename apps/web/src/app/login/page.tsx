@@ -168,14 +168,16 @@ export default function LoginPage() {
 
               <div className="mt-8 relative">
                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                 <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest"><span className="bg-white px-4 text-gray-400 uppercase">OR</span></div>
+                 <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest"><span className="bg-white px-4 text-gray-400 uppercase">New Here?</span></div>
               </div>
 
-              <div className="mt-8 space-y-3">
-                 <button className="w-full py-3 border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] flex items-center justify-center gap-3 hover:bg-gray-50 transition-all">
-                    <Image src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width={14} height={14} />
-                    Login with Government
-                 </button>
+              <div className="mt-8">
+                 <Link
+                   href="/register"
+                   className="w-full py-3 border-2 border-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-600 flex items-center justify-center gap-2 hover:bg-blue-50 transition-all"
+                 >
+                    Create an Account
+                 </Link>
               </div>
 
               <p className="mt-10 text-center text-[9px] font-black text-gray-400 uppercase tracking-widest">Authorized Access Only</p>
