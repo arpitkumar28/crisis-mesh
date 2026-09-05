@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
   ForbiddenException,
 } from '@nestjs/common';
@@ -17,6 +18,13 @@ import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
 import { IncidentUpdatedEvent } from '../websocket/dto/websocket-event.dto';
 import { UserRoleEnum } from '../entities/profile.entity';
+import { UsersService } from '../users/users.service';
+
+export interface EligibleResponder {
+  id: string;
+  name: string;
+  role: UserRoleEnum.RESPONDER;
+}
 
 @Injectable()
 export class IncidentsService {
@@ -27,6 +35,7 @@ export class IncidentsService {
     private readonly incidentRepository: Repository<Incident>,
     private readonly webSocketService: WebSocketService,
     private readonly auditService: AuditService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
@@ -179,6 +188,90 @@ export class IncidentsService {
     }
 
     return incident;
+  }
+
+  /**
+   * The minimum information needed to pick an assignee: RESPONDER accounts
+   * only, no email/contact/profile data that assignment doesn't need.
+   */
+  async getEligibleResponders(): Promise<EligibleResponder[]> {
+    const responders = await this.usersService.findByRole(
+      UserRoleEnum.RESPONDER,
+    );
+    return responders.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      role: UserRoleEnum.RESPONDER as const,
+    }));
+  }
+
+  /**
+   * Assign, reassign, or unassign (assignedTo === null) an incident.
+   * Every non-null target is verified to actually hold RESPONDER before
+   * the write happens — this is the only path allowed to change
+   * assigned_to, and it rejects a nonexistent user or one without the
+   * RESPONDER role identically (both simply fail the same role check),
+   * so no arbitrary or wrongly-privileged account can ever be assigned.
+   */
+  async assignResponder(
+    id: string,
+    assignedTo: string | null,
+    currentUser: any,
+  ): Promise<Incident> {
+    const incident = await this.findOne(id, currentUser);
+
+    if (assignedTo !== null) {
+      const isEligible = await this.usersService.hasRole(
+        assignedTo,
+        UserRoleEnum.RESPONDER,
+      );
+      if (!isEligible) {
+        throw new BadRequestException(
+          'assigned_to must be the ID of an active user with the RESPONDER role',
+        );
+      }
+    }
+
+    const previousAssignee = incident.assigned_to ?? null;
+    if (previousAssignee === assignedTo) {
+      return incident;
+    }
+
+    // A plain repository.save() on an entity that also carries the loaded
+    // `assignee` relation is unreliable here: TypeORM resolves the
+    // assigned_to column from that relation object on persist, so a
+    // change to the raw scalar alone can be silently dropped after the
+    // relation has been populated once. An explicit update() against the
+    // column removes that ambiguity entirely.
+    await this.incidentRepository.update(
+      { id },
+      { assigned_to: assignedTo as unknown as string },
+    );
+    const updatedIncident = await this.findOne(id, currentUser);
+
+    this.webSocketService.broadcastIncidentUpdated({
+      incident_id: updatedIncident.id,
+      severity: updatedIncident.severity,
+      type: updatedIncident.type,
+      location: updatedIncident.location_id,
+      status: updatedIncident.status,
+      timestamp: updatedIncident.updated_at.toISOString(),
+    });
+
+    await this.auditService.log({
+      user_id: currentUser.id,
+      action: assignedTo === null ? 'UNASSIGN' : 'ASSIGN',
+      entity_type: 'INCIDENT',
+      entity_id: id,
+      old_values: { assigned_to: previousAssignee },
+      new_values: { assigned_to: assignedTo },
+    });
+
+    this.logger.log(
+      `Incident ${id} assignment changed: ${previousAssignee ?? 'none'} -> ${assignedTo ?? 'none'} by user: ${currentUser.id}`,
+    );
+
+    return updatedIncident;
   }
 
   async update(

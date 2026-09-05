@@ -4,6 +4,7 @@ import { ConfigModule } from '../config/config.module';
 import { AuthModule } from '../auth/auth.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { AuditModule } from '../audit/audit.module';
+import { UsersModule } from '../users/users.module';
 import { IncidentsService } from './incidents.service';
 import { IncidentsController } from './incidents.controller';
 import { Incident } from '../entities/incident.entity';
@@ -16,6 +17,7 @@ import { Profile } from '../entities/profile.entity';
     AuthModule,
     WebSocketModule,
     AuditModule,
+    UsersModule,
     TypeOrmModule.forFeature([Incident, GeographicLocation, Profile]),
   ],
   controllers: [IncidentsController],

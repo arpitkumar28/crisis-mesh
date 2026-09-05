@@ -3,14 +3,17 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
+import { AssignIncidentDto } from './dto/assign-incident.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -157,6 +160,18 @@ export class IncidentsController {
     };
   }
 
+  @Get('eligible-responders')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
+  async eligibleResponders() {
+    const responders = await this.incidentsService.getEligibleResponders();
+    return {
+      success: true,
+      message: 'Eligible responders retrieved successfully',
+      data: responders,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
   @Get(':id')
   @Roles(
     UserRoleEnum.CITIZEN,
@@ -190,6 +205,34 @@ export class IncidentsController {
     return {
       success: true,
       message: 'Incident updated successfully',
+      data: incident,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Patch(':id/assignment')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY, UserRoleEnum.RESPONDER)
+  async assign(
+    @Param('id') id: string,
+    @Body() assignIncidentDto: AssignIncidentDto,
+    @CurrentUser() user: any,
+  ) {
+    if (assignIncidentDto.assigned_to === undefined) {
+      throw new BadRequestException(
+        'assigned_to is required (a responder ID to assign, or null to unassign)',
+      );
+    }
+    const incident = await this.incidentsService.assignResponder(
+      id,
+      assignIncidentDto.assigned_to,
+      user,
+    );
+    return {
+      success: true,
+      message:
+        assignIncidentDto.assigned_to === null
+          ? 'Incident unassigned successfully'
+          : 'Incident assigned successfully',
       data: incident,
       request_id: crypto.randomUUID(),
     };

@@ -15,10 +15,18 @@ import { Toast } from '@/lib/toast';
 
 const INCIDENT_STATUSES = ['REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
 // Mirrors the backend's own @Roles(ADMIN, AUTHORITY, RESPONDER) guard on
-// PUT /v1/incidents/:id (see services/api/src/incidents/incidents.controller.ts) —
-// this only controls whether the control renders; the backend enforces
-// the real check regardless.
+// PUT /v1/incidents/:id and PATCH /v1/incidents/:id/assignment (see
+// services/api/src/incidents/incidents.controller.ts) — this only
+// controls whether the control renders; the backend enforces the real
+// check regardless.
 const CAN_UPDATE_STATUS_ROLES = ['ADMIN', 'AUTHORITY', 'RESPONDER'];
+const CAN_ASSIGN_ROLES = ['ADMIN', 'AUTHORITY', 'RESPONDER'];
+
+interface EligibleResponder {
+  id: string;
+  name: string;
+  role: string;
+}
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -30,6 +38,9 @@ export default function IncidentDetailsPage() {
   const [incident, setIncident] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [eligibleResponders, setEligibleResponders] = useState<EligibleResponder[]>([]);
+  const [respondersLoading, setRespondersLoading] = useState(false);
+  const [assigning, setAssigning] = useState(false);
   const { token, user } = useAuthStore();
 
   const fetchIncidentDetails = async () => {
@@ -48,6 +59,30 @@ export default function IncidentDetailsPage() {
     fetchIncidentDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const canAssign = !!user?.role && CAN_ASSIGN_ROLES.includes(user.role);
+
+  useEffect(() => {
+    if (!canAssign) return;
+    let cancelled = false;
+    setRespondersLoading(true);
+    apiClient
+      .get('/incidents/eligible-responders')
+      .then((response) => {
+        if (!cancelled) setEligibleResponders(response.data.data || []);
+      })
+      .catch((error) => {
+        console.error('Failed to load eligible responders:', error);
+        if (!cancelled) Toast.error('Failed to load eligible responders');
+      })
+      .finally(() => {
+        if (!cancelled) setRespondersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canAssign]);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -84,6 +119,26 @@ export default function IncidentDetailsPage() {
       Toast.error('Failed to update incident status');
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleAssignmentChange = async (responderId: string) => {
+    if (!incident) return;
+    const nextAssignedTo = responderId === '' ? null : responderId;
+    if (nextAssignedTo === (incident.assigned_to ?? null)) return;
+
+    setAssigning(true);
+    try {
+      const response = await apiClient.patch(`/incidents/${id}/assignment`, {
+        assigned_to: nextAssignedTo,
+      });
+      setIncident(response.data.data);
+      Toast.success(nextAssignedTo ? 'Responder assigned' : 'Incident unassigned');
+    } catch (error) {
+      console.error('Failed to update incident assignment:', error);
+      Toast.error('Failed to update incident assignment');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -195,10 +250,33 @@ export default function IncidentDetailsPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] font-bold text-gray-400 mt-3">
-                    Responder assignment is not yet available in this view — the AUTHORITY role has no
-                    access to the responder directory needed to pick an assignee.
-                  </p>
+                </div>
+              )}
+              {canAssign && (
+                <div className="mt-8 pt-8 border-t border-gray-50">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Assign Responder</p>
+                  <select
+                    value={incident.assigned_to || ''}
+                    disabled={assigning || respondersLoading}
+                    onChange={(e) => handleAssignmentChange(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-[#0f172a] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Unassigned</option>
+                    {eligibleResponders.map((responder) => (
+                      <option key={responder.id} value={responder.id}>
+                        {responder.name}
+                      </option>
+                    ))}
+                  </select>
+                  {respondersLoading && (
+                    <p className="text-[9px] font-bold text-gray-400 mt-3">Loading eligible responders...</p>
+                  )}
+                  {!respondersLoading && eligibleResponders.length === 0 && (
+                    <p className="text-[9px] font-bold text-gray-400 mt-3">No RESPONDER accounts are available to assign.</p>
+                  )}
+                  {assigning && (
+                    <p className="text-[9px] font-bold text-blue-600 mt-3">Updating assignment...</p>
+                  )}
                 </div>
               )}
               <div className="mt-8 pt-8 border-t border-gray-50 flex justify-end gap-4">

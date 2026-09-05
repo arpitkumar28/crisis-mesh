@@ -84,6 +84,27 @@ export class UsersService {
     });
   }
 
+  /**
+   * Active profiles currently holding the given role, e.g. the pool of
+   * RESPONDER accounts eligible for incident assignment.
+   */
+  async findByRole(roleName: UserRoleEnum): Promise<Profile[]> {
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
+    if (!role) return [];
+
+    const userRoles = await this.userRoleRepository.find({
+      where: { role_id: role.id },
+      relations: { profile: true },
+    });
+
+    return userRoles
+      .map((ur) => ur.profile)
+      .filter((profile): profile is Profile => !!profile && profile.is_active)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   async findByIdIncludingInactive(id: string): Promise<Profile | null> {
     return this.profileRepository.findOne({
       where: { id },

@@ -26,8 +26,4 @@ export class CreateIncidentDto {
   @IsOptional()
   @IsEnum(IncidentSeverity)
   severity?: IncidentSeverity;
-
-  @IsOptional()
-  @IsString()
-  assigned_to?: string;
 }
