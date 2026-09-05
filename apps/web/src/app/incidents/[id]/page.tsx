@@ -8,8 +8,17 @@ import { OperationsShell } from '@/components/operations-shell';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import { wsClient } from '@/lib/websocket-client';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { format } from 'date-fns';
 import { Toast } from '@/lib/toast';
+
+const INCIDENT_STATUSES = ['REPORTED', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+// Mirrors the backend's own @Roles(ADMIN, AUTHORITY, RESPONDER) guard on
+// PUT /v1/incidents/:id (see services/api/src/incidents/incidents.controller.ts) —
+// this only controls whether the control renders; the backend enforces
+// the real check regardless.
+const CAN_UPDATE_STATUS_ROLES = ['ADMIN', 'AUTHORITY', 'RESPONDER'];
 
 const LiveMap = dynamic(() => import('@/components/live-map'), {
   ssr: false,
@@ -20,6 +29,8 @@ export default function IncidentDetailsPage() {
   const { id } = useParams();
   const [incident, setIncident] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const { token, user } = useAuthStore();
 
   const fetchIncidentDetails = async () => {
     try {
@@ -37,6 +48,46 @@ export default function IncidentDetailsPage() {
     fetchIncidentDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!token || !id) return;
+    wsClient.connect(token);
+
+    // incident.updated/incident.status_changed broadcast a minimal
+    // payload keyed by incident id — refetch this exact incident's real
+    // record rather than guessing which fields changed.
+    const onIncidentEvent = (payload: any) => {
+      if (payload?.incident_id === id || payload?.id === id) {
+        fetchIncidentDetails();
+      }
+    };
+
+    wsClient.on('incident.updated', onIncidentEvent);
+    wsClient.on('incident.status_changed', onIncidentEvent);
+
+    return () => {
+      wsClient.off('incident.updated', onIncidentEvent);
+      wsClient.off('incident.status_changed', onIncidentEvent);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, id]);
+
+  const handleStatusChange = async (status: string) => {
+    if (!incident || status === incident.status) return;
+    setUpdatingStatus(true);
+    try {
+      const response = await apiClient.put(`/incidents/${id}`, { status });
+      setIncident(response.data.data);
+      Toast.success(`Status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update incident status:', error);
+      Toast.error('Failed to update incident status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const canUpdateStatus = !!user?.role && CAN_UPDATE_STATUS_ROLES.includes(user.role);
 
   if (loading) {
     return (
@@ -125,15 +176,37 @@ export default function IncidentDetailsPage() {
                     <p className="text-xl font-black text-[#0f172a]">{incident.assignee?.name || 'Unassigned'}</p>
                  </div>
               </div>
+              {canUpdateStatus && (
+                <div className="mt-8 pt-8 border-t border-gray-50">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Update Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {INCIDENT_STATUSES.map((s) => (
+                      <button
+                        key={s}
+                        disabled={updatingStatus || s === incident.status}
+                        onClick={() => handleStatusChange(s)}
+                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed ${
+                          s === incident.status
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-50 border border-gray-200 text-gray-600 hover:border-blue-500 hover:text-blue-600'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] font-bold text-gray-400 mt-3">
+                    Responder assignment is not yet available in this view — the AUTHORITY role has no
+                    access to the responder directory needed to pick an assignee.
+                  </p>
+                </div>
+              )}
               <div className="mt-8 pt-8 border-t border-gray-50 flex justify-end gap-4">
-                 <button 
+                 <button
                   onClick={() => window.location.href = `/incidents`}
                   className="px-6 py-2.5 border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest"
                  >
                    Back to List
-                 </button>
-                 <button className="px-6 py-2.5 bg-[#061a37] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">
-                   Dispatch Responder
                  </button>
               </div>
            </div>
