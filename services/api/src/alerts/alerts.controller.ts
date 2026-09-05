@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -283,6 +284,33 @@ export class AlertsController {
       success: true,
       message: 'Alert updated successfully',
       data: alert,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Patch(':id/acknowledge')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY)
+  async acknowledge(@Param('id') id: string, @CurrentUser() user: any) {
+    const alert = await this.alertsService.acknowledge(id, user);
+    return {
+      success: true,
+      message: 'Alert acknowledged successfully',
+      data: alert,
+      request_id: crypto.randomUUID(),
+    };
+  }
+
+  @Post(':id/escalate')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.AUTHORITY)
+  async escalate(@Param('id') id: string, @CurrentUser() user: any) {
+    const { alert, incident } = await this.alertsService.escalateToIncident(
+      id,
+      user,
+    );
+    return {
+      success: true,
+      message: 'Alert escalated to incident successfully',
+      data: { alert, incident },
       request_id: crypto.randomUUID(),
     };
   }

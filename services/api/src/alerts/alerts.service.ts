@@ -1,18 +1,44 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
-import { Alert, AlertStatus, AlertSeverity } from '../entities/alert.entity';
+import { Alert, AlertStatus, AlertSeverity, AlertType } from '../entities/alert.entity';
+import { Incident, IncidentType, IncidentSeverity } from '../entities/incident.entity';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { AuditService } from '../audit/audit.service';
 import { AlertUpdatedEvent } from '../websocket/dto/websocket-event.dto';
 import { UserRoleEnum } from '../entities/profile.entity';
+import { IncidentsService } from '../incidents/incidents.service';
+
+// Alert types that represent a natural-hazard event map onto the
+// DISASTER incident type; MANUAL (an authority-issued advisory with no
+// fixed hazard category) maps onto OTHER.
+const NATURAL_HAZARD_ALERT_TYPES = new Set<AlertType>([
+  AlertType.WEATHER,
+  AlertType.FLOOD,
+  AlertType.EARTHQUAKE,
+  AlertType.WILDFIRE,
+  AlertType.LANDSLIDE,
+  AlertType.TSUNAMI,
+  AlertType.CYCLONE,
+]);
+
+// AlertSeverity and IncidentSeverity are separate enums with identical
+// string values (LOW/MEDIUM/HIGH/CRITICAL) — map explicitly rather than
+// casting, so a future divergence between the two fails loudly.
+const ALERT_TO_INCIDENT_SEVERITY: Record<AlertSeverity, IncidentSeverity> = {
+  [AlertSeverity.LOW]: IncidentSeverity.LOW,
+  [AlertSeverity.MEDIUM]: IncidentSeverity.MEDIUM,
+  [AlertSeverity.HIGH]: IncidentSeverity.HIGH,
+  [AlertSeverity.CRITICAL]: IncidentSeverity.CRITICAL,
+};
 
 @Injectable()
 export class AlertsService {
@@ -23,6 +49,7 @@ export class AlertsService {
     private readonly alertRepository: Repository<Alert>,
     private readonly webSocketService: WebSocketService,
     private readonly auditService: AuditService,
+    private readonly incidentsService: IncidentsService,
   ) {}
 
   async create(createAlertDto: CreateAlertDto, userId: string): Promise<Alert> {
@@ -132,6 +159,116 @@ export class AlertsService {
     }
 
     return alert;
+  }
+
+  /**
+   * Marks an alert as reviewed by an authority. Idempotent — acknowledging
+   * an already-acknowledged alert is a no-op rather than an error, since a
+   * second click racing the first should not fail or double-log.
+   */
+  async acknowledge(id: string, currentUser: any): Promise<Alert> {
+    const alert = await this.findOne(id, currentUser);
+
+    if (alert.acknowledged_at) {
+      return alert;
+    }
+
+    // A direct update() against the columns, not save() on the loaded
+    // entity — save() can silently drop a column change once a relation
+    // sharing that foreign key has been loaded (see the equivalent fix in
+    // IncidentsService.assignResponder).
+    await this.alertRepository.update(
+      { id },
+      { acknowledged_at: new Date(), acknowledged_by: currentUser.id },
+    );
+    const updatedAlert = await this.findOne(id, currentUser);
+
+    this.webSocketService.broadcastAlertUpdated({
+      alert_id: updatedAlert.id,
+      severity: updatedAlert.severity,
+      type: updatedAlert.type,
+      status: updatedAlert.status,
+      location: updatedAlert.location_id,
+      message: updatedAlert.title,
+      timestamp: updatedAlert.updated_at.toISOString(),
+    });
+
+    await this.auditService.log({
+      user_id: currentUser.id,
+      action: 'ACKNOWLEDGE',
+      entity_type: 'ALERT',
+      entity_id: id,
+      old_values: { acknowledged_at: null },
+      new_values: {
+        acknowledged_at: updatedAlert.acknowledged_at,
+        acknowledged_by: currentUser.id,
+      },
+    });
+
+    this.logger.log(`Alert acknowledged: ${id} by user: ${currentUser.id}`);
+    return updatedAlert;
+  }
+
+  /**
+   * Escalates an alert into a real incident — an explicit authority
+   * decision, never automatic. Rejects escalating an alert that is
+   * already linked to an incident (duplicate prevention: one alert can
+   * only ever produce one incident).
+   */
+  async escalateToIncident(
+    id: string,
+    currentUser: any,
+  ): Promise<{ alert: Alert; incident: Incident }> {
+    const alert = await this.findOne(id, currentUser);
+
+    if (alert.incident_id) {
+      throw new BadRequestException(
+        'This alert has already been escalated to an incident',
+      );
+    }
+
+    const incidentType = NATURAL_HAZARD_ALERT_TYPES.has(alert.type)
+      ? IncidentType.DISASTER
+      : IncidentType.OTHER;
+
+    const incident = await this.incidentsService.create(
+      {
+        type: incidentType,
+        title: `Escalated from alert: ${alert.title}`.slice(0, 500),
+        description: alert.description || undefined,
+        location_id: alert.location_id || undefined,
+        severity: ALERT_TO_INCIDENT_SEVERITY[alert.severity],
+      },
+      currentUser.id,
+    );
+
+    await this.alertRepository.update({ id }, { incident_id: incident.id });
+    const updatedAlert = await this.findOne(id, currentUser);
+
+    this.webSocketService.broadcastAlertUpdated({
+      alert_id: updatedAlert.id,
+      severity: updatedAlert.severity,
+      type: updatedAlert.type,
+      status: updatedAlert.status,
+      location: updatedAlert.location_id,
+      message: updatedAlert.title,
+      timestamp: updatedAlert.updated_at.toISOString(),
+    });
+
+    await this.auditService.log({
+      user_id: currentUser.id,
+      action: 'ESCALATE',
+      entity_type: 'ALERT',
+      entity_id: id,
+      old_values: { incident_id: null },
+      new_values: { incident_id: incident.id },
+    });
+
+    this.logger.log(
+      `Alert escalated to incident: alert=${id} incident=${incident.id} by user: ${currentUser.id}`,
+    );
+
+    return { alert: updatedAlert, incident };
   }
 
   async update(
