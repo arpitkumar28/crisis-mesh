@@ -310,6 +310,45 @@ describe('UsersService', () => {
     });
   });
 
+  describe('findByRole', () => {
+    it('returns active profiles holding the given role, sorted by name', async () => {
+      mockRoleRepository.findOne.mockResolvedValue({ id: 'role-responder', name: UserRoleEnum.RESPONDER });
+      mockUserRoleRepository.find.mockResolvedValue([
+        { profile: { id: 'r2', name: 'Zed Responder', is_active: true } },
+        { profile: { id: 'r1', name: 'Anne Responder', is_active: true } },
+      ]);
+
+      const result = await service.findByRole(UserRoleEnum.RESPONDER);
+
+      expect(mockUserRoleRepository.find).toHaveBeenCalledWith({
+        where: { role_id: 'role-responder' },
+        relations: { profile: true },
+      });
+      expect(result.map((p) => p.id)).toEqual(['r1', 'r2']);
+    });
+
+    it('excludes deactivated profiles', async () => {
+      mockRoleRepository.findOne.mockResolvedValue({ id: 'role-responder', name: UserRoleEnum.RESPONDER });
+      mockUserRoleRepository.find.mockResolvedValue([
+        { profile: { id: 'r1', name: 'Active Responder', is_active: true } },
+        { profile: { id: 'r2', name: 'Deactivated Responder', is_active: false } },
+      ]);
+
+      const result = await service.findByRole(UserRoleEnum.RESPONDER);
+
+      expect(result.map((p) => p.id)).toEqual(['r1']);
+    });
+
+    it('returns an empty array when the role does not exist', async () => {
+      mockRoleRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.findByRole(UserRoleEnum.RESPONDER);
+
+      expect(result).toEqual([]);
+      expect(mockUserRoleRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deactivateProfile', () => {
     it('should deactivate profile', async () => {
       const id = 'profile-id';
