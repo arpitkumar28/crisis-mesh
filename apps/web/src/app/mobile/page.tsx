@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  Map as MapIcon, Bell, Activity, Shield, Zap, CheckCircle2, Apple, Play, QrCode
+  Map as MapIcon, Bell, Activity, Shield, Zap, CheckCircle2, Apple, Play
 } from 'lucide-react';
 import { OperationsShell } from '@/components/operations-shell';
 
@@ -15,6 +15,13 @@ const features = [
   { icon: <CheckCircle2 className="text-purple-500" />, title: 'Safety Tips', desc: 'Guidelines and safety information' },
 ];
 
+// This is a purely illustrative phone-shell mockup of the mobile app's
+// UI layout — it does not fetch or display any real data. It previously
+// showed hardcoded "Active Alerts: 6" / "Nearby Shelters: 12" counts,
+// which looked like live statistics but were fabricated; the stat cards
+// below no longer claim any specific number. The "Download" buttons are
+// disabled rather than linking to app store listings that do not exist,
+// since the mobile app is not currently published.
 export default function MobileAppPreview() {
   return (
     <OperationsShell eyebrow="CrisisMesh mobile ecosystem for citizens and responders" title="Mobile App Preview">
@@ -38,23 +45,23 @@ export default function MobileAppPreview() {
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-black text-blue-900/10 uppercase tracking-[0.2em] -rotate-12">Interactive Map</div>
                     
-                    {/* Mock Markers */}
+                    {/* Illustrative map pins — layout only, not real locations */}
                     <div className="absolute top-1/3 left-1/4 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
                     <div className="absolute top-2/3 right-1/3 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                  </div>
-                 
+
                  <div className="grid grid-cols-2 gap-3 mb-6">
                     <div className="p-3 bg-red-50 rounded-xl border border-red-100">
                        <p className="text-[8px] font-black text-red-600 uppercase mb-1">Active Alerts</p>
-                       <p className="text-lg font-black text-red-600">6</p>
+                       <p className="text-[9px] font-bold text-red-600/70">Live in-app</p>
                     </div>
                     <div className="p-3 bg-green-50 rounded-xl border border-green-100">
                        <p className="text-[8px] font-black text-green-600 uppercase mb-1">Nearby Shelters</p>
-                       <p className="text-lg font-black text-green-600">12</p>
+                       <p className="text-[9px] font-bold text-green-600/70">Live in-app</p>
                     </div>
                  </div>
-                 
-                 {/* Bottom Nav Mock */}
+
+                 {/* Bottom nav — illustrative layout only */}
                  <div className="mt-auto py-4 border-t border-gray-100 flex justify-between items-center text-gray-300">
                     <MapIcon size={20} className="text-blue-600" />
                     <Bell size={20} />
@@ -92,31 +99,22 @@ export default function MobileAppPreview() {
            <div className="pt-10 border-t border-gray-100">
               <div className="flex flex-wrap items-center gap-8">
                  <div className="space-y-4">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Download Now</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Coming Soon</p>
                     <div className="flex gap-4">
-                       <button className="flex items-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-2xl hover:bg-black transition-all shadow-xl">
+                       <button disabled className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-400 rounded-2xl cursor-not-allowed" title="Not yet published">
                           <Play size={20} />
                           <div className="text-left">
-                             <p className="text-[8px] font-bold opacity-50 leading-none">GET IT ON</p>
+                             <p className="text-[8px] font-bold opacity-70 leading-none">NOT YET ON</p>
                              <p className="text-xs font-black">Google Play</p>
                           </div>
                        </button>
-                       <button className="flex items-center gap-2 px-6 py-3 bg-[#0f172a] text-white rounded-2xl hover:bg-black transition-all shadow-xl">
+                       <button disabled className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-400 rounded-2xl cursor-not-allowed" title="Not yet published">
                           <Apple size={20} />
                           <div className="text-left">
-                             <p className="text-[8px] font-bold opacity-50 leading-none">Download on the</p>
+                             <p className="text-[8px] font-bold opacity-70 leading-none">NOT YET ON THE</p>
                              <p className="text-xs font-black">App Store</p>
                           </div>
                        </button>
-                    </div>
-                 </div>
-                 
-                 <div className="flex items-center gap-4 p-4 bg-white rounded-[32px] border border-gray-100 shadow-xl">
-                    <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-[#0f172a] border border-gray-100">
-                       <QrCode size={48} />
-                    </div>
-                    <div>
-                       <p className="text-[10px] font-black text-[#0f172a] uppercase leading-tight">Scan to <br />Download</p>
                     </div>
                  </div>
               </div>
