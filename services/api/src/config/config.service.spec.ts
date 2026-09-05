@@ -84,6 +84,42 @@ describe('ConfigService', () => {
     expect(origins).not.toContain('http://localhost:3000');
   });
 
+  it('should match this project\'s own Vercel preview URLs in production', () => {
+    process.env.NODE_ENV = 'production';
+
+    const pattern = service.corsOriginPreviewPattern;
+
+    expect(pattern).not.toBeNull();
+    expect(pattern!.test('https://crisis-mesh-git-claude-verify-ren-8237b7-arpitkumar28s-projects.vercel.app')).toBe(true);
+    expect(pattern!.test('https://crisis-mesh-abc123-arpitkumar28s-projects.vercel.app')).toBe(true);
+  });
+
+  it('should not match a look-alike origin outside this project\'s Vercel team', () => {
+    process.env.NODE_ENV = 'production';
+
+    const pattern = service.corsOriginPreviewPattern;
+
+    expect(pattern!.test('https://crisis-mesh-abc123-some-other-team.vercel.app')).toBe(false);
+    expect(pattern!.test('https://evil.com/?crisis-mesh-abc123-arpitkumar28s-projects.vercel.app')).toBe(false);
+  });
+
+  it('should not offer a preview pattern outside production', () => {
+    process.env.NODE_ENV = 'development';
+    expect(service.corsOriginPreviewPattern).toBeNull();
+  });
+
+  it('should honor an explicit CORS_ORIGIN_PREVIEW_PATTERN override', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.CORS_ORIGIN_PREVIEW_PATTERN = '^https://custom-preview\\.example\\.com$';
+
+    const pattern = service.corsOriginPreviewPattern;
+
+    expect(pattern!.test('https://custom-preview.example.com')).toBe(true);
+    expect(pattern!.test('https://crisis-mesh-abc123-arpitkumar28s-projects.vercel.app')).toBe(false);
+
+    delete process.env.CORS_ORIGIN_PREVIEW_PATTERN;
+  });
+
   it('should require an explicit MQTT broker URL in production', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.MQTT_BROKER_URL;
