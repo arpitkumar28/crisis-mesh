@@ -360,7 +360,8 @@ function ProfileInput({ label, value, onChange, type = 'text', readOnly = false 
          value={value}
          onChange={onChange}
          readOnly={readOnly}
-         className={`w-full px-6 py-3.5 rounded-2xl text-xs font-black border transition-all focus:outline-none ${
+         title={value}
+         className={`w-full px-6 py-3.5 rounded-2xl text-xs font-black border transition-all focus:outline-none text-ellipsis ${
            readOnly ? 'bg-gray-50 text-gray-500 border-gray-100 cursor-not-allowed' : 'bg-white text-[#0f172a] border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5'
          }`}
        />

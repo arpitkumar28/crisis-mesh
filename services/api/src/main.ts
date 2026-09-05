@@ -16,7 +16,12 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = configService.corsOrigin;
-      if (!origin || allowedOrigins.includes(origin)) {
+      const previewPattern = configService.corsOriginPreviewPattern;
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        (previewPattern && previewPattern.test(origin))
+      ) {
         callback(null, origin || true);
         return;
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import {
   Activity, Bell, Boxes, LogOut, Map, Radio, AlertTriangle,
@@ -14,7 +14,7 @@ import {
   FileJson, Table, Share2, Megaphone, Globe2, BookOpen,
   Ticket, Wrench, Wallet, CreditCard, DollarSign,
   Filter, Download, MoreVertical, Layout, ZapOff, ShoppingCart,
-  HardHat, ClipboardList
+  HardHat, ClipboardList, Menu, X
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -37,6 +37,7 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
   const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     await performLogout();
@@ -47,7 +48,14 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
     <div className="flex flex-col min-h-screen bg-[#f1f5f9]">
       {/* Top Navigation Bar - Dark Themed as per image */}
       <header className="h-14 bg-[#061a37] flex items-center justify-between px-4 sticky top-0 z-50 shadow-lg">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 sm:gap-6">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 -ml-2 text-white hover:bg-white/10 rounded-lg lg:hidden"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
           <a href="/dashboard" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white shadow-lg shadow-blue-500/20 overflow-hidden">
               <Image src="/brand/crisismesh-icon.png" alt="CrisisMesh" width={32} height={32} className="w-full h-full object-cover" />
@@ -91,9 +99,32 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Dark as per image */}
-        <aside className="w-[200px] bg-[#061a37] text-white flex flex-col h-[calc(100vh-56px)] shrink-0 z-40">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Backdrop — mobile only, closes the drawer on tap outside it */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Sidebar — fixed off-canvas drawer below lg, static in-flow above it */}
+        <aside
+          className={`fixed inset-y-0 left-0 top-14 lg:top-0 w-[240px] lg:w-[200px] bg-[#061a37] text-white flex flex-col h-[calc(100vh-56px)] shrink-0 z-40 transform transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${
+            isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 py-3 lg:hidden">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Menu</span>
+            <button
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+              aria-label="Close menu"
+            >
+              <X size={18} />
+            </button>
+          </div>
           <nav className="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto custom-scrollbar">
             {sidebarLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -101,6 +132,7 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
                 <a
                   key={link.label}
                   href={link.href}
+                  onClick={() => setIsMobileSidebarOpen(false)}
                   className={`flex items-center justify-between px-3 py-2 rounded transition-all group ${
                     isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
                   }`}
@@ -123,7 +155,7 @@ export function OperationsShell({ title, eyebrow, children }: { title: string; e
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-y-auto bg-[#f8fafc] custom-scrollbar">
+        <main className="flex-1 min-w-0 flex flex-col overflow-y-auto overflow-x-hidden bg-[#f8fafc] custom-scrollbar">
           <div className="p-4 flex-1">
             {children}
           </div>

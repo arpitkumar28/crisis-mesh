@@ -241,7 +241,7 @@ export default function AlertsPage() {
                   <div className="flex items-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><MapPin size={12} className="text-gray-300" /> {alert.location?.name || 'Unknown Location'}</span>
                     <span className="flex items-center gap-1.5"><Clock size={12} className="text-gray-300" /> {formatDistanceToNow(new Date(alert.issued_at), { addSuffix: true })}</span>
-                    <span className="flex items-center gap-1.5"><Shield size={12} className="text-gray-300" /> Source: {alert.source}</span>
+                    <span className="flex items-center gap-1.5"><Shield size={12} className="text-gray-300" /> Source: {alert.source || 'Unknown'}</span>
                   </div>
                 </div>
 

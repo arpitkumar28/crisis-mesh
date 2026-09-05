@@ -74,6 +74,28 @@ export class ConfigService {
     ];
   }
 
+  /**
+   * Vercel gives every branch/PR its own preview URL
+   * (crisis-mesh-<branch-or-hash>-arpitkumar28s-projects.vercel.app),
+   * which can never be predicted ahead of time to add to CORS_ORIGIN.
+   * This matches only deployments of this project under this project's
+   * own Vercel team — nobody else can create a URL matching it, since
+   * Vercel subdomains are tied to team ownership — so it doesn't open
+   * CORS to arbitrary origins the way a wildcard would. It never
+   * touches authentication: every request still needs a valid JWT and
+   * passes the same RBAC checks regardless of origin.
+   */
+  get corsOriginPreviewPattern(): RegExp | null {
+    const override = process.env.CORS_ORIGIN_PREVIEW_PATTERN;
+    if (override) {
+      return new RegExp(override);
+    }
+    if (this.isProduction) {
+      return /^https:\/\/crisis-mesh-[a-z0-9-]+-arpitkumar28s-projects\.vercel\.app$/;
+    }
+    return null;
+  }
+
   get databaseUrl(): string {
     return process.env.DATABASE_URL || '';
   }
