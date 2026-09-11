@@ -72,7 +72,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> restoreSession() async {
     state = state.copyWith(isLoading: true);
-    final token = await _storage.read(key: _tokenKey);
+    String? token;
+    try {
+      token = await _storage.read(key: _tokenKey);
+    } catch (_) {
+      await _removeStoredToken();
+      state = AuthState();
+      return;
+    }
     if (token == null || token.isEmpty) {
       state = state.copyWith(isLoading: false);
       return;
@@ -124,8 +131,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> setAuth(User user, String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+  Future<void> setAuth(
+    User user,
+    String token, {
+    bool persist = true,
+  }) async {
+    if (persist) {
+      await _storage.write(key: _tokenKey, value: token);
+    } else {
+      await _removeStoredToken();
+    }
     _api.setAuthToken(token);
     state = AuthState(
       user: user,
@@ -137,10 +152,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> clearSession() async {
-    await _storage.delete(key: _tokenKey);
+    await _removeStoredToken();
     _api.clearAuthToken();
     _webSocket.disconnect();
     state = AuthState();
+  }
+
+  Future<void> _removeStoredToken() async {
+    try {
+      await _storage.delete(key: _tokenKey);
+    } catch (_) {
+      // A corrupted platform keystore entry is already unusable.
+    }
   }
 
   Future<void> logout() async {

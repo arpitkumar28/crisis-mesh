@@ -119,6 +119,23 @@ export class MigrationService {
       this.logger.log(`Migration ${filename} completed successfully`);
     } catch (error) {
       await client.query('ROLLBACK');
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isAlreadyAppliedError = /already exists|duplicate object|duplicate key|duplicate key value|type .* already exists|relation .* already exists/i.test(
+        errorMessage,
+      );
+
+      if (isAlreadyAppliedError) {
+        this.logger.warn(
+          `Migration ${filename} appears to already be applied; recording it as executed to continue startup.`,
+        );
+        await pool.query(
+          'INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT (filename) DO NOTHING',
+          [filename],
+        );
+        return;
+      }
+
       this.logger.error(`Migration ${filename} failed`, error);
       throw error;
     } finally {

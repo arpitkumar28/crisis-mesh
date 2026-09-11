@@ -16,32 +16,21 @@ class ApiService {
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 5),
         )) {
-    // Console Logging Interceptors
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        developer.log('🚀 [API REQUEST] ${options.method} ${options.path}',
-            name: 'ApiService');
-        if (options.data != null) {
-          developer.log('📦 BODY: ${options.data}', name: 'ApiService');
-        }
+        developer.log('${options.method} ${options.path}', name: 'ApiService');
         return handler.next(options);
       },
       onResponse: (response, handler) {
         developer.log(
-            '✅ [API RESPONSE] ${response.statusCode} ${response.requestOptions.path}',
+            '${response.statusCode} ${response.requestOptions.path}',
             name: 'ApiService');
-        developer.log('📄 DATA: ${response.data}', name: 'ApiService');
         return handler.next(response);
       },
       onError: (DioException e, handler) {
         developer.log(
-            '❌ [API ERROR] ${e.response?.statusCode ?? "NETWORK"} ${e.requestOptions.path}',
+            '${e.response?.statusCode ?? "NETWORK"} ${e.requestOptions.path}',
             name: 'ApiService');
-        developer.log('⚠️ MESSAGE: ${e.message}', name: 'ApiService');
-        if (e.response?.data != null) {
-          developer.log('🔻 ERROR DATA: ${e.response?.data}',
-              name: 'ApiService');
-        }
         return handler.next(e);
       },
     ));

@@ -5,8 +5,9 @@ import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { MigrationService } from './database/migration.service';
 
-async function bootstrap() {
+export async function bootstrapApp() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
@@ -36,6 +37,10 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
+  // Ensure schema exists before serving traffic
+  const migrationService = app.get(MigrationService);
+  await migrationService.runMigrations();
+
   // Global validation pipe
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
@@ -59,7 +64,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const port = process.env.PORT || process.env.API_PORT || 3001;
+  const port = process.env.PORT || process.env.API_PORT || 3002;
   const host = process.env.API_HOST || '0.0.0.0';
 
   await app.listen(port, host);
@@ -67,4 +72,10 @@ async function bootstrap() {
   console.log(`📍 Health check: http://${host}:${port}/api/v1/health`);
 }
 
-bootstrap();
+async function bootstrap() {
+  await bootstrapApp();
+}
+
+if (require.main === module) {
+  void bootstrap();
+}

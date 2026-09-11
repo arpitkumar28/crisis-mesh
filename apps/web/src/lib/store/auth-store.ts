@@ -8,6 +8,24 @@ interface User {
   role: string;
 }
 
+function hasValidJwt(token?: string | null) {
+  if (!token) return false;
+
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return false;
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+
+    if (typeof payload.exp !== 'number') return true;
+    return Date.now() / 1000 < payload.exp;
+  } catch {
+    return false;
+  }
+}
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -32,29 +50,38 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, isAuthenticated: false }),
       setHydrated: () => set({ hasHydrated: true }),
       initializeFromStorage: () => {
+        if (typeof window === 'undefined') return;
+
         const token = localStorage.getItem('access_token');
         const userStr = localStorage.getItem('user');
-        
-        // Also check cookies as fallback for middleware-based auth
+
         const cookieToken = document.cookie
           .split('; ')
-          .find(row => row.startsWith('access_token='))
-          ?.split('=')[1];
-        
-        if (token && userStr) {
+          .find((row) => row.startsWith('access_token='))
+          ?.split('=')
+          .slice(1)
+          .join('=');
+
+        const activeToken = token || cookieToken;
+
+        if (!activeToken || !hasValidJwt(activeToken)) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax';
+          set({ user: null, token: null, isAuthenticated: false, hasHydrated: true });
+          return;
+        }
+
+        if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            set({ user, token, isAuthenticated: true, hasHydrated: true });
+            set({ user, token: activeToken, isAuthenticated: true, hasHydrated: true });
           } catch (e) {
             console.error('Failed to parse user from localStorage', e);
-            set({ hasHydrated: true });
+            set({ user: null, token: activeToken, isAuthenticated: true, hasHydrated: true });
           }
-        } else if (cookieToken) {
-          // Fallback: if cookie exists but localStorage doesn't, use cookie token
-          // This handles cases where middleware validated auth but client storage is empty
-          set({ token: cookieToken, isAuthenticated: true, hasHydrated: true });
         } else {
-          set({ hasHydrated: true });
+          set({ user: null, token: activeToken, isAuthenticated: true, hasHydrated: true });
         }
       },
     }),
@@ -62,7 +89,6 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
-        // Set isAuthenticated based on stored token after hydration
         if (state?.token && !state.isAuthenticated) {
           state.isAuthenticated = true;
         }

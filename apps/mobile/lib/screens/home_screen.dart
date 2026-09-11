@@ -144,9 +144,9 @@ class DashboardTab extends ConsumerWidget {
                   if (alerts.isEmpty) return _buildSafeStatusCard();
                   final topAlert = alerts.first;
                   return _buildRiskCard(
-                    title: topAlert['title'] ?? 'High Flood Risk',
-                    location: topAlert['location'] ?? 'Jaipur, Rajasthan',
-                    severity: topAlert['severity'] ?? 'CRITICAL',
+                    title: _alertText(topAlert['title'], 'High Flood Risk'),
+                    location: _alertLocation(topAlert['location']),
+                    severity: _alertText(topAlert['severity'], 'CRITICAL'),
                   );
                 },
                 loading: () => Container(height: 160, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(16))),
@@ -172,6 +172,19 @@ class DashboardTab extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _alertText(dynamic value, String fallback) {
+    return value is String && value.isNotEmpty ? value : fallback;
+  }
+
+  String _alertLocation(dynamic value) {
+    if (value is String && value.isNotEmpty) return value;
+    if (value is Map) {
+      final name = value['name'] ?? value['city'] ?? value['label'];
+      if (name is String && name.isNotEmpty) return name;
+    }
+    return 'Jaipur, Rajasthan';
   }
 
   Widget _buildHeader(BuildContext context, String name) {
@@ -240,7 +253,6 @@ class DashboardTab extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0757E8),
         borderRadius: BorderRadius.circular(20),
-        image: const DecorationImage(image: AssetImage('assets/dashboard/risk_bg.png'), fit: BoxFit.cover, opacity: 0.1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,8 +338,8 @@ class DashboardTab extends ConsumerWidget {
               Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20)),
               const SizedBox(width: 16),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(i['type'] ?? 'Incident', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF102043))),
-                Text(i['title'] ?? 'Response in progress', style: const TextStyle(fontSize: 12, color: Color(0xFF65728A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(_alertText(i['type'], 'Incident'), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF102043))),
+                Text(_alertText(i['title'], 'Response in progress'), style: const TextStyle(fontSize: 12, color: Color(0xFF65728A)), maxLines: 1, overflow: TextOverflow.ellipsis),
               ])),
               const Icon(Icons.chevron_right, color: Color(0xFFDCE3F0)),
             ],

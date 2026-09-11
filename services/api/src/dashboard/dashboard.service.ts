@@ -6,6 +6,11 @@ import { Device, DeviceStatus } from '../entities/device.entity';
 import { Incident, IncidentStatus } from '../entities/incident.entity';
 import { SensorReading } from '../entities/sensor-reading.entity';
 
+interface MapCoordinates {
+  latitude?: number;
+  longitude?: number;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -16,6 +21,52 @@ export class DashboardService {
     @InjectRepository(SensorReading)
     private readonly readings: Repository<SensorReading>,
   ) {}
+
+  private parsePointLocation(location: unknown): MapCoordinates {
+    if (!location || typeof location !== 'object') {
+      return {};
+    }
+
+    const raw = location as { latitude?: number; longitude?: number; location?: string };
+    if (
+      typeof raw.latitude === 'number' &&
+      Number.isFinite(raw.latitude) &&
+      typeof raw.longitude === 'number' &&
+      Number.isFinite(raw.longitude)
+    ) {
+      return { latitude: raw.latitude, longitude: raw.longitude };
+    }
+
+    if (typeof raw.location === 'string') {
+      const match = raw.location.match(/POINT\(([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\)/i);
+      if (match) {
+        const longitude = Number(match[1]);
+        const latitude = Number(match[2]);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          return { latitude, longitude };
+        }
+      }
+    }
+
+    return {};
+  }
+
+  private toMapEntity(entity: any, kind: 'alert' | 'incident' | 'device') {
+    const location = this.parsePointLocation(entity.location);
+    const latitude = location.latitude ?? entity.latitude ?? null;
+    const longitude = location.longitude ?? entity.longitude ?? null;
+
+    return {
+      id: entity.id,
+      kind,
+      title: entity.title ?? entity.name ?? 'Location',
+      detail: entity.description ?? entity.address ?? entity.name ?? 'Active location',
+      severity: entity.severity ?? undefined,
+      status: entity.status ?? undefined,
+      latitude: latitude !== null && Number.isFinite(Number(latitude)) ? Number(latitude) : undefined,
+      longitude: longitude !== null && Number.isFinite(Number(longitude)) ? Number(longitude) : undefined,
+    };
+  }
 
   async getOverview() {
     const now = new Date();
@@ -81,8 +132,22 @@ export class DashboardService {
         open_incidents: openIncidents,
       },
       trends,
-      alerts: latestAlerts,
-      incidents: latestIncidents,
+      alerts: latestAlerts.map((alert) => {
+        const coords = this.parsePointLocation(alert.location);
+        return {
+          ...alert,
+          latitude: coords.latitude ?? undefined,
+          longitude: coords.longitude ?? undefined,
+        };
+      }),
+      incidents: latestIncidents.map((incident) => {
+        const coords = this.parsePointLocation(incident.location);
+        return {
+          ...incident,
+          latitude: coords.latitude ?? undefined,
+          longitude: coords.longitude ?? undefined,
+        };
+      }),
       telemetry: latestReadings.map((reading) => ({
         id: reading.id,
         device_id: reading.sensor.device_id,
@@ -187,9 +252,9 @@ export class DashboardService {
       }),
     ]);
     return {
-      alerts,
-      incidents,
-      devices,
+      alerts: alerts.map((alert) => this.toMapEntity(alert, 'alert')),
+      incidents: incidents.map((incident) => this.toMapEntity(incident, 'incident')),
+      devices: devices.map((device) => this.toMapEntity(device as any, 'device')),
       generated_at: new Date().toISOString(),
     };
   }
